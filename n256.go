@@ -1,0 +1,237 @@
+package art
+
+import (
+	"bytes"
+	"encoding/hex"
+	"fmt"
+)
+
+type node256 struct {
+	lth      int
+	children [256]*bnode
+
+	//compressed []byte
+	//dep        int
+}
+
+func (n *node256) last() (byte, *bnode) {
+	for i := 255; i >= 0; i-- {
+		ch := n.children[i]
+		if ch != nil {
+			return byte(i), ch
+		}
+	}
+	//panic("unreachable since node256 must have min 49 children")
+	return 0, nil // forgo panic, try to make inline-able.
+}
+
+func (n *node256) first() (byte, *bnode) {
+	for i, ch := range n.children {
+		if ch != nil {
+			return byte(i), ch
+		}
+	}
+	//panic("unreachable since node256 must have min 49 children")
+	return 0, nil // forgo panic, try to make inline-able.
+}
+
+/*
+func (n *node256) getCompressed() []byte {
+	return n.compressed
+}
+func (n *node256) setCompressed(pathpart []byte) {
+	n.compressed = pathpart
+}
+
+func (n *node256) setDepth(d int) {
+	n.dep = d
+}
+func (n *node256) depth() int {
+	return n.dep
+}
+*/
+
+func (n *node256) nchild() int {
+	return int(n.lth)
+}
+
+func (n *node256) childkeysString() (s string) {
+	s = "["
+	for k, ch := range n.children {
+		if ch != nil {
+			if s != "" {
+				s += ", "
+			}
+			if k == 0 {
+				s += "zero"
+			} else {
+				if k < 33 || k > '~' {
+					s += fmt.Sprintf("0x%x", byte(k))
+				} else {
+					s += fmt.Sprintf("'%v'", string(byte(k)))
+				}
+			}
+		}
+	}
+	return s + "]"
+}
+
+func (n *node256) Kind() Kind {
+	return Node256
+}
+
+func (n *node256) child(k byte) (int, *bnode) {
+	return int(k), n.children[k]
+}
+
+func (n *node256) next(k *byte) (byte, *bnode) {
+	for b, child := range n.children {
+		if (k == nil || byte(b) > *k) && child != nil {
+			return byte(b), child
+		}
+	}
+	return 0, nil
+}
+
+// gte: A nil k will return the first key.
+//
+// Otherwise, we return the first
+// (smallest) key that is >= *k.
+//
+// A nil bnode back means that all keys were < *k.
+func (n *node256) gte(k *byte) (byte, *bnode) {
+	for b, child := range n.children {
+		if (k == nil || byte(b) >= *k) && child != nil {
+			return byte(b), child
+		}
+	}
+	return 0, nil
+}
+
+func (n *node256) gt(k *byte) (keyb byte, ch *bnode) {
+	if k == nil {
+		// request for 1st key
+		return n.gte(nil)
+	}
+	// INVAR: k != nil
+	for b, child := range n.children {
+		if (byte(b) > *k) && child != nil {
+			return byte(b), child
+		}
+	}
+	return 0, nil
+}
+
+func (n *node256) prev(k *byte) (byte, *bnode) {
+	for idx := n.lth - 1; idx >= 0; idx-- {
+		b := byte(idx)
+		child := n.children[idx]
+		if (k == nil || b < *k) && child != nil {
+			return b, child
+		}
+	}
+	return 0, nil
+}
+
+func (n *node256) replace(idx int, child *bnode) (old *bnode) {
+	old = n.children[byte(idx)]
+	n.children[byte(idx)] = child
+	if child == nil {
+		n.lth--
+	}
+	return
+}
+
+func (n *node256) full() bool {
+	return n.lth == 256
+}
+
+func (n *node256) addChild(k byte, child *bnode) {
+	n.children[k] = child
+	n.lth++
+}
+
+func (n *node256) grow() Inode {
+	return nil
+}
+
+func (n *node256) min() bool {
+	return n.lth <= 49
+}
+
+func (n *node256) shrink() Inode {
+	nn := &node48{
+		lth: n.lth,
+		//compressed: append([]byte{}, n.compressed...),
+		//dep:        n.dep,
+	}
+	var index uint16
+	for i := range n.children {
+		if n.children[i] == nil {
+			continue
+		}
+		index++
+		nn.keys[i] = index
+		nn.children[index-1] = n.children[i]
+	}
+	return nn
+}
+
+func (n *node256) String() string {
+	var b bytes.Buffer
+	_, _ = b.WriteString("n256[")
+	encoder := hex.NewEncoder(&b)
+	for i := range n.children {
+		if n.children[i] != nil {
+			_, _ = encoder.Write([]byte{byte(i)})
+		}
+	}
+	_, _ = b.WriteString("]")
+	return b.String()
+}
+
+// lte: A nil k will return the last key.
+//
+// Otherwise, we return the largest
+// (right-most) key that is <= *k.
+//
+// A nil bnode back means that all keys were > *k.
+func (n *node256) lte(k *byte) (keyb byte, ch *bnode) {
+	for i := 255; i >= 0; i-- {
+		ch = n.children[i]
+		if ch != nil {
+			keyb = byte(i)
+			if k == nil {
+				// return the last (largest) key.
+				return
+			}
+			if keyb <= *k {
+				return
+			}
+		}
+	}
+	return 0, nil
+}
+
+// lt: A nil k will return the last key.
+//
+// Otherwise, we return the largest
+// (right-most) key that is < *k.
+//
+// A nil ch *bnode back means that all keys were >= *k.
+func (n *node256) lt(k *byte) (keyb byte, ch *bnode) {
+	for i := 255; i >= 0; i-- {
+		ch = n.children[i]
+		if ch != nil {
+			keyb = byte(i)
+			if k == nil {
+				// return the last (largest) key.
+				return
+			}
+			if keyb < *k {
+				return
+			}
+		}
+	}
+	return 0, nil
+}
