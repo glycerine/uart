@@ -72,7 +72,7 @@ func (n *Inner) getLTE(
 	//pp("%p top of getLTE(), path='%v'; we are '%v' %v;  largestWillDo=%v", n, string(n.path), n.FlatString(depth, 0), n.rangestr(), largestWillDo)
 
 	//defer func() {
-	//pp("%p returning from calldepth=%v getLTE value='%v', found='%v'; dir='%v'; id='%v'; my Inner %v;  largestWillDo=%v; pathMatch=%v", n, calldepth, value, found, dir, id, n.rangestr(), largestWillDo, pathMatch)
+	//	pp("%p returning from calldepth=%v getLTE value='%v', found='%v'; dir='%v'; id='%v'; my Inner %v;  largestWillDo=%v", n, calldepth, value, found, dir, id, n.rangestr(), largestWillDo)
 	//}()
 
 	// PHASE ZERO: largestWillDo during backtracking.
@@ -147,6 +147,10 @@ func (n *Inner) getLTE(
 		if gt {
 			dir = needNextLeaf
 			value, _ = n.recursiveLast()
+			id = n.SubN - 1
+			// set found to allow LTE queries greater
+			// than largest key in the tree to answer correctly.
+			found = (calldepth == 0)
 			return
 		} else {
 			dir = needPrevLeaf

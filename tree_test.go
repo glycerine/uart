@@ -13,6 +13,7 @@ import (
 	"time"
 )
 
+var stopnow int // debug todo remove
 var _ = sort.Sort
 
 // used by tests; kind of a default value type.
@@ -1400,6 +1401,9 @@ func Test507_ArtTree_SearchMod_random_numbered_LTE(t *testing.T) {
 
 		// verify LTE queries for keys larger than the
 		// largest in the tree return the last key.
+		if j == 9 {
+			//stopnow = true
+		}
 		if sz > 0 {
 
 			for kk := range 2 {
@@ -1414,7 +1418,7 @@ func Test507_ArtTree_SearchMod_random_numbered_LTE(t *testing.T) {
 				} else {
 					vv("tree = %v", tree)
 					vv("lf='%v'; idx=%v; found=%v; largestIdx=%v", lf, idx, found, largestIdx)
-					showlist(largestIdx+1+kk, string(lf.Key))
+					showlist(-1, string(lf.Key))
 					panic(fmt.Sprintf("could not find key LTE '%v' at j=%v", string(query), j))
 				}
 
