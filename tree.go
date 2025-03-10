@@ -81,6 +81,18 @@ type Tree struct {
 	root *bnode
 	size int64
 
+	// The treeVersion Update protocol:
+	// Writers increment this treeVersion number
+	// to allow iterators to continue
+	// efficiently past tree modifications
+	// (deletions and/or insertinos) that happen
+	// behind them. If the iterator sees a
+	// different treeVersion, it will use a
+	// slightly more expensive way of getting
+	// the next leaf, one that is resilient in
+	// the face of tree structure changes.
+	treeVersion int64
+
 	// Leafz is for serialization. You must
 	// set leafByLeaf=false if you want to
 	// automatically serialize a Tree when it is
@@ -214,6 +226,7 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 		// first node in tree
 		t.size++
 		t.root = bnodeLeaf(lf)
+		t.treeVersion++
 		return false
 	}
 
@@ -225,6 +238,7 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	if !updated {
 		t.size++
 	}
+	t.treeVersion++
 	return
 }
 
@@ -384,16 +398,15 @@ func (t *Tree) Remove(key Key) (deleted bool, value any) {
 		return
 	}
 
-	for {
-		deleted, deletedNode = t.root.del(key, 0, t.root, func(rn *bnode) {
-			t.root = rn
-		})
-		if deleted {
-			value = deletedNode.leaf.Value
-			t.size--
-		}
-		return deleted, value
+	deleted, deletedNode = t.root.del(key, 0, t.root, func(rn *bnode) {
+		t.root = rn
+	})
+	if deleted {
+		value = deletedNode.leaf.Value
+		t.size--
+		t.treeVersion++
 	}
+	return deleted, value
 }
 
 // IsEmpty returns true iff the Tree is empty.
