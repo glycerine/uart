@@ -120,19 +120,13 @@ https://duckdb.org/2022/07/27/art-storage.html
 
 [7] https://hyper-db.de/  https://tableau.github.io/hyper-db/journey
 
-Docs: https://pkg.go.dev/github.com/glycerine/art-adaptive-radix-tree
+Docs: https://pkg.go.dev/github.com/glycerine/uart
 
-
-Serialization to disk facilities are provided via greenpack (https://github.com/glycerine/greenpack).
-
-The implementation is based on following paper:
-
-- [The Adaptive Radix Tree: ARTful Indexing for Main-Memory Databases](https://db.in.tum.de/~leis/papers/ART.pdf)
 
 -----
 Author: Jason E. Aten, Ph.D.
 
-Licence: MIT
+Licence: MIT. See the LICENSE file.
 
 Originally based on, but much diverged from, the upstream repo
 https://github.com/WenyXu/sync-adaptive-radix-tree . 
