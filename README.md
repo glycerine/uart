@@ -48,7 +48,7 @@ offering it[4] in query result APIs.
 As an alternative to red-black trees,
 AVL trees, and other kinds of balanced binary trees,
 ART trees are attractive because of their speed and
-space savings (especially though path compression). Like
+space savings. Like
 those trees, ART offers an ordered index
 of sorted keys allowing efficient O(log N) access
 for each unique key. However, as the benchmarks
@@ -69,7 +69,7 @@ this quick and cursory benchmark as a guide.
 Ease of use: efficient key-range lookup and iteration, as well as the
 ability to "treat the tree as a slice" using
 integer indexes (based on the counted B-tree
-idea[5]), make this ART tree implementation
+idea[5] -- see the tree.At(i int) method), make this ART tree implementation
 particularly easy to use in practice.
 
 This ART tree supports only a single value for each
