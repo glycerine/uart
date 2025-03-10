@@ -341,6 +341,7 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool
 		return
 	}
 	if len(key) == 0 && t.size == 1 {
+		//vv("t.size == 1, nil query")
 		// nil query asks for first leaf, or last, depending.
 		// here it is the same.
 		return t.root.leaf, 0, true
@@ -355,6 +356,7 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool
 		b, found, _, idx = t.root.get(key, 0, t.root)
 	}
 	if t.size == 1 {
+		//vv("t.size == 1")
 		// special case is a leaf at the root, as
 		// we don't want to slow down the hot path
 		// leaf code with this rare situation.

@@ -1231,13 +1231,19 @@ func Test506_ArtTree_SearchMod_random_numbered_GT_(t *testing.T) {
 	for j := 1; j < 5000; j++ {
 		tree := NewArtTree()
 
-		// Generate sorted keys
+		// bump up from 0 to test query 0,1 not in tree.
+		first := 2
+
+		// Generate sorted keys.
 		sorted := make([][]byte, 0, j)
 		for i := 0; i < j; i++ {
 			if i%2 == 0 {
 				k := fmt.Sprintf("%06d", i)
 				sorted = append(sorted, []byte(k))
-				tree.Insert(Key(k), ByteSliceValue(k))
+
+				if i >= first {
+					tree.Insert(Key(k), ByteSliceValue(k))
+				}
 			} else {
 				k := fmt.Sprintf("%06d", i)
 				sorted = append(sorted, []byte(k))
@@ -1297,13 +1303,19 @@ func Test506_ArtTree_SearchMod_random_numbered_GT_(t *testing.T) {
 
 		// verify nil gives the first key in the tree in GT
 		lf, _, found := tree.Find(GT, nil)
+		if sz == 0 {
+			if found || lf != nil {
+				t.Fatal("should not find a leaf in an empty tree")
+			}
+			continue
+		}
 		if !found {
-			t.Fatal("expected to find first key with nil GT search")
+			t.Fatalf("expected to find first key with nil GT search; j=%v;", j)
 		}
 		if lf == nil {
 			t.Fatal("expected non-nil leaf for nil GT search")
 		}
-		firstKey := sorted[0] // First even index since odds aren't in tree
+		firstKey := sorted[first] // First even index since odds aren't in tree
 		if !bytes.Equal(lf.Key, firstKey) {
 			t.Fatalf("expected first key %v but got %v", string(firstKey), string(lf.Key))
 		}
