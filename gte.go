@@ -69,11 +69,11 @@ func (n *Inner) getGTE(
 
 ) (value *bnode, found bool, dir direc, id int) {
 
-	pp("%p top of getGTE(key='%v'), path='%v'; we are '%v' %v;  smallestWillDo=%v; calldepth='%v'; smod='%v'", n, string(key), string(n.path), n.FlatString(depth, 0), n.rangestr(), smallestWillDo, calldepth, smod)
+	//pp("%p top of getGTE(key='%v'), path='%v'; we are '%v' %v;  smallestWillDo=%v; calldepth='%v'; smod='%v'", n, string(key), string(n.path), n.FlatString(depth, 0), n.rangestr(), smallestWillDo, calldepth, smod)
 
-	defer func() {
-		pp("%p returning from calldepth=%v getGTE(key='%v') value='%v', found='%v'; dir='%v'; id='%v'; my Inner %v;  smallestWillDo=%v; id=%v; smod='%v'", n, calldepth, string(key), value, found, dir, id, n.rangestr(), smallestWillDo, id, smod)
-	}()
+	//defer func() {
+	//pp("%p returning from calldepth=%v getGTE(key='%v') value='%v', found='%v'; dir='%v'; id='%v'; my Inner %v;  smallestWillDo=%v; id=%v; smod='%v'", n, calldepth, string(key), value, found, dir, id, n.rangestr(), smallestWillDo, id, smod)
+	//}()
 
 	// PHASE ZERO: smallestWillDo during backtracking.
 	if smallestWillDo {

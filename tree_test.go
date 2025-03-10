@@ -1114,16 +1114,26 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 
 		// j = number of leaves in the tree.
 
+		smallest := int(N + 1)
 		used := make(map[int]bool) // tree may dedup, but sorted needs too.
 		for range j {
 			r := int(chacha8.Uint64() % N)
-			if used[r] {
+			// disallow 0 so we can query with it,
+			// knowing it is not in the tree; and
+			// that smallerThanSmallestInTree will not be negative.
+			if r == 0 || used[r] {
 				continue
+			}
+			if r < smallest {
+				smallest = r
 			}
 			used[r] = true
 			sorted = append(sorted, []byte(fmt.Sprintf("%06d", r)))
 		}
 		sort.Sort(sliceByteSlice(sorted))
+
+		smallerThanSmallestInTree := []byte(fmt.Sprintf("%06d", smallest-1))
+		zeroKey := []byte(fmt.Sprintf("%06d", 0))
 
 		for i, w := range sorted {
 			// only insert the evens, so we can search GTE on odds.
@@ -1160,6 +1170,21 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 
 		// do GTE the odd keys, expecting to get the next even.
 		var wrong []int
+
+		// check the GTE(key) when key < key0 (smallest in tree).
+		for kk := range 2 {
+			query := smallerThanSmallestInTree
+			if kk == 1 {
+				query = zeroKey
+			}
+			lf, idx, found := tree.Find(GTE, query)
+			if found && idx == 0 &&
+				bytes.Equal(lf.Key, sorted[0]) {
+				// good. correct. okay.
+			} else {
+				panic(fmt.Sprintf("bad GTE smaller-than-smallest response! want key='%v', got='%v'; found=%v; idx=%v", string(sorted[0]), string(lf.Key), found, idx))
+			}
+		}
 
 		for i := 2; i < sz; i += 2 {
 
@@ -1715,7 +1740,7 @@ func TestArtTree777_FindGT_key_before_keys_in_tree(t *testing.T) {
 	tree.Insert(Key("b01"), ByteSliceValue("b01"))
 
 	lf, _, found := tree.Find(GT, Key("a10"))
-	vv("lf back from Find(GT,'a10') = '%v'", lf)
+	//vv("lf back from Find(GT,'a10') = '%v'", lf)
 	if !found {
 		t.Error("expected key to be found")
 	}

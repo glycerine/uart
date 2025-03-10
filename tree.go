@@ -336,6 +336,7 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool
 		t.Rwmut.RLock()
 		defer t.Rwmut.RUnlock()
 	}
+	//vv("Find, smod='%v; key='%v'; t.size='%v'", smod, string(key), t.size)
 	if t.root == nil {
 		return
 	}
@@ -352,6 +353,14 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool
 		b, found, _, idx = t.root.getLTE(key, 0, smod, t.root, t, 0, false, 0)
 	default:
 		b, found, _, idx = t.root.get(key, 0, t.root)
+	}
+	if t.size == 1 {
+		// special case is a leaf at the root, as
+		// we don't want to slow down the hot path
+		// leaf code with this rare situation.
+		if b != nil {
+			found = true
+		}
 	}
 	if b != nil {
 		lf = b.leaf
