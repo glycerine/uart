@@ -54,7 +54,7 @@ of sorted keys allowing efficient O(log N) access
 for each unique key. However, as the benchmarks
 below indicate (1440 nsec per lookup for red-black tree,
 versus 53 nsec for ART), lookups can be orders of
-magnitude faster (27x in that benchmark).
+magnitude faster (27x in that benchmark, for the read-only case).
 As a point of humility, we note that the skip-list
 measured here was even faster. Skip
 lists do not provide prefix compression,
