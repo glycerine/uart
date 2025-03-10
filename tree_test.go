@@ -1708,3 +1708,55 @@ func Test512_LeafIndex_inverse_of_At(t *testing.T) {
 
 	}
 }
+
+func TestArtTree777_FindGT_key_before_keys_in_tree(t *testing.T) {
+	tree := NewArtTree()
+	tree.Insert(Key("a14"), ByteSliceValue("a14"))
+	tree.Insert(Key("b01"), ByteSliceValue("b01"))
+
+	lf, _, found := tree.Find(GT, Key("a10"))
+	vv("lf back from Find(GT,'a10') = '%v'", lf)
+	if !found {
+		t.Error("expected key to be found")
+	}
+	v := lf.Value
+	if got, want := string(v.(ByteSliceValue)), string(ByteSliceValue("a14")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
+
+	// also GTE
+
+	v, _, found = tree.FindGT(Key("a10"))
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := string(v.(ByteSliceValue)), string(ByteSliceValue("a14")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
+
+}
+
+func TestArtTree777_FindLT_key_after_keys_in_tree(t *testing.T) {
+	tree := NewArtTree()
+	tree.Insert(Key("a14"), ByteSliceValue("a14"))
+	tree.Insert(Key("b01"), ByteSliceValue("b01"))
+
+	v, _, found := tree.FindLT(Key("c00"))
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := string(v.(ByteSliceValue)), string(ByteSliceValue("b01")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
+
+	// also LTE
+
+	v, _, found = tree.FindLTE(Key("c00"))
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := string(v.(ByteSliceValue)), string(ByteSliceValue("b01")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
+
+}

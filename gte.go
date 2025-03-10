@@ -63,7 +63,7 @@ func (n *Inner) getGTE(
 	smod SearchModifier,
 	selfb *bnode, // selfb.inner == n
 	tree *Tree,
-	calldepth int, // easier diagnostics
+	calldepth int, // how deep in recurisve getGTE calls are we.
 	smallestWillDo bool, // want the next largest key.
 	keyCmpPath int, // equal to binary.Compare(key, n.path)
 
@@ -338,8 +338,15 @@ func (n *Inner) getGTE(
 	prevKeyb, prev := n.Node.prev(&querykey)
 	if prev == nil {
 		// goal could be in previous subtree.
-		_, value = n.Node.first()
-		return value, false, needPrevLeaf, 0
+		//_, value = n.Node.first()
+		value, _ = n.recursiveFirst()
+
+		// Setting found like this lets us
+		// correctly answer GT/GTE queries for
+		// keys before the smallest key in the tree.
+		found = (calldepth == 0)
+
+		return value, found, needPrevLeaf, 0
 	}
 
 	if dir > 1 {

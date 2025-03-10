@@ -338,8 +338,15 @@ func (n *Inner) getLTE(
 	nextKeyb, next := n.Node.next(&querykey)
 	if next == nil {
 		// goal could be in next subtree.
-		_, value = n.Node.last()
-		return value, false, needNextLeaf, 0
+		//_, value = n.Node.last()
+		value, _ = n.recursiveLast()
+
+		// Setting found like this lets us
+		// correctly answer LT/LTE queries for
+		// keys after the largest key in the tree.
+		found = (calldepth == 0)
+
+		return value, found, needNextLeaf, 0
 	}
 
 	if dir < -1 {
