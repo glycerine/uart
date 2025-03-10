@@ -57,11 +57,12 @@ versus 53 nsec for ART), lookups can be orders of
 magnitude faster (27x in that benchmark).
 As a point of humility, we note that the skip-list
 measured here was even faster. Skip
-lists have their own trade-offs, such as using
-more memory for multiple forward pointers per node, having
-randomized/non-deterministic performance, and worst
-case O(N) insertion for "tall towers";
-but they may also be worth investigating in your
+lists do not provide prefix compression,
+and have other trade-offs such as using
+more memory for multiple forward pointers per node; having
+randomized/non-deterministic performance; and worst
+case O(N) insertion for "tall towers".
+Nonetheless, they may also be worth investigating in your
 application context with more than 
 this quick and cursory benchmark as a guide.
 
