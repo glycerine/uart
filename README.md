@@ -58,13 +58,11 @@ magnitude faster (27x in that benchmark, for the read-only case).
 As a point of humility, we note that the skip-list
 measured here was even faster. Skip
 lists do not provide prefix compression
-or reverse iteration (in their single-link typical form)
-and have other trade-offs such as using
-more memory for multiple forward pointers per node; having
-randomized/non-deterministic performance; and worst
-case O(N) insertion for "tall towers".
-Nonetheless, they may also be worth investigating in your
-application context with more than 
+or reverse iteration (in their single-link typical form),
+and have other trade-offs that are out of scope here.
+Still they are an interesting data structure
+that may also be worth investigating in your
+application's context with more than 
 this quick and cursory benchmark as a guide.
 
 Ease of use: efficient key-range lookup and iteration, as well as the
