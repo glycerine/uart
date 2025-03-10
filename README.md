@@ -65,7 +65,8 @@ that may also be worth investigating in your
 application's context with more than 
 this quick and cursory benchmark as a guide.
 
-Ease of use: efficient key-range lookup and iteration, as well as the
+Ease of use: efficient greater-than/less-than key lookup
+and range iteration, as well as the
 ability to "treat the tree as a slice" using
 integer indexes (based on the counted B-tree
 idea[5] -- see the tree.At(i int) method), make this ART tree implementation
