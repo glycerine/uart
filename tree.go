@@ -247,6 +247,7 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 func (t *Tree) FindGT(key Key) (val any, idx int, found bool) {
 	var lf *Leaf
 	lf, idx, found = t.Find(GT, key)
+	//vv("FindGT got back lf='%v'; idx=%v; found = %v", lf, idx, found)
 	if found && lf != nil {
 		val = lf.Value
 	}
@@ -468,6 +469,7 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 		cursor:      start,
 		terminate:   end,
 		begIdx:      begIdx,
+		curIdx:      begIdx,
 		endxIdx:     endIdx + 1,
 	}
 }
@@ -504,26 +506,34 @@ func (t *Tree) ReverseIterator(end, start []byte) *iterator {
 	// get the integer range [endIdx, begIdx]
 	_, begIdx, ok := t.FindLTE(start)
 	if !ok {
+		vv("FindLTE start found nothing!")
 		return &iterator{
 			initDone: true,
 			closed:   true,
 		}
 	}
 
-	_, endIdx, ok := t.FindGT(end)
+	gtLeaf, endIdx, ok := t.FindGT(end)
 	if !ok {
+		vv("in revIt: FindGT(end='%v') got ok=false, endIdx = %v; gtLeaf='%v'", string(end), endIdx, gtLeaf)
+		// this is okay if end is nil, of course
+
+		vv("FindGT end found nothing! end='%v'", string(end))
 		return &iterator{
 			initDone: true,
 			closed:   true,
 		}
 	}
 
+	vv("revIt starting cursor=start='%v'", string(start))
 	return &iterator{
 		tree:        t,
 		treeVersion: t.treeVersion,
+		reverse:     true,
 		cursor:      start,
 		terminate:   end,
 		begIdx:      begIdx,
+		curIdx:      begIdx,
 		endxIdx:     endIdx - 1,
 	}
 }

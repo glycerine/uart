@@ -401,71 +401,71 @@ func TestIterator(t *testing.T) {
 		keys       []string
 		start, end string
 		reverse    bool
-		rst        []string
+		want       []string
 	}{
 		{
 			desc: "full",
 			keys: keys,
-			rst:  sorted,
+			want: sorted,
 		},
 		{
 			desc: "empty",
-			rst:  []string{},
+			want: []string{},
 		},
 		{
 			desc: "matching leaf",
 			keys: keys[:1],
-			rst:  keys[:1],
+			want: keys[:1],
 		},
 		{
 			desc:  "non matching leaf",
 			keys:  keys[:1],
-			rst:   []string{},
+			want:  []string{},
 			start: "13",
 		},
 		{
 			desc: "limited by end",
 			keys: keys,
 			end:  "125",
-			rst:  sorted[:2],
+			want: sorted[:2],
 		},
 		{
 			desc:  "limited by start",
 			keys:  keys,
 			start: "124",
-			rst:   sorted[1:],
+			want:  sorted[1:],
 		},
 		{
 			desc: "end is excluded",
 			keys: keys,
 			end:  "1345",
-			rst:  sorted[:3],
+			want: sorted[:3],
 		},
 		{
 			desc:  "start to end",
 			keys:  keys,
 			start: "125",
 			end:   "1345",
-			rst:   sorted[2:3],
+			want:  sorted[2:3],
 		},
 		{
 			desc:    "reverse",
 			keys:    keys,
-			rst:     reversed,
+			want:    reversed,
 			reverse: true,
 		},
 		{
 			desc:    "reverse until",
 			keys:    keys,
-			start:   "1234",
-			rst:     reversed,
+			end:     "1200",
+			want:    reversed,
 			reverse: true,
 		},
 		{
 			desc:    "reverse from",
 			keys:    keys,
 			end:     "1268",
-			rst:     reversed[1:],
+			want:    reversed[1:],
 			reverse: true,
 		},
 		{
@@ -473,7 +473,7 @@ func TestIterator(t *testing.T) {
 			keys:    keys,
 			start:   "1235",
 			end:     "1268",
-			rst:     reversed[1:3],
+			want:    reversed[1:3],
 			reverse: true,
 		},
 	} {
@@ -484,16 +484,20 @@ func TestIterator(t *testing.T) {
 				tree.Insert([]byte(key), key)
 			}
 			vv("tree = '%v'", tree)
-			iter := tree.Iterator([]byte(tc.start), []byte(tc.end))
+			var iter *iterator
 			if tc.reverse {
-				iter = tree.Iterator([]byte(tc.end), []byte(tc.start))
+				vv("reverse is true")
+				iter = tree.ReverseIterator([]byte(tc.end), []byte(tc.start))
+				vv("iter.reverse is %v", iter.reverse)
+			} else {
+				iter = tree.Iterator([]byte(tc.start), []byte(tc.end))
 			}
-			rst := []string{}
+			want := []string{}
 			for iter.Next() {
-				rst = append(rst, iter.Value().(string))
+				want = append(want, iter.Value().(string))
 			}
-			if !equalStringSlice(rst, tc.rst) {
-				t.Fatalf("got rst='%v'; want '%v'", rst, tc.rst)
+			if !equalStringSlice(want, tc.want) {
+				t.Fatalf("got='%v'; want '%v'", want, tc.want)
 			}
 		})
 	}

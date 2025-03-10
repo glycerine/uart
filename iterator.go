@@ -27,6 +27,7 @@ type iterator struct {
 	reverse           bool
 
 	begIdx  int // corresponding to initial cursor key
+	curIdx  int // corresponding to current key
 	endxIdx int // corresponding to 1 past the last key
 
 	started bool
@@ -35,12 +36,6 @@ type iterator struct {
 	key   []byte
 	value any
 	leaf  *Leaf
-}
-
-func (i *iterator) Reverse() *iterator {
-	i.cursor, i.terminate = i.terminate, i.cursor
-	i.reverse = true
-	return i
 }
 
 // Next will iterate over all leaf nodes between specified prefixes
@@ -57,7 +52,7 @@ func (i *iterator) Next() (ok bool) {
 	return i.iterate()
 }
 
-func (i *iterator) TheLeaf() *Leaf {
+func (i *iterator) Leaf() *Leaf {
 	return i.leaf
 }
 
@@ -69,11 +64,15 @@ func (i *iterator) Key() Key {
 	return i.key
 }
 
-func (i *iterator) inRange(key []byte) bool {
-	if !i.reverse {
-		return bytes.Compare(key, i.cursor) > 0 && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) <= 0)
+func (i *iterator) inRange(key []byte) (inside bool) {
+	defer func() {
+		vv("inRange returns inside=%v; reverse is %v; key='%v'; cursor='%v; terminate='%v'", inside, i.reverse, string(key), string(i.cursor), string(i.terminate))
+	}()
+	if i.reverse {
+		return (bytes.Compare(key, i.cursor) <= 0 || len(i.cursor) == 0) && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) > 0)
 	}
-	return (bytes.Compare(key, i.cursor) < 0 || len(i.cursor) == 0) && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) >= 0)
+	// forward iteration:
+	return bytes.Compare(key, i.cursor) >= 0 && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) < 0)
 }
 
 // exit returned true means only 0 or 1 nodes in tree,
@@ -85,7 +84,7 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 		i.closed = true
 		return true, false
 	}
-	//l, isLeaf := root.(*Leaf)
+
 	if root.isLeaf {
 		l := root.leaf
 		i.closed = true
@@ -97,12 +96,15 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 		return true, false
 	}
 	i.stack = &checkpoint{
-		node: root.inner, // *Inner
+		node: root.inner,
 	}
 	return false, false
 }
 
-func (i *iterator) next(n *Inner, curkey *byte) (byte, *bnode) {
+func (i *iterator) next(n *Inner, curkey *byte) (keyb byte, b *bnode) {
+	defer func() {
+		vv("it.next returning keyb='%v', b='%v'", string(keyb), b.String())
+	}()
 	if !i.reverse {
 		return n.Node.next(curkey)
 	}
@@ -138,9 +140,7 @@ func (i *iterator) tryAdvance() (bool, bool) {
 
 		tail := i.stack
 
-		//vv("adv = %v; about to tail.node.lock.RLock(); state is '%v'", adv, tail.node.lock.state) // adv is always 0
-		//vv("past RLock; state = '%v'", tail.node.lock.state)
-
+		vv("tryAdv calling i.next() with tail.curkey = '%#v'", tail.curkey) // nil on first call
 		curkey, child := i.next(tail.node, tail.curkey)
 		if child == nil {
 
@@ -149,6 +149,7 @@ func (i *iterator) tryAdvance() (bool, bool) {
 			return false, false
 		}
 		// advance curkey
+		vv("setting tail.curkey = '%v'", string(curkey))
 		tail.curkey = &curkey
 
 		if child.isLeaf {
