@@ -9,124 +9,125 @@ import (
 	"testing"
 )
 
+/*
 func TestIterator(t *testing.T) {
 
-	keys := []string{
-		"1234",
-		"1245",
-		"1345",
-		"1267",
+		keys := []string{
+			"1234",
+			"1245",
+			"1345",
+			"1267",
+		}
+		sorted := make([]string, len(keys))
+		copy(sorted, keys)
+		sort.Strings(sorted)
+
+		reversed := make([]string, len(keys))
+		copy(reversed, keys)
+		sort.Sort(sort.Reverse(sort.StringSlice(reversed)))
+
+		for _, tc := range []struct {
+			desc       string
+			keys       []string
+			start, end string
+			reverse    bool
+			rst        []string
+		}{
+			{
+				desc: "full",
+				keys: keys,
+				rst:  sorted,
+			},
+			{
+				desc: "empty",
+				rst:  []string{},
+			},
+			{
+				desc: "matching leaf",
+				keys: keys[:1],
+				rst:  keys[:1],
+			},
+			{
+				desc:  "non matching leaf",
+				keys:  keys[:1],
+				rst:   []string{},
+				start: "13",
+			},
+			{
+				desc: "limited by end",
+				keys: keys,
+				end:  "125",
+				rst:  sorted[:2],
+			},
+			{
+				desc:  "limited by start",
+				keys:  keys,
+				start: "124",
+				rst:   sorted[1:],
+			},
+			{
+				desc:  "start is excluded",
+				keys:  keys,
+				start: "1234",
+				rst:   sorted[1:],
+			},
+			{
+				desc:  "start to end",
+				keys:  keys,
+				start: "125",
+				end:   "1344",
+				rst:   sorted[2:3],
+			},
+			{
+				desc:    "reverse",
+				keys:    keys,
+				rst:     reversed,
+				reverse: true,
+			},
+			{
+				desc:    "reverse until",
+				keys:    keys,
+				start:   "1234",
+				rst:     reversed[:4],
+				reverse: true,
+			},
+			{
+				desc:    "reverse from",
+				keys:    keys,
+				end:     "1268",
+				rst:     reversed[1:],
+				reverse: true,
+			},
+			{
+				desc:    "reverse from until",
+				keys:    keys,
+				start:   "1235",
+				end:     "1268",
+				rst:     reversed[1:3],
+				reverse: true,
+			},
+		} {
+			tc := tc
+			t.Run(tc.desc, func(t *testing.T) {
+				tree := NewArtTree()
+				for _, key := range tc.keys {
+					tree.Insert([]byte(key), key)
+				}
+				iter := tree.Iterator([]byte(tc.start), []byte(tc.end))
+				if tc.reverse {
+					iter = iter.Reverse()
+				}
+				rst := []string{}
+				for iter.Next() {
+					rst = append(rst, iter.Value().(string))
+				}
+				if got, want := rst, tc.rst; !equalStringSlice(got, want) {
+					t.Errorf("got %v, want %v", got, want)
+				}
+			})
+		}
 	}
-	sorted := make([]string, len(keys))
-	copy(sorted, keys)
-	sort.Strings(sorted)
-
-	reversed := make([]string, len(keys))
-	copy(reversed, keys)
-	sort.Sort(sort.Reverse(sort.StringSlice(reversed)))
-
-	for _, tc := range []struct {
-		desc       string
-		keys       []string
-		start, end string
-		reverse    bool
-		rst        []string
-	}{
-		{
-			desc: "full",
-			keys: keys,
-			rst:  sorted,
-		},
-		{
-			desc: "empty",
-			rst:  []string{},
-		},
-		{
-			desc: "matching leaf",
-			keys: keys[:1],
-			rst:  keys[:1],
-		},
-		{
-			desc:  "non matching leaf",
-			keys:  keys[:1],
-			rst:   []string{},
-			start: "13",
-		},
-		{
-			desc: "limited by end",
-			keys: keys,
-			end:  "125",
-			rst:  sorted[:2],
-		},
-		{
-			desc:  "limited by start",
-			keys:  keys,
-			start: "124",
-			rst:   sorted[1:],
-		},
-		{
-			desc:  "start is excluded",
-			keys:  keys,
-			start: "1234",
-			rst:   sorted[1:],
-		},
-		{
-			desc:  "start to end",
-			keys:  keys,
-			start: "125",
-			end:   "1344",
-			rst:   sorted[2:3],
-		},
-		{
-			desc:    "reverse",
-			keys:    keys,
-			rst:     reversed,
-			reverse: true,
-		},
-		{
-			desc:    "reverse until",
-			keys:    keys,
-			start:   "1234",
-			rst:     reversed[:4],
-			reverse: true,
-		},
-		{
-			desc:    "reverse from",
-			keys:    keys,
-			end:     "1268",
-			rst:     reversed[1:],
-			reverse: true,
-		},
-		{
-			desc:    "reverse from until",
-			keys:    keys,
-			start:   "1235",
-			end:     "1268",
-			rst:     reversed[1:3],
-			reverse: true,
-		},
-	} {
-		tc := tc
-		t.Run(tc.desc, func(t *testing.T) {
-			tree := NewArtTree()
-			for _, key := range tc.keys {
-				tree.Insert([]byte(key), key)
-			}
-			iter := tree.Iterator([]byte(tc.start), []byte(tc.end))
-			if tc.reverse {
-				iter = iter.Reverse()
-			}
-			rst := []string{}
-			for iter.Next() {
-				rst = append(rst, iter.Value().(string))
-			}
-			if got, want := rst, tc.rst; !equalStringSlice(got, want) {
-				t.Errorf("got %v, want %v", got, want)
-			}
-		})
-	}
-}
-
+*/
 func equalStringSlice(a, b []string) bool {
 	if len(a) != len(b) {
 		return false
@@ -289,8 +290,7 @@ func TestIterDeleteBehindReverse(t *testing.T) {
 	deleted := make(map[int]int)
 	kept := make(map[int]int)
 
-	iter := tree.Iterator(nil, nil)
-	iter = iter.Reverse()
+	iter := tree.ReverseIterator(nil, nil)
 
 	thresh := 20_000
 	callcount := 0
@@ -370,4 +370,188 @@ func TestIterDeleteBehindReverse(t *testing.T) {
 			}
 		}
 	}
+}
+
+func TestIterator(t *testing.T) {
+
+	keys := []string{
+		"1234",
+		"1245",
+		"1267",
+		"1345",
+	}
+	sorted := make([]string, len(keys))
+	copy(sorted, keys)
+	sort.Strings(sorted)
+
+	reversed := make([]string, len(keys))
+	copy(reversed, keys)
+	sort.Sort(sort.Reverse(sort.StringSlice(reversed)))
+
+	for _, tc := range []struct {
+		desc       string
+		keys       []string
+		start, end string
+		reverse    bool
+		rst        []string
+	}{
+		{
+			desc: "full",
+			keys: keys,
+			rst:  sorted,
+		},
+		{
+			desc: "empty",
+			rst:  []string{},
+		},
+		{
+			desc: "matching leaf",
+			keys: keys[:1],
+			rst:  keys[:1],
+		},
+		{
+			desc:  "non matching leaf",
+			keys:  keys[:1],
+			rst:   []string{},
+			start: "13",
+		},
+		{
+			desc: "limited by end",
+			keys: keys,
+			end:  "125",
+			rst:  sorted[:2],
+		},
+		{
+			desc:  "limited by start",
+			keys:  keys,
+			start: "124",
+			rst:   sorted[1:],
+		},
+		{
+			desc: "end is excluded",
+			keys: keys,
+			end:  "1345",
+			rst:  sorted[:3],
+		},
+		{
+			desc:  "start to end",
+			keys:  keys,
+			start: "125",
+			end:   "1345",
+			rst:   sorted[2:3],
+		},
+		{
+			desc:    "reverse",
+			keys:    keys,
+			rst:     reversed,
+			reverse: true,
+		},
+		{
+			desc:    "reverse until",
+			keys:    keys,
+			start:   "1234",
+			rst:     reversed,
+			reverse: true,
+		},
+		{
+			desc:    "reverse from",
+			keys:    keys,
+			end:     "1268",
+			rst:     reversed[1:],
+			reverse: true,
+		},
+		{
+			desc:    "reverse from until",
+			keys:    keys,
+			start:   "1235",
+			end:     "1268",
+			rst:     reversed[1:3],
+			reverse: true,
+		},
+	} {
+		tc := tc
+		t.Run(tc.desc, func(t *testing.T) {
+			tree := NewArtTree()
+			for _, key := range tc.keys {
+				tree.Insert([]byte(key), key)
+			}
+			iter := tree.Iterator([]byte(tc.start), []byte(tc.end))
+			if tc.reverse {
+				iter = tree.Iterator([]byte(tc.end), []byte(tc.start))
+			}
+			rst := []string{}
+			for iter.Next() {
+				rst = append(rst, iter.Value().(string))
+			}
+			if !equalStringSlice(rst, tc.rst) {
+				t.Fatalf("got rst='%v'; want '%v'", rst, tc.rst)
+			}
+		})
+	}
+}
+
+func TestIterRange(t *testing.T) {
+
+	tree := NewArtTree()
+	N := 3
+
+	var first, last []byte
+	for i := range N {
+		k := fmt.Sprintf("%09d", i)
+		key := Key(k) // []byte
+		if i == 0 {
+			first = append([]byte{}, []byte(key)...)
+		}
+		if i == N-1 {
+			last = append([]byte{}, []byte(key)...)
+		}
+		tree.Insert(key, key)
+	}
+	//vv("tree: '%s'", tree)
+	//vv("first = '%v'", string(first))
+	//vv("last = '%v'", string(last))
+
+	expect := []int{0, 1}
+	iter := tree.Iterator(first, last)
+	n := 0
+	for iter.Next() {
+		key := iter.Key()
+		k, err := strconv.Atoi(strings.TrimSpace(string(key)))
+		panicOn(err)
+		//fmt.Printf("item %v was key '%v'\n", n, string(key))
+		if k != expect[n] {
+			t.Fatalf("want %v, got %v", n, k)
+		}
+		n++
+	}
+
+	expect = []int{1, 0}
+	riter := tree.ReverseIterator(last, first)
+	n = 0
+	for riter.Next() {
+		key := riter.Key()
+		//k, err := strconv.Atoi(strings.TrimSpace(string(key)))
+		//panicOn(err)
+		k, err := strconv.Atoi(strings.TrimSpace(string(key)))
+		panicOn(err)
+		//fmt.Printf("riter item %v was key '%v'\n", n, string(key))
+		if k != expect[n] {
+			t.Fatalf("want %v, got %v", n, k)
+		}
+		n++
+	}
+	// same but get the riter from tree.ReverseIterator() instead.
+	riter = tree.ReverseIterator(first, last)
+	n = 0
+	for riter.Next() {
+		key := riter.Key()
+		k, err := strconv.Atoi(strings.TrimSpace(string(key)))
+		panicOn(err)
+		//fmt.Printf("riter item %v was key '%v'\n", n, string(key))
+		if k != expect[n] {
+			t.Fatalf("want %v, got %v", n, k)
+		}
+		n++
+	}
+
 }

@@ -411,39 +411,92 @@ func (t *Tree) IsEmpty() (empty bool) {
 // Use a nil start to begin with the first key.
 // Use a nil end to proceed through the last key.
 //
-// If Reverse() is called on the iterator before Next(),
-// this does not change the returned range,
-// but it does reverse the order in which keys in
-// that range are returned.
-//
 // For example, suppose the keys {0, 1, 2} are
 // in the tree, and tree.Iterator(0, 2) is called.
 // Forward iteration will return 0, then 1.
-// Reverse iteration will return 1, then 0.
 //
 // The returned iterator is not concurrent/multiple goroutine safe.
-// If you need synchronization, read-lock
-// the tree with tree.Rwmut.Rlock()
-// and read-unlock with the tree.Rwmut.RUnlock().
+// Iteration does no synchronization. If concurrent
+// writes are possible, the user must
+// ensure the equivalent of a read-lock is in place
+// during iteration, using the t.Rwmut if necessary.
+// Calling `tree.Rwmut.Rlock()` followed by
+// `defer tree.Rwmut.RUnlock()` is typical.
 func (t *Tree) Iterator(start, end []byte) *iterator {
+
+	if t.root == nil || t.size < 1 {
+		return &iterator{
+			initialized: true,
+			closed:      true,
+		}
+	}
+
+	// get the integer range [begIdx, endIdx]
+	_, begIdx, ok := t.FindGTE(start)
+	if !ok {
+		panic("what? internal logic error, t.size was >= 1")
+	}
+
+	_, endIdx, ok := t.FindLT(end)
+	if !ok {
+		panic("what? internal logic error, t.size was >= 1")
+	}
+
 	return &iterator{
-		tree:      t,
-		cursor:    start,
-		terminate: end,
+		tree:    t,
+		start:   start,
+		end:     end,
+		begIdx:  begIdx,
+		endxIdx: endIdx + 1,
 	}
 }
 
 // ReverseIterator starts a traversal over
-// the range [start, end) but returns keys
-// in the reverse order. It is equivalent
-// to doing it := tree.Iterator() and then
-// it.Reverse().  See Iterator() for further detail.
-func (t *Tree) ReverseIterator(start, end []byte) *iterator {
+// the range (end, start] and returns keys in descending order
+// beginning with the first key that is <= start.
+// The start key must be >= the end key. Either
+// can be nil to indicate the furthest possible range
+// in that direction.
+//
+// For example, suppose the keys {0, 1, 2} are
+// in the tree, and tree.ReverseIterator(0, 2) is called.
+// Reverse iteration will return 2, then 1.
+//
+// tree.ReverseIterator(nil, 2) will yield 2, then 1, then 0;
+// as will tree.ReverseIterator(nil, nil).
+//
+// The returned iterator is not concurrent/multiple goroutine safe.
+// Iteration does no synchronization. If concurrent
+// writes are possible, the user must
+// ensure the equivalent of a read-lock is in place
+// during iteration, using the Tree.Rwmut if necessary.
+// Calling `tree.Rwmut.Rlock()` followed by
+// `defer tree.Rwmut.RUnlock()` is typical.
+func (t *Tree) ReverseIterator(end, start []byte) *iterator {
+	if t.root == nil || t.size < 1 {
+		return &iterator{
+			initialized: true,
+			closed:      true,
+		}
+	}
+
+	// get the integer range [endIdx, begIdx]
+	_, begIdx, ok := t.FindLTE(start)
+	if !ok {
+		panic("what? internal logic error, t.size was >= 1")
+	}
+
+	_, endIdx, ok := t.FindGT(end)
+	if !ok {
+		panic("what? internal logic error, t.size was >= 1")
+	}
+
 	return &iterator{
-		tree:      t,
-		cursor:    end,
-		terminate: start,
-		reverse:   true,
+		tree:    t,
+		start:   start,
+		end:     end,
+		begIdx:  begIdx,
+		endxIdx: endIdx - 1,
 	}
 }
 

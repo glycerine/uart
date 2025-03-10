@@ -5,31 +5,21 @@ import (
 	"iter"
 )
 
-// An iterator that wants to "delete behind"
-// itself will also need a write lock (TODO
-// implement a "writing iterator", or
-// set SkipLocking below and manager
-// synchronization at a higher level.
-
-type checkpoint struct {
-	node   *Inner
-	curkey *byte
-
-	prev *checkpoint
-}
-
 // iterator will scan the tree in lexicographic order.
 type iterator struct {
 	tree *Tree
 
-	stack  *checkpoint
 	closed bool
 
-	cursor, terminate []byte
-	reverse           bool
+	start   []byte
+	end     []byte
+	reverse bool
 
-	allowDel bool
-	started  bool
+	begIdx  int
+	endxIdx int
+
+	initialized bool
+	started     bool
 
 	// current:
 	key   []byte
@@ -37,35 +27,12 @@ type iterator struct {
 	leaf  *Leaf
 }
 
-// AllowDeletes during iteration uses a
-// different traversal strategy that allows
-// you to do deletes on the tree while
-// you are traversing it. AllowDeletes
-// must be called before calling Next on
-// the iterator for the first time; it
-// cannot be called after starting an
-// iteration.
-//
-// AllowDeletes changes the
-// state of the iterator (its receiver)
-// and returns that same receiver as a convenience.
-func (i *iterator) AllowDeletes() *iterator {
-	i.allowDel = true
-	return i
-}
-
-func (i *iterator) Reverse() *iterator {
-	i.cursor, i.terminate = i.terminate, i.cursor
-	i.reverse = true
-	return i
-}
-
 // Next will iterate over all leaf nodes between specified prefixes
 func (i *iterator) Next() (ok bool) {
 	if i.closed {
 		return false
 	}
-	if i.stack == nil {
+	if !i.initialized {
 		// initialize iterator
 		if exit, next := i.init(); exit {
 			return next
@@ -74,7 +41,7 @@ func (i *iterator) Next() (ok bool) {
 	return i.iterate()
 }
 
-func (i *iterator) TheLeaf() *Leaf {
+func (i *iterator) Leaf() *Leaf {
 	return i.leaf
 }
 
@@ -87,10 +54,12 @@ func (i *iterator) Key() Key {
 }
 
 func (i *iterator) inRange(key []byte) bool {
-	if !i.reverse {
-		return bytes.Compare(key, i.cursor) > 0 && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) <= 0)
+	if i.reverse {
+		return (len(i.start) == 0 || (bytes.Compare(key, i.start) <= 0)) &&
+			(len(i.end) == 0 || bytes.Compare(key, i.end) > 0)
 	}
-	return (bytes.Compare(key, i.cursor) < 0 || len(i.cursor) == 0) && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) >= 0)
+	return (len(i.start) == 0 || (bytes.Compare(key, i.start) >= 0)) &&
+		(len(i.end) == 0 || bytes.Compare(key, i.end) < 0)
 }
 
 // exit returned true means only 0 or 1 nodes in tree,
@@ -102,7 +71,7 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 		i.closed = true
 		return true, false
 	}
-	//l, isLeaf := root.(*Leaf)
+
 	if root.isLeaf {
 		l := root.leaf
 		i.closed = true
@@ -113,78 +82,41 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 		}
 		return true, false
 	}
-	i.stack = &checkpoint{
-		node: root.inner, // *Inner
-	}
 	return false, false
 }
 
-func (i *iterator) next(n *Inner, curkey *byte) (byte, *bnode) {
-	if !i.reverse {
-		return n.Node.next(curkey)
-	}
-	return n.Node.prev(curkey)
-}
-
 func (i *iterator) iterate() bool {
-	for i.stack != nil {
-		more, restart := i.tryAdvance()
-		if more {
-			return more
-		} else if restart {
-			i.stack = i.stack.prev
-			if i.stack == nil {
-				// checkpoint is root
-				i.stack = nil
-				if exit, next := i.init(); exit {
-					return next
-				}
-			}
+
+	if i.reverse {
+		if i.begIdx <= i.endxIdx {
+			i.closed = true
+			return false
+		}
+	} else {
+		if i.begIdx >= i.endxIdx {
+			i.closed = true
+			return false
 		}
 	}
-	i.closed = true
-	return false
-}
-
-func (i *iterator) tryAdvance() (bool, bool) {
-	//vv("top of tryAdvance")
-	//defer vv("end of tryAdvance")
-
-	for adv := 0; ; adv++ {
-		_ = adv
-
-		tail := i.stack
-
-		//vv("adv = %v; about to tail.node.lock.RLock(); state is '%v'", adv, tail.node.lock.state) // adv is always 0
-		//vv("past RLock; state = '%v'", tail.node.lock.state)
-
-		curkey, child := i.next(tail.node, tail.curkey)
-		if child == nil {
-
-			// Inner node is exhausted, move one level up the stack
-			i.stack = tail.prev
-			return false, false
-		}
-		// advance curkey
-		tail.curkey = &curkey
-
-		if child.isLeaf {
-			l := child.leaf
-			if i.inRange(l.Key) {
-				i.key = l.Key
-				i.value = l.Value
-				i.cursor = l.Key
-				i.leaf = l
-				return true, false
-			}
-			return false, false
-		}
-		i.stack = &checkpoint{
-			node: child.inner, // (*Inner),
-			prev: tail,
-		}
-		return false, false
+	lf, ok := i.tree.At(i.begIdx)
+	if !ok {
+		i.closed = true
+		return false
 	}
+	if !i.inRange(lf.Key) {
+		i.closed = true
+		return false
+	}
+	if i.reverse {
+		i.begIdx--
+	} else {
+		i.begIdx++
+	}
+	i.key = lf.Key
+	i.value = lf.Value
+	i.leaf = lf
+
+	return true
 }
 
 func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {
