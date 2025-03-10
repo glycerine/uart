@@ -57,7 +57,8 @@ versus 53 nsec for ART), lookups can be orders of
 magnitude faster (27x in that benchmark, for the read-only case).
 As a point of humility, we note that the skip-list
 measured here was even faster. Skip
-lists do not provide prefix compression,
+lists do not provide prefix compression
+or reverse iteration (in their single-link typical form)
 and have other trade-offs such as using
 more memory for multiple forward pointers per node; having
 randomized/non-deterministic performance; and worst
