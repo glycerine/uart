@@ -150,7 +150,7 @@ provide sorted element access. They provide for range queries
 and finding elements greater-than, greater-than-or-equal,
 less-than, and less-than-or-equal to a key.
 
-The Go map, sync.Map, and Ctrie provide only unordered
+As hash tables, the Go map, sync.Map, and Ctrie provide only unordered
 lookups.
 
 ```bash
