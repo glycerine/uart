@@ -21,7 +21,7 @@ like Tableau and DuckDB leverage ART trees
 to implement their indexes because they
 provide significant speedups[6].
 They were designed in 2013 by the German academic
-computer scientists whose HyPer project
+computer scientists whose HyPer database
 was bought to provide the backend engine
 for Tableau[7].
 
