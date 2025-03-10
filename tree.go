@@ -119,9 +119,6 @@ type Tree struct {
 	SkipLocking bool `msg:"-"`
 }
 
-// used by tests; kind of a default value type.
-type ByteSliceValue []byte
-
 func NewArtTree() *Tree {
 	return &Tree{}
 }

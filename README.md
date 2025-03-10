@@ -1,5 +1,12 @@
 # the Adaptive radix tree (ART): sorted and speedy
 
+Note: this is a minimal-dependency version of 
+the Adaptive Radix Tree (ART) implementation at
+https://github.com/glycerine/art-adaptive-radix-tree
+and it comes without greenpack serialization support. 
+Thus it is unserialized ART, or uart. See the mother project
+above for full benchmark/comparison capabilities.
+
 This project provides an implemention
 of the Adaptive Radix Tree (ART) data structure[1]. 
 

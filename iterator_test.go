@@ -1,13 +1,12 @@
 package art
 
 import (
+	"bytes"
 	"fmt"
 	"sort"
 	"strconv"
 	"strings"
 	"testing"
-
-	"github.com/stretchr/testify/require"
 )
 
 func TestIterator(t *testing.T) {
@@ -121,9 +120,23 @@ func TestIterator(t *testing.T) {
 			for iter.Next() {
 				rst = append(rst, iter.Value().(string))
 			}
-			require.Equal(t, tc.rst, rst)
+			if got, want := rst, tc.rst; !equalStringSlice(got, want) {
+				t.Errorf("got %v, want %v", got, want)
+			}
 		})
 	}
+}
+
+func equalStringSlice(a, b []string) bool {
+	if len(a) != len(b) {
+		return false
+	}
+	for i := range a {
+		if a[i] != b[i] {
+			return false
+		}
+	}
+	return true
 }
 
 func TestIterConcurrentExpansion(t *testing.T) {
@@ -140,17 +153,29 @@ func TestIterConcurrentExpansion(t *testing.T) {
 		tree.Insert(key, key)
 	}
 	iter := tree.Iterator(nil, nil)
-	require.True(t, iter.Next())
-	require.Equal(t, Key(keys[0]), iter.Key())
+	if !iter.Next() {
+		t.Fatal("expected Next() to return true")
+	}
+	if got, want := iter.Key(), Key(keys[0]); !bytes.Equal(got, want) {
+		t.Errorf("got key %v, want %v", got, want)
+	}
 
 	// adding a 3rd key, after iter started,
 	// that is after the 2nd key we have not read yet.
 	tree.Insert([]byte("aaca"), nil)
-	require.True(t, iter.Next())
-	require.Equal(t, Key(keys[1]), iter.Key())
+	if !iter.Next() {
+		t.Fatal("expected Next() to return true")
+	}
+	if got, want := iter.Key(), Key(keys[1]); !bytes.Equal(got, want) {
+		t.Errorf("got key %v, want %v", got, want)
+	}
 
-	require.True(t, iter.Next())
-	require.Equal(t, Key("aaca"), iter.Key())
+	if !iter.Next() {
+		t.Fatal("expected Next() to return true")
+	}
+	if got, want := iter.Key(), Key("aaca"); !bytes.Equal(got, want) {
+		t.Errorf("got key %v, want %v", got, want)
+	}
 }
 
 func TestIterDeleteBehindFwd(t *testing.T) {

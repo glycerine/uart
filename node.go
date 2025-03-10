@@ -160,13 +160,6 @@ func (a *bnode) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, par *Inner
 	return a.inner.insert(lf, depth, selfb, tree, par)
 }
 
-func (a *bnode) DepthString(depth int, prior []byte, recurse int) (s string) {
-	if a.isLeaf {
-		return a.leaf.DepthString(depth, prior, recurse)
-	}
-	return a.inner.DepthString(depth, prior, recurse)
-}
-
 func (a *bnode) FlatString(depth int, recurse int) (s string) {
 	if a.isLeaf {
 		return a.leaf.FlatString(depth, recurse)

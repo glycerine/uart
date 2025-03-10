@@ -52,32 +52,6 @@ func (n *Leaf) clone() (c *Leaf) {
 	return c
 }
 
-func (lf *Leaf) DepthString(depth int, prior []byte, recurse int) string {
-	rep := strings.Repeat("    ", depth)
-
-	valstr := ""
-	switch x := (lf.Value).(type) {
-	case []byte:
-		valstr = string(x)
-	case ByteSliceValue:
-		valstr = string(x)
-	case int: // tests use
-		valstr = fmt.Sprintf("int value: '%v'", x)
-	default:
-		valstr = fmt.Sprintf("opaque %T", lf.Value)
-		//panic(fmt.Sprintf("how to turn %T into string?", lf.Value))
-	}
-
-	return fmt.Sprintf(`%[1]v Leaf{
-%[1]v       key: "%[2]v" (len %[3]v),
-%[1]v     value: "%[4]v",
-%[1]v }
-`, rep,
-		string(lf.Key), len(lf.Key),
-		valstr,
-	)
-}
-
 func NewLeaf(key Key, v any, x []byte) *Leaf {
 	return &Leaf{
 		Key:   key,

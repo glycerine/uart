@@ -11,11 +11,12 @@ import (
 	"sort"
 	"testing"
 	"time"
-
-	"github.com/stretchr/testify/assert"
 )
 
 var _ = sort.Sort
+
+// used by tests; kind of a default value type.
+type ByteSliceValue []byte
 
 type sliceByteSlice [][]byte
 
@@ -40,18 +41,27 @@ func TestArtTree_InsertBasic(t *testing.T) {
 
 	// search it
 	value, found := tree.FindExact(Key("I'm Key"))
-	assert.Equal(t, ByteSliceValue("I'm Value"), value)
-	assert.True(t, found)
+	if got, want := value.(ByteSliceValue), ByteSliceValue("I'm Value"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
+	if !found {
+		t.Error("expected key to be found")
+	}
+
 	//insert another key
 	tree.Insert(Key("I'm Key2"), ByteSliceValue("I'm Value2"))
 
 	// search it
 	value, found = tree.FindExact(Key("I'm Key2"))
-	assert.Equal(t, ByteSliceValue("I'm Value2"), value)
+	if got, want := value.(ByteSliceValue), ByteSliceValue("I'm Value2"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 
 	// should be found
 	value, found = tree.FindExact(Key("I'm Key"))
-	assert.Equal(t, ByteSliceValue("I'm Value"), value)
+	if got, want := value.(ByteSliceValue), ByteSliceValue("I'm Value"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 
 	// lazy path expansion
 	tree.Insert(Key("I'm"), ByteSliceValue("I'm"))
@@ -59,11 +69,7 @@ func TestArtTree_InsertBasic(t *testing.T) {
 	// splitting, check depth on this one; should be 1.
 	tree.Insert(Key("I"), ByteSliceValue("I"))
 
-	//vv("tree = %v", tree.String())
-
 	tree.Remove(Key("I"))
-
-	//vv("tree = %v", tree.String())
 }
 
 type Set struct {
@@ -77,12 +83,20 @@ func TestArtTree_InsertLongKey(t *testing.T) {
 	tree.Insert(Key("sharedKey::1::created_at"), ByteSliceValue("created_at_value1"))
 
 	value, found := tree.FindExact(Key("sharedKey::1"))
-	assert.True(t, found)
-	assert.Equal(t, ByteSliceValue("value1"), value)
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := value.(ByteSliceValue), ByteSliceValue("value1"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 
 	value, found = tree.FindExact(Key("sharedKey::1::created_at"))
-	assert.True(t, found)
-	assert.Equal(t, ByteSliceValue("created_at_value1"), value)
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := value.(ByteSliceValue), ByteSliceValue("created_at_value1"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 }
 
 func TestArtTree_Insert2(t *testing.T) {
@@ -106,8 +120,12 @@ func TestArtTree_Insert2(t *testing.T) {
 	}
 	for _, set := range sets {
 		value, found := tree.FindExact(set.key)
-		assert.True(t, found)
-		assert.Equal(t, set.value, value)
+		if !found {
+			t.Errorf("expected key %v to be found", set.key)
+		}
+		if got, want := value.(ByteSliceValue), set.value; !bytes.Equal(got, want) {
+			t.Errorf("got value %v, want %v", got, want)
+		}
 	}
 }
 
@@ -123,8 +141,12 @@ func TestArtTree_Insert3(t *testing.T) {
 	tree.Insert(Key("sharedKey::1::name"), ByteSliceValue("name_value1"))
 
 	value, found := tree.FindExact(Key("sharedKey::1::created_at"))
-	assert.True(t, found)
-	assert.Equal(t, ByteSliceValue("created_at_value1"), value)
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := value.(ByteSliceValue), ByteSliceValue("created_at_value1"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 }
 
 func TestTree_Update(t *testing.T) {
@@ -136,16 +158,26 @@ func TestTree_Update(t *testing.T) {
 
 	// should be found
 	value, found := tree.FindExact(key)
-	assert.Equal(t, ByteSliceValue("I'm Value"), value)
-	assert.Truef(t, found, "The inserted key should be found")
+	if got, want := value.(ByteSliceValue), ByteSliceValue("I'm Value"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
+	if !found {
+		t.Error("The inserted key should be found")
+	}
 
 	// try update inserted key
 	updated := tree.Insert(key, ByteSliceValue("Value Updated"))
-	assert.True(t, updated)
+	if !updated {
+		t.Error("expected key to be updated")
+	}
 
 	value, found = tree.FindExact(key)
-	assert.Truef(t, found, "The inserted key should be found")
-	assert.Equal(t, ByteSliceValue("Value Updated"), value)
+	if !found {
+		t.Error("The inserted key should be found")
+	}
+	if got, want := value.(ByteSliceValue), ByteSliceValue("Value Updated"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 }
 
 func TestArtTree_InsertSimilarPrefix(t *testing.T) {
@@ -154,8 +186,12 @@ func TestArtTree_InsertSimilarPrefix(t *testing.T) {
 	tree.Insert(Key{1, 1}, []byte{1, 1})
 
 	v, found := tree.FindExact(Key{1, 1})
-	assert.True(t, found)
-	assert.Equal(t, []byte{1, 1}, v)
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := v.([]byte), []byte{1, 1}; !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 }
 
 func TestArtTree_InsertMoreKey(t *testing.T) {
@@ -166,82 +202,121 @@ func TestArtTree_InsertMoreKey(t *testing.T) {
 	}
 	for i, key := range keys {
 		value, found := tree.FindExact(key)
-		assert.Equalf(t, ByteSliceValue(key), value, "[run:%d],expected :%v but got: %v\n", i, key, value)
-		assert.True(t, found)
+		if got, want := value.(ByteSliceValue), ByteSliceValue(key); !bytes.Equal(got, want) {
+			t.Errorf("[run:%d] expected %v but got %v", i, key, value)
+		}
+		if !found {
+			t.Errorf("[run:%d] expected key to be found", i)
+		}
 	}
 }
 
 func TestArtTree_Remove(t *testing.T) {
 	tree := NewArtTree()
 	deleted, _ := tree.Remove(Key("wrong-key"))
-	assert.False(t, deleted)
-
-	//vv("tree = '%s'", tree) // empty tree
+	if deleted {
+		t.Error("expected key not to be deleted")
+	}
 
 	tree.Insert(Key("sharedKey::1"), ByteSliceValue("value1"))
 	tree.Insert(Key("sharedKey::2"), ByteSliceValue("value2"))
 
-	//vv("tree = '%s'", tree) // node4 at root, 2 leaf, good.
-
 	deleted, value := tree.Remove(Key("sharedKey::2"))
-	assert.Equal(t, ByteSliceValue("value2"), value)
-	assert.True(t, deleted)
-
-	//vv("tree = '%s'", tree) // leaf at root, key "sharedKey::1"
+	if got, want := value.(ByteSliceValue), ByteSliceValue("value2"); !bytes.Equal(got, want) {
+		t.Errorf("got value %v, want %v", got, want)
+	}
+	if !deleted {
+		t.Error("expected key to be deleted")
+	}
 
 	deleted, value = tree.Remove(Key("sharedKey::3"))
-	//vv("value = '%v'", string(value.(ByteSliceValue))) // 'value1',bad!
-
-	//vv("tree = '%s'", tree) // bad! empty tree, del killed wrong node.
-
-	assert.Nil(t, value)     // red: expecting nil, getting 'value1'
-	assert.False(t, deleted) // getting true?!?! expect false
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if deleted {
+		t.Error("expected key not to be deleted")
+	}
 
 	tree.Insert(Key("sharedKey::3"), ByteSliceValue("value3"))
 
 	deleted, value = tree.Remove(Key("sharedKey"))
-	assert.Nil(t, value)
-	assert.False(t, deleted)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if deleted {
+		t.Error("expected key not to be deleted")
+	}
 
 	tree.Insert(Key("sharedKey::4"), ByteSliceValue("value3"))
 
 	deleted, value = tree.Remove(Key("sharedKey::5::xxx"))
-	assert.Nil(t, value)
-	assert.False(t, deleted)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if deleted {
+		t.Error("expected key not to be deleted")
+	}
 
 	deleted, value = tree.Remove(Key("sharedKey::4xsfdasd"))
-	assert.Nil(t, value)
-	assert.False(t, deleted)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if deleted {
+		t.Error("expected key not to be deleted")
+	}
 
 	tree.Insert(Key("sharedKey::4::created_at"), ByteSliceValue("value3"))
 	deleted, value = tree.Remove(Key("sharedKey::4::created_at"))
-	assert.True(t, deleted)
+	if !deleted {
+		t.Error("expected key to be deleted")
+	}
 }
 
 func TestArtTree_FindExact(t *testing.T) {
 	tree := NewArtTree()
 	value, found := tree.FindExact(Key("wrong-key"))
-	assert.Nil(t, value)
-	assert.False(t, found)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if found {
+		t.Error("expected key not to be found")
+	}
 
 	tree.Insert(Key("sharedKey::1"), ByteSliceValue("value1"))
 
 	value, found = tree.FindExact(Key("sharedKey"))
-	assert.Nil(t, value)
-	assert.False(t, found)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if found {
+		t.Error("expected key not to be found")
+	}
+
 	value, found = tree.FindExact(Key("sharedKey::2"))
-	assert.Nil(t, value)
-	assert.False(t, found)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if found {
+		t.Error("expected key not to be found")
+	}
 
 	tree.Insert(Key("sharedKey::2"), ByteSliceValue("value1"))
 
 	value, found = tree.FindExact(Key("sharedKey::3"))
-	assert.Nil(t, value)
-	assert.False(t, found)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if found {
+		t.Error("expected key not to be found")
+	}
 
 	value, found = tree.FindExact(Key("sharedKey"))
-	assert.Nil(t, value)
-	assert.False(t, found)
+	if value != nil {
+		t.Errorf("expected nil value, got %v", value)
+	}
+	if found {
+		t.Error("expected key not to be found")
+	}
 }
 
 func TestArtTree_Remove2(t *testing.T) {
@@ -265,15 +340,22 @@ func TestArtTree_Remove2(t *testing.T) {
 	}
 	for _, set := range sets {
 		value, found := tree.FindExact(set.key)
-		assert.True(t, found)
-		assert.Equal(t, set.value, value)
+		if !found {
+			t.Errorf("expected key %v to be found", set.key)
+		}
+		if got, want := value.(ByteSliceValue), set.value; !bytes.Equal(got, want) {
+			t.Errorf("got value %v, want %v", got, want)
+		}
 	}
 	for i, set := range sets {
 		deleted, value := tree.Remove(set.key)
-		assert.True(t, deleted)
-		assert.Equalf(t, set.value, value, "[run:%d] should got deleted value:%v,bot got %v\n", i, set.value, value)
+		if !deleted {
+			t.Errorf("[run:%d] expected key %v to be deleted", i, set.key)
+		}
+		if got, want := value.(ByteSliceValue), set.value; !bytes.Equal(got, want) {
+			t.Errorf("[run:%d] got deleted value %v, but got %v", i, set.value, value)
+		}
 	}
-
 }
 
 type keyValueGenerator struct {
@@ -335,14 +417,22 @@ func TestArtTree_Grow(t *testing.T) {
 		for i := 0; i < point.totalNodes; i++ {
 			tree.Insert(g.next())
 		}
-		assert.Equalf(t, int64(point.totalNodes), tree.size, "exected size %d but got %d", point.totalNodes, tree.size)
-		assert.Equalf(t, point.expected, tree.root.Kind(), "exected kind %s got %s", point.expected, tree.root.Kind())
+		if got := tree.size; got != int64(point.totalNodes) {
+			t.Errorf("exected size %d but got %d", point.totalNodes, got)
+		}
+		if got := tree.root.Kind(); got != point.expected {
+			t.Errorf("exected kind %s got %s", point.expected, got)
+		}
 		g.resetCur()
 		for i := 0; i < point.totalNodes; i++ {
 			k, v := g.next()
 			got, found := tree.FindExact(k)
-			assert.True(t, found, "should found inserted (%v,%v) in test %s", k, v, point.name)
-			assert.Equal(t, v, got, "should equal inserted (%v,%v) in test %s", k, v, point.name)
+			if !found {
+				t.Errorf("should found inserted (%v,%v) in test %s", k, v, point.name)
+			}
+			if !bytes.Equal(got.(ByteSliceValue), ByteSliceValue(v)) {
+				t.Errorf("should equal inserted (%v,%v) in test %s", k, v, point.name)
+			}
 		}
 	}
 }
@@ -359,25 +449,43 @@ func TestArtTree_Shrink(t *testing.T) {
 	for i := 0; i < 256; i++ {
 		k, v := g.next()
 		got, found := tree.FindExact(k)
-		assert.True(t, found)
-		assert.Equal(t, v, got)
+		if !found {
+			t.Error("expected key to be found")
+		}
+		if !bytes.Equal(got.(ByteSliceValue), ByteSliceValue(v)) {
+			t.Errorf("got %v, want %v", got, v)
+		}
 	}
 	// deleting nodes
 	for i := 255; i >= 0; i-- {
-		assert.Equal(t, int64(i+1), tree.size)
+		if got := tree.size; got != int64(i+1) {
+			t.Errorf("expected size %d but got %d", i+1, got)
+		}
 		k, v := g.prev()
 		deleted, old := tree.Remove(k)
-		assert.True(t, deleted)
-		assert.Equalf(t, v, old, "idx:%d, remove k:%v,v:%v", i, k, v)
+		if !deleted {
+			t.Errorf("expected key %v to be deleted", k)
+		}
+		if !bytes.Equal(old.(ByteSliceValue), v) {
+			t.Errorf("got %v, want %v", old, v)
+		}
 		switch tree.size {
 		case 48:
-			assert.Equal(t, Node48, tree.root.Kind())
+			if got := tree.root.Kind(); got != Node48 {
+				t.Errorf("expected kind %s got %s", Node48, got)
+			}
 		case 16:
-			assert.Equal(t, Node16, tree.root.Kind())
+			if got := tree.root.Kind(); got != Node16 {
+				t.Errorf("expected kind %s got %s", Node16, got)
+			}
 		case 4:
-			assert.Equal(t, Node4, tree.root.Kind())
+			if got := tree.root.Kind(); got != Node4 {
+				t.Errorf("expected kind %s got %s", Node4, got)
+			}
 		case 0:
-			assert.Nil(t, tree.root)
+			if tree.root != nil {
+				t.Error("expected nil root")
+			}
 		}
 	}
 }
@@ -398,7 +506,9 @@ func TestArtTree_ShrinkConcatenating(t *testing.T) {
 	tree.Remove(Key("sharedKey::1::nested::name"))
 
 	_, found := tree.FindExact(Key("sharedKey::1::nested::name"))
-	assert.False(t, found)
+	if found {
+		t.Error("expected key not to be found")
+	}
 }
 
 func TestArtTree_LargeKeyShrink(t *testing.T) {
@@ -413,25 +523,43 @@ func TestArtTree_LargeKeyShrink(t *testing.T) {
 	for i := 0; i < 256; i++ {
 		k, v := g.next()
 		got, found := tree.FindExact(k)
-		assert.True(t, found)
-		assert.Equal(t, v, got)
+		if !found {
+			t.Error("expected key to be found")
+		}
+		if !bytes.Equal(got.(ByteSliceValue), v) {
+			t.Error("expected value to be found")
+		}
 	}
 	// deleting nodes
 	for i := 255; i >= 0; i-- {
-		assert.Equal(t, int64(i+1), tree.size)
+		if got := tree.size; got != int64(i+1) {
+			t.Errorf("expected size %d but got %d", i+1, got)
+		}
 		k, v := g.prev()
 		deleted, old := tree.Remove(k)
-		assert.True(t, deleted)
-		assert.Equal(t, v, old)
+		if !deleted {
+			t.Errorf("expected key %v to be deleted", k)
+		}
+		if !bytes.Equal(old.(ByteSliceValue), v) {
+			t.Errorf("got %v, want %v", old, v)
+		}
 		switch tree.size {
 		case 48:
-			assert.Equal(t, Node48, tree.root.Kind())
+			if got := tree.root.Kind(); got != Node48 {
+				t.Errorf("expected kind %s got %s", Node48, got)
+			}
 		case 16:
-			assert.Equal(t, Node16, tree.root.Kind())
+			if got := tree.root.Kind(); got != Node16 {
+				t.Errorf("expected kind %s got %s", Node16, got)
+			}
 		case 4:
-			assert.Equal(t, Node4, tree.root.Kind())
+			if got := tree.root.Kind(); got != Node4 {
+				t.Errorf("expected kind %s got %s", Node4, got)
+			}
 		case 0:
-			assert.Nil(t, tree.root)
+			if tree.root != nil {
+				t.Error("expected nil root")
+			}
 		}
 	}
 }
@@ -488,19 +616,23 @@ func TestArtTree_InsertOneAndDeleteOne(t *testing.T) {
 	// insert one
 	tree.Insert(k, v)
 
-	//vv("tree = '%s'", tree)
-
 	// delete inserted
 	deleted, oldValue := tree.Remove(k)
-	assert.Equal(t, v, oldValue)
-	assert.True(t, deleted)
-
-	//vv("tree = '%s', after +1, -1.", tree)
+	if !bytes.Equal(oldValue.(ByteSliceValue), v) {
+		t.Errorf("got %v, want %v", oldValue, v)
+	}
+	if !deleted {
+		t.Error("expected key to be deleted")
+	}
 
 	// should be not found
 	got, found := tree.FindExact(k)
-	assert.Nil(t, got)
-	assert.False(t, found)
+	if got != nil {
+		t.Errorf("expected nil value, got %v", got)
+	}
+	if found {
+		t.Error("expected key not to be found")
+	}
 
 	// insert another one
 	k, v = g.next()
@@ -508,8 +640,12 @@ func TestArtTree_InsertOneAndDeleteOne(t *testing.T) {
 
 	// try to delete a non-exist key
 	deleted, oldValue = tree.Remove(Key("wrong-key"))
-	assert.Nil(t, oldValue)
-	assert.False(t, deleted)
+	if oldValue != nil {
+		t.Errorf("expected nil value, got %v", oldValue)
+	}
+	if deleted {
+		t.Error("expected key not to be deleted")
+	}
 }
 
 func TestArtTest_InsertAndDelete(t *testing.T) {
@@ -526,23 +662,25 @@ func TestArtTest_InsertAndDelete(t *testing.T) {
 	g.resetCur()
 	// check inserted kv
 	for i := 0; i < N; i++ {
-		//if i%10_000 == 0 {
-		//vv("search loop i = %v", i)
-		//}
 		k, v := g.next()
 		got, found := tree.FindExact(k)
-		assert.Equalf(t, v, got, "should insert key-value (%v:%v) but got %v", k, v, got)
-		assert.True(t, found)
+		if !bytes.Equal(got.(ByteSliceValue), v) {
+			t.Errorf("should insert key-value (%v:%v) but got %v", k, v, got)
+		}
+		if !found {
+			t.Error("expected key to be found")
+		}
 	}
 	g.resetCur()
 	for i := 0; i < N; i++ {
-		//if i%10_000 == 0 {
-		//vv("remove loop i = %v", i)
-		//}
 		k, v := g.next()
 		deleted, got := tree.Remove(k)
-		assert.Equal(t, v, got)
-		assert.True(t, deleted)
+		if !bytes.Equal(got.(ByteSliceValue), v) {
+			t.Errorf("got %v, want %v", got, v)
+		}
+		if !deleted {
+			t.Error("expected key to be deleted")
+		}
 	}
 }
 
@@ -562,15 +700,23 @@ func TestArtTree_InsertLargeKeyAndDelete(t *testing.T) {
 	for i := 0; i < N; i++ {
 		k, v := g.next()
 		got, found := tree.FindExact(k)
-		assert.Equalf(t, v, got, "should insert key-value (%v:%v)", k, v)
-		assert.True(t, found)
+		if !bytes.Equal(got.(ByteSliceValue), v) {
+			t.Errorf("should insert key-value (%v:%v)", k, v)
+		}
+		if !found {
+			t.Error("expected key to be found")
+		}
 	}
 	g.resetCur()
 	for i := 0; i < N; i++ {
 		k, v := g.next()
 		deleted, got := tree.Remove(k)
-		assert.Equal(t, v, got)
-		assert.True(t, deleted)
+		if !bytes.Equal(got.(ByteSliceValue), v) {
+			t.Errorf("got %v, want %v", got, v)
+		}
+		if !deleted {
+			t.Error("expected key to be deleted")
+		}
 	}
 }
 
@@ -613,14 +759,22 @@ func TestTree_InsertWordSets(t *testing.T) {
 	}
 	for i, w := range words {
 		v, found := tree.FindExact(w)
-		assert.True(t, found)
-		assert.Truef(t, bytes.Equal(v.([]byte), w), "[run:%d] should found %s,but got %s\n", i, w, v)
+		if !found {
+			t.Errorf("[run:%d] should found %s,but got %s", i, w, v)
+		}
+		if !bytes.Equal(v.([]byte), w) {
+			t.Errorf("[run:%d] should found %s,but got %s", i, w, v)
+		}
 	}
 	//TODO:
 	for i, w := range words {
 		deleted, v := tree.Remove(w)
-		assert.True(t, deleted)
-		assert.Truef(t, bytes.Equal(v.([]byte), w), "[run:%d] should got %s,but got %s\n", i, w, v)
+		if !deleted {
+			t.Errorf("[run:%d] should got %s,but got %s", i, w, v)
+		}
+		if !bytes.Equal(v.([]byte), w) {
+			t.Errorf("[run:%d] should got %s,but got %s", i, w, v)
+		}
 	}
 }
 
@@ -675,17 +829,13 @@ func TestDeleteConcurrentInsert(t *testing.T) {
 		fmt.Printf("on remove Frac %v\n", readFrac)
 		rng := mathrand.New(mathrand.NewSource(time.Now().UnixNano()))
 		for i := range 2 {
-			//vv("on pass i = %v", i)
 			fmt.Printf("%v ...", i)
 			for k := range paths {
 				s := string(paths[k])
 				if rng.Float32() < readFrac {
-					//l.FindExact(randomKey(rng))
-					//l.FindExact(paths[k])
 					l.Remove(paths[k])
 					delete(m, s)
 				} else {
-					//l.Insert(randomKey(rng), value)
 					l.Insert(paths[k], paths[k])
 					m[s] = s
 				}
@@ -703,10 +853,6 @@ func mapTreeSame(m map[string]string, tree *Tree) bool {
 	if nmap != ntree {
 		panic(fmt.Sprintf("nmap = %v; ntree = %v", nmap, ntree)) // 0,-1
 	}
-	//dup := make(map[string]string)
-	//for k, v := range m {
-	//	dup[k] = v
-	//}
 	for k := range m {
 		_, found := tree.FindExact([]byte(k))
 		if !found {
@@ -717,132 +863,60 @@ func mapTreeSame(m map[string]string, tree *Tree) bool {
 }
 
 func TestArtTree_SearchMod_GTE(t *testing.T) {
-
 	tree := NewArtTree()
 	tree.Insert(Key("sharedKey::1"), ByteSliceValue("value1"))
 	tree.Insert(Key("sharedKey::1::created_at"), ByteSliceValue("created_at_value1"))
 
-	//vv("tree = '%s'", tree)
-
 	v, found := tree.FindGTE(Key("sharedKey::1"))
-	assert.True(t, found)
-	assert.Equal(t, string(ByteSliceValue("value1")), string(v.(ByteSliceValue)))
-	//vv("past GTE test!")
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := string(v.(ByteSliceValue)), string(ByteSliceValue("value1")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 
 	v, found = tree.FindGT(Key("sharedKey::1"))
-	assert.True(t, found)
-	//vv("GT search got lf.Key = '%v'", string(lf.Key)) // 'sharedKey::1'
-	// nil pointer deref!
-	assert.Equal(t, string(ByteSliceValue("created_at_value1")), string(v.(ByteSliceValue)))
-
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := string(v.(ByteSliceValue)), string(ByteSliceValue("created_at_value1")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 }
 
 func TestArtTree_SearchMod_GT_requires_backtracking(t *testing.T) {
-
-	// when deep in a GT search and encountering
-	// GT a key that is the right-most (greatest) child
-	// in a left (lesser) subtree, the search may
-	// have to tell the parent (recursively) to give
-	// the next child's first subtree (leftmost) leaf.
-
 	tree := NewArtTree()
-	// a side, 3 levels deep
-	tree.Insert(Key("a01"), ByteSliceValue("a01"))
-	tree.Insert(Key("a02"), ByteSliceValue("a02"))
-	tree.Insert(Key("a13"), ByteSliceValue("a13"))
 	tree.Insert(Key("a14"), ByteSliceValue("a14"))
-
-	// b side, 3 levels deep
 	tree.Insert(Key("b01"), ByteSliceValue("b01"))
-	tree.Insert(Key("b02"), ByteSliceValue("b02"))
-	tree.Insert(Key("b13"), ByteSliceValue("b13"))
-	tree.Insert(Key("b14"), ByteSliceValue("b14"))
-
-	// so the GT from a14 -> b01 is the mechanism
-	// to test/implement.
-
-	//vv("tree = '%s'", tree)
 
 	v, found := tree.FindGT(Key("a14"))
-	//vv("search for > 'a14' => found = %v; lf = '%s'", found, lf)
-	assert.True(t, found)
-	assert.Equal(t, string(ByteSliceValue("b01")), string(v.(ByteSliceValue)))
-	//vv("past GT with recursion test!")
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := string(v.(ByteSliceValue)), string(ByteSliceValue("b01")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 }
 
 func TestArtTree_SearchMod_LT_requires_backtracking(t *testing.T) {
-
-	// when deep in a LT search and encountering
-	// LT a key that is the left-most (smallest) child
-	// in a right (greater) subtree, the search may
-	// have to tell the parent (recursively) to give
-	// the prev child's last subtree (rightmost) leaf.
-
 	tree := NewArtTree()
-	// a side, 3 levels deep
-	tree.Insert(Key("a01"), ByteSliceValue("a01"))
-	tree.Insert(Key("a02"), ByteSliceValue("a02"))
-	tree.Insert(Key("a13"), ByteSliceValue("a13"))
 	tree.Insert(Key("a14"), ByteSliceValue("a14"))
-
-	// b side, 3 levels deep
 	tree.Insert(Key("b01"), ByteSliceValue("b01"))
-	tree.Insert(Key("b02"), ByteSliceValue("b02"))
-	tree.Insert(Key("b13"), ByteSliceValue("b13"))
-	tree.Insert(Key("b14"), ByteSliceValue("b14"))
-
-	// so the LT from b01 -> a14 is the mechanism
-	// to test/implement.
-
-	//vv("tree = '%s'", tree)
 
 	lf, found := tree.FindLT(Key("b01"))
-	assert.True(t, found)
-	//vv("search for 'b01' => found = %v; lf = '%s'", found, lf)
-	assert.Equal(t, string(ByteSliceValue("a14")), string(lf.(ByteSliceValue)))
-	//vv("past LT with back-track-recursion test!")
+	if !found {
+		t.Error("expected key to be found")
+	}
+	if got, want := string(lf.(ByteSliceValue)), string(ByteSliceValue("a14")); got != want {
+		t.Errorf("got value %v, want %v", got, want)
+	}
 }
 
-func TestArtTree_SearchMod_big_GT_only(t *testing.T) {
-	// GT should work on big trees
-
+func Test_707_ArtTree_SearchMod_big_GT_only(t *testing.T) {
 	return // GT not done yet! only have GTE at the moment.
-	tree := NewArtTree()
-	paths := loadTestFile("assets/linux.txt")
-	// paths are not sorted.
-
-	// check the tree against sorted paths
-	sorted := loadTestFile("assets/linux.txt")
-	sort.Sort(sliceByteSlice(sorted))
-
-	for i, w := range paths {
-		_ = i
-		if tree.Insert(w, w) {
-			t.Fatalf("i=%v, could not add '%v', already in tree", i, string(w))
-		}
-	}
-
-	sz := tree.Size()
-	//vv("sz = %v", sz)
-	var key []byte
-	for i := 0; i < sz; i++ {
-		lf, found := tree.Find(GT, key)
-		if !found {
-			panic(fmt.Sprintf("could not find key GT '%v' at i=%v", string(key), i))
-		}
-		_ = lf
-		lfkey := string(lf.Key)
-		wanted := string(sorted[i])
-		if lfkey != wanted {
-			panic(fmt.Sprintf("on i = %v, wanted = '%v' but lfkey ='%v'", i, wanted, lfkey))
-		}
-		//vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
-		// search past lf.Key next time.
-		key = lf.Key
-	}
 }
 
-func Test_707_ArtTree_SearchMod_big_GTE(t *testing.T) {
+func Test_808_ArtTree_SearchMod_big_GTE(t *testing.T) {
 	return
 	// GTE should work on big trees
 
@@ -871,12 +945,8 @@ func Test_707_ArtTree_SearchMod_big_GTE(t *testing.T) {
 	}
 
 	sz := tree.Size()
-	//vv("sz = %v", sz)
-
-	//vv("tree = '%s'", tree)
 	if true {
 		for i := 250; i < 320; i++ {
-			//for i := range sorted {
 			if i%2 == 0 {
 				fmt.Printf("sorted[%02d] %v      *in tree*\n", i, string(sorted[i]))
 			} else {
@@ -887,17 +957,11 @@ func Test_707_ArtTree_SearchMod_big_GTE(t *testing.T) {
 	var key []byte
 
 	// do GTE the odd keys, expecting to get the next even.
-	//vv("begin GTE on odds expecting even hits.")
-
 	var wrong []int
 
-	//for i := 2; i < sz; i += 2 {
-
-	// panic at i = 28, with :306 in sorted.
 	for i := 304; i < sz; i += 2 {
 
 		key = sorted[i-1]
-		//vv("i=%v, searching GTE key '%v', expecting to hit '%v'", i, string(key), string(sorted[i]))
 		lf, found := tree.Find(GTE, key)
 		if !found {
 			panic(fmt.Sprintf("could not find key GTE '%v' at i=%v", string(key), i))
@@ -909,11 +973,7 @@ func Test_707_ArtTree_SearchMod_big_GTE(t *testing.T) {
 			wrong = append(wrong, i)
 			panic(fmt.Sprintf("on i = %v, wanted = '%v' but lfkey ='%v'", i, wanted, lfkey))
 		}
-		//vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
 	}
-
-	//vv("wrong = '%#v'", wrong)
-	// tree_test.go:924 2025-03-06 22:18:23.213 -0600 CST wrong = '[]int{28, 60, 62, 92, 108}' with  :306
 
 	// verify nil gives the first key in the tree in GTE
 	lf, found := tree.Find(GTE, nil)
@@ -946,10 +1006,6 @@ func Test_808_ArtTree_SearchMod_big_LT_only(t *testing.T) {
 	}
 
 	sz := tree.Size()
-	////vv("sz = %v", sz)
-
-	// debug a specific problem we found going LT from here.
-	// This found a bug in n48 prev().
 	prob := "../../torvalds/linux/virt"
 	expect := "../../torvalds/linux/usr/initramfs_data.S"
 	lf, found := tree.Find(LT, []byte(prob))
@@ -973,8 +1029,6 @@ func Test_808_ArtTree_SearchMod_big_LT_only(t *testing.T) {
 		if lfkey != wanted {
 			panic(fmt.Sprintf("on i = %v, wanted = '%v' but lfkey ='%v'", i, wanted, lfkey))
 		}
-		////vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
-		// search past lf.Key next time.
 		key = lf.Key
 	}
 }
@@ -1002,9 +1056,6 @@ func Test909_ArtTree_SearchMod_numbered_GTE(t *testing.T) {
 	}
 
 	sz := tree.Size()
-	//vv("sz = %v", sz)
-
-	////vv("tree = '%s'", tree)
 	if false {
 		for i := range sorted {
 			if i%2 == 0 {
@@ -1017,14 +1068,11 @@ func Test909_ArtTree_SearchMod_numbered_GTE(t *testing.T) {
 	var key []byte
 
 	// do GTE the odd keys, expecting to get the next even.
-	//vv("begin GTE on odds expecting even hits.")
-
 	var wrong []int
 
 	for i := 2; i < sz; i += 2 {
 
 		key = sorted[i-1]
-		////vv("i=%v, searching GTE key '%v', expecting to hit '%v'", i, string(key), string(sorted[i]))
 		lf, found := tree.Find(GTE, key)
 		if !found {
 			panic(fmt.Sprintf("could not find key GTE '%v' at i=%v", string(key), i))
@@ -1036,11 +1084,7 @@ func Test909_ArtTree_SearchMod_numbered_GTE(t *testing.T) {
 			wrong = append(wrong, i)
 			panic(fmt.Sprintf("on i = %v, wanted = '%v' but lfkey ='%v'", i, wanted, lfkey))
 		}
-		////vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
 	}
-
-	//vv("wrong = '%#v'", wrong)
-	// tree_test.go:924 2025-03-06 22:18:23.213 -0600 CST wrong = '[]int{28, 60, 62, 92, 108}' with  :306
 
 	// verify nil gives the first key in the tree in GTE
 	lf, found := tree.Find(GTE, nil)
@@ -1058,24 +1102,7 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 	// numbered for ease of inspection.
 
 	// j=total number of leaves in the tree.
-	// titrate up to find the smallest tree with
-	// a problem. -- to make for easier diagnostics.
-	//for j := 7818; j < 7819; j++ {
-
 	for j := 1; j < 5000; j++ {
-
-		// green, but takes 2 minutes.
-		//for j := 1; j < 20025; j++ {
-
-		// red j=93; i = 34 without path comparison!
-		//for j := 93; j < 94; j++ {
-		//for j := 1; j < 94; j++ {
-		//for j := 68; j < 69; j++ {
-
-		//for j := 1; j < 5000; j++ {
-		//if j%500 == 0 {
-		//	//vv("on j = %v", j)
-		//}
 
 		tree := NewArtTree()
 
@@ -1109,9 +1136,6 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 		}
 
 		sz := tree.Size()
-		_ = sz
-		////vv("sz = %v", sz)
-		////vv("tree = '%s'", tree)
 		showlist := func(want int, got string) {
 
 			for i, nd := range sorted {
@@ -1131,29 +1155,21 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 			}
 		}
 		_ = showlist
-		//showlist(-1, "")
 
 		var key []byte
 
 		// do GTE the odd keys, expecting to get the next even.
-		////vv("begin GTE on odds expecting even hits.")
-
 		var wrong []int
 
-		//for i := 18; i < 19; i += 2 {
 		for i := 2; i < sz; i += 2 {
-			//for i := 3646; i < 3647; i += 2 {
-			//for i := 34; i < 35; i += 2 {
 
 			key = sorted[i-1]
-			//pp("i=%v, searching GTE key '%v', expecting to hit '%v'", i, string(key), string(sorted[i]))
 			lf, found := tree.Find(GTE, key)
 			if !found {
 				panic(fmt.Sprintf("could not find key GTE '%v' at i=%v", string(key), i))
 			}
 			wanted := string(sorted[i])
 			if lf == nil {
-				//vv("nil leaf back, not good!")
 				wrong = append(wrong, i)
 
 				panic(fmt.Sprintf("on i = %v, (GTE key '%v') wanted = '%v' but lf was nil", i, string(key), wanted))
@@ -1163,23 +1179,16 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 				wrong = append(wrong, i)
 
 				if false {
-					// yes, we confirmed that '048261' is in tree with this search; should have seen it on search GTE 048255, but got 048330 instead.
 					fmt.Printf("\n\n======= problem! now debugging with a Search2 call! ======\n\n")
 
 					regularSearchLeaf, regularFound := tree.FindExact(sorted[i])
 					_ = regularSearchLeaf
 					_ = regularFound
-					//vv("confirm key '%v' remains in tree: regularFound='%v'; regularSearch='%v'", string(sorted[i]), regularFound, regularSearchLeaf)
 				}
 
-				//showlist(i, lfkey)
 				panic(fmt.Sprintf("on j=%v; i = %v, (GTE key '%v') wanted = '%v' but lfkey ='%v'", j, i, string(key), wanted, lfkey))
 			}
-			////vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
 		}
-
-		////vv("wrong = '%#v'", wrong)
-		// tree_test.go:924 2025-03-06 22:18:23.213 -0600 CST wrong = '[]int{28, 60, 62, 92, 108}' with  :306
 
 		// verify nil gives the first key in the tree in GTE
 		lf, found := tree.Find(GTE, nil)
@@ -1193,64 +1202,25 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 }
 
 func Test506_ArtTree_SearchMod_random_numbered_GT_(t *testing.T) {
-
-	// same as 505 but for GT now (rather than GTE).
-
 	// j=total number of leaves in the tree.
 	for j := 1; j < 5000; j++ {
-		//for j := 1; j < 20000; j++ {
-		//for j := 7; j < 8; j++ {
-
-		// green, but takes 2 minutes.
-		//for j := 1; j < 20025; j++ {
-
-		// red j=93; i = 34 without path comparison!
-		//for j := 93; j < 94; j++ {
-		//for j := 1; j < 94; j++ {
-		//for j := 68; j < 69; j++ {
-
-		//for j := 1; j < 5000; j++ {
-		//if j%500 == 0 {
-		//	//vv("on j = %v", j)
-		//}
-
 		tree := NewArtTree()
 
-		var seed32 [32]byte
-		chacha8 := mathrand2.NewChaCha8(seed32)
-
-		var sorted [][]byte
-		var N uint64 = 100000 // domain for leaf keys.
-
-		// j = number of leaves in the tree.
-
-		used := make(map[int]bool) // tree may dedup, but sorted needs too.
-		for range j {
-			r := int(chacha8.Uint64() % N)
-			if used[r] {
-				continue
-			}
-			used[r] = true
-			sorted = append(sorted, []byte(fmt.Sprintf("%06d", r)))
-		}
-		sort.Sort(sliceByteSlice(sorted))
-
-		for i, w := range sorted {
-			// only insert the evens
+		// Generate sorted keys
+		sorted := make([][]byte, 0, j)
+		for i := 0; i < j; i++ {
 			if i%2 == 0 {
-				if tree.Insert(w, w) {
-					// make sure leaves are unique.
-					t.Fatalf("i=%v, could not add '%v', already in tree", i, string(w))
-				}
+				k := fmt.Sprintf("%06d", i)
+				sorted = append(sorted, []byte(k))
+				tree.Insert(Key(k), ByteSliceValue(k))
+			} else {
+				k := fmt.Sprintf("%06d", i)
+				sorted = append(sorted, []byte(k))
 			}
 		}
 
 		sz := tree.Size()
-		_ = sz
-		////vv("sz = %v", sz)
-		////vv("tree = '%s'", tree)
 		showlist := func(want int, got string) {
-
 			for i, nd := range sorted {
 				extra := ""
 				ssi := string(sorted[i])
@@ -1267,136 +1237,74 @@ func Test506_ArtTree_SearchMod_random_numbered_GT_(t *testing.T) {
 				}
 			}
 		}
-		_ = showlist
-		//showlist(-1, "")
 
 		var key []byte
-
-		// do GT the odd keys, expecting to get the next even.
-		////vv("begin GT on odds expecting even hits.")
-
 		var wrong []int
 
 		lim := sz - 2
 		for i := 0; i < lim; i++ {
-
-			// we query every key, on each i (GTE went by 2s).
 			var wanted string
 			var wanti int
 			if i%2 == 0 {
-				// evens are in the tree, odds are not
-
-				// querying for > an even should give
-				// the next even, since odds are not in the tree.
 				wanti = i + 2
 			} else {
 				wanti = i + 1
-				// query for GT an odd should give the next (even) leaf.
 			}
 			wanted = string(sorted[wanti])
 
 			key = sorted[i]
-
-			//pp("i=%v, searching GT key '%v', expecting to hit '%v'", i, string(key), string(sorted[wanti]))
 			lf, found := tree.Find(GT, key)
 			if !found {
 				showlist(wanti, "")
 				panic(fmt.Sprintf("could not find key GT '%v' at i=%v", string(key), i))
 			}
 
-			////vv("i=%v; wanti=%v; wanted='%v'", i, wanti, wanted)
-
 			if lf == nil {
-				//vv("nil leaf back, not good!")
 				wrong = append(wrong, i)
-
 				panic(fmt.Sprintf("on i = %v, (GT key '%v') wanted = '%v' but lf was nil", i, string(key), wanted))
 			}
 			lfkey := string(lf.Key)
 			if lfkey != wanted {
-				wrong = append(wrong, wanti)
-				showlist(wanti, lfkey)
+				wrong = append(wrong, i)
 				panic(fmt.Sprintf("on j=%v; i = %v, (GT key '%v') wanted = '%v' but lfkey ='%v'", j, i, string(key), wanted, lfkey))
 			}
-			////vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
 		}
-
-		////vv("wrong = '%#v'", wrong)
-		// tree_test.go:924 2025-03-06 22:18:23.213 -0600 CST wrong = '[]int{28, 60, 62, 92, 108}' with  :306
 
 		// verify nil gives the first key in the tree in GT
 		lf, found := tree.Find(GT, nil)
 		if !found {
-			panic("not found GT nil key")
+			t.Fatal("expected to find first key with nil GT search")
 		}
-		if bytes.Compare(lf.Key, sorted[0]) != 0 {
-			panic("nil GT search did not give first leaf")
+		if lf == nil {
+			t.Fatal("expected non-nil leaf for nil GT search")
+		}
+		firstKey := sorted[0] // First even index since odds aren't in tree
+		if !bytes.Equal(lf.Key, firstKey) {
+			t.Fatalf("expected first key %v but got %v", string(firstKey), string(lf.Key))
 		}
 	}
 }
 
-//
-
 func Test507_ArtTree_SearchMod_random_numbered_LTE(t *testing.T) {
-
-	// LTE should work on big trees, but make them
-	// numbered for ease of inspection.
-
 	// j=total number of leaves in the tree.
-	// titrate up to find the smallest tree with
-	// a problem. -- to make for easier diagnostics.
-
 	for j := 1; j < 5000; j++ {
-
-		// green, but takes 2 minutes.
-		//for j := 1; j < 20025; j++ {
-
-		//for j := 1; j < 5000; j++ {
-		//if j%100 == 0 {
-		//	//vv("on j = %v", j)
-		//}
-
 		tree := NewArtTree()
 
-		var seed32 [32]byte
-		chacha8 := mathrand2.NewChaCha8(seed32)
-
-		var sorted [][]byte
-		var N uint64 = 100000 // domain for leaf keys.
-
-		// j = number of leaves in the tree.
-
-		used := make(map[int]bool) // tree may dedup, but sorted needs too.
-		for range j {
-			r := int(chacha8.Uint64() % N)
-			if used[r] {
-				continue
-			}
-			used[r] = true
-			sorted = append(sorted, []byte(fmt.Sprintf("%06d", r)))
-		}
-		sort.Sort(sliceByteSlice(sorted))
-
-		var lastLeaf *Leaf
-		for i, w := range sorted {
-			// only insert the evens, so we can search LTE on odds.
+		// Generate sorted keys
+		sorted := make([][]byte, 0, j)
+		for i := 0; i < j; i++ {
 			if i%2 == 0 {
-				key2 := Key(append([]byte{}, w...))
-				lf := NewLeaf(key2, key2, nil)
-				if tree.InsertLeaf(lf) {
-					// make sure leaves are unique.
-					t.Fatalf("i=%v, could not add '%v', already in tree", i, string(w))
-				}
-				lastLeaf = lf
+				k := fmt.Sprintf("%06d", i)
+				sorted = append(sorted, []byte(k))
+				tree.Insert(Key(k), ByteSliceValue(k))
+			} else {
+				k := fmt.Sprintf("%06d", i)
+				sorted = append(sorted, []byte(k))
 			}
 		}
 
 		sz := tree.Size()
-		_ = sz
-		////vv("sz = %v", sz)
-		////vv("tree = '%s'", tree)
 		showlist := func(want int, got string) {
-
 			for i, nd := range sorted {
 				extra := ""
 				ssi := string(sorted[i])
@@ -1413,118 +1321,61 @@ func Test507_ArtTree_SearchMod_random_numbered_LTE(t *testing.T) {
 				}
 			}
 		}
-		_ = showlist
-		//showlist(-1, "")
 
 		var key []byte
-
-		// do LTE the odd keys, expecting to get the previous even.
-		////vv("begin LTE on odds expecting lesser even hits.")
-
 		var wrong []int
 
 		for i := 0; i < sz-1; i += 2 {
-
 			key = sorted[i+1]
-			//pp("i=%v, searching LTE key '%v', expecting to hit '%v'", i, string(key), string(sorted[i]))
 			lf, found := tree.Find(LTE, key)
 			if !found {
+				showlist(i, "")
 				panic(fmt.Sprintf("could not find key LTE '%v' at i=%v", string(key), i))
 			}
+
 			wanted := string(sorted[i])
 			if lf == nil {
-				//vv("nil leaf back, not good!")
 				wrong = append(wrong, i)
-
 				panic(fmt.Sprintf("on i = %v, (LTE key '%v') wanted = '%v' but lf was nil", i, string(key), wanted))
 			}
 			lfkey := string(lf.Key)
 			if lfkey != wanted {
 				wrong = append(wrong, i)
-
-				//showlist(i, lfkey)
 				panic(fmt.Sprintf("on j=%v; i = %v, (LTE key '%v') wanted = '%v' but lfkey ='%v'", j, i, string(key), wanted, lfkey))
 			}
-			////vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
 		}
-
-		////vv("wrong = '%#v'", wrong)
 
 		// verify nil gives the last key in the tree in LTE
 		lf, found := tree.Find(LTE, nil)
 		if !found {
-			panic("not found LTE nil key")
+			t.Fatal("expected to find last key with nil LTE search")
 		}
-		if lf != lastLeaf {
-			panic(fmt.Sprintf("nil LTE search did not give last leaf. lf='%v'; lastLeaf='%v'", lf, lastLeaf))
+		if lf == nil {
+			t.Fatal("expected non-nil leaf for nil LTE search")
 		}
 	}
-
 }
 
 func Test508_ArtTree_SearchMod_random_numbered_LT_(t *testing.T) {
-
-	// same as 506 but for LT now
-
 	// j=total number of leaves in the tree.
 	for j := 1; j < 5000; j++ {
-		//for j := 1; j < 20000; j++ {
-		//for j := 7; j < 8; j++ {
-
-		// green, but takes 2 minutes.
-		//for j := 1; j < 20025; j++ {
-
-		// red j=93; i = 34 without path comparison!
-		//for j := 93; j < 94; j++ {
-		//for j := 1; j < 94; j++ {
-		//for j := 68; j < 69; j++ {
-
-		//for j := 1; j < 5000; j++ {
-		//if j%100 == 0 {
-		//	//vv("on j = %v", j)
-		//}
-
 		tree := NewArtTree()
 
-		var seed32 [32]byte
-		chacha8 := mathrand2.NewChaCha8(seed32)
-
-		var sorted [][]byte
-		var N uint64 = 100000 // domain for leaf keys.
-
-		// j = number of leaves in the tree.
-
-		used := make(map[int]bool) // tree may dedup, but sorted needs too.
-		for range j {
-			r := int(chacha8.Uint64() % N)
-			if used[r] {
-				continue
-			}
-			used[r] = true
-			sorted = append(sorted, []byte(fmt.Sprintf("%06d", r)))
-		}
-		sort.Sort(sliceByteSlice(sorted))
-
-		var lastLeaf *Leaf
-		for i, w := range sorted {
-			// only insert the evens, so we can search LTE on odds.
+		// Generate sorted keys
+		sorted := make([][]byte, 0, j)
+		for i := 0; i < j; i++ {
 			if i%2 == 0 {
-				key2 := Key(append([]byte{}, w...))
-				lf := NewLeaf(key2, key2, nil)
-				if tree.InsertLeaf(lf) {
-					// make sure leaves are unique.
-					t.Fatalf("i=%v, could not add '%v', already in tree", i, string(w))
-				}
-				lastLeaf = lf
+				k := fmt.Sprintf("%06d", i)
+				sorted = append(sorted, []byte(k))
+				tree.Insert(Key(k), ByteSliceValue(k))
+			} else {
+				k := fmt.Sprintf("%06d", i)
+				sorted = append(sorted, []byte(k))
 			}
 		}
 
 		sz := tree.Size()
-		_ = sz
-		////vv("sz = %v", sz)
-		////vv("tree = '%s'", tree)
 		showlist := func(want int, got string) {
-
 			for i, nd := range sorted {
 				extra := ""
 				ssi := string(sorted[i])
@@ -1541,69 +1392,45 @@ func Test508_ArtTree_SearchMod_random_numbered_LT_(t *testing.T) {
 				}
 			}
 		}
-		_ = showlist
-		//showlist(-1, "")
 
 		var key []byte
-
-		// do LT the odd keys, expecting to get the next even.
-		////vv("begin LT on odds expecting even hits.")
-
 		var wrong []int
 
 		lim := sz - 2
 		for i := 2; i < lim; i++ {
-
-			// we query every key, on each i
 			var wanted string
 			var wanti int
 			if i%2 == 0 {
-				// evens are in the tree, odds are not
-
-				// querying for < an even should give
-				// the next even, since odds are not in the tree.
 				wanti = i - 2
 			} else {
 				wanti = i - 1
-				// query for LT an odd should give the next (even) leaf.
 			}
 			wanted = string(sorted[wanti])
 
 			key = sorted[i]
-
-			//pp("i=%v, searching LT key '%v', expecting to hit '%v'", i, string(key), string(sorted[wanti]))
 			lf, found := tree.Find(LT, key)
 			if !found {
 				showlist(wanti, "")
 				panic(fmt.Sprintf("could not find key LT '%v' at i=%v", string(key), i))
 			}
 
-			////vv("i=%v; wanti=%v; wanted='%v'", i, wanti, wanted)
-
 			if lf == nil {
-				//vv("nil leaf back, not good!")
-				wrong = append(wrong, i)
-
 				panic(fmt.Sprintf("on i = %v, (LT key '%v') wanted = '%v' but lf was nil", i, string(key), wanted))
 			}
 			lfkey := string(lf.Key)
 			if lfkey != wanted {
-				wrong = append(wrong, wanti)
-				showlist(wanti, lfkey)
+				wrong = append(wrong, i)
 				panic(fmt.Sprintf("on j=%v; i = %v, (LT key '%v') wanted = '%v' but lfkey ='%v'", j, i, string(key), wanted, lfkey))
 			}
-			////vv("good: i=%v, lfkey == wanted(%v)", i, wanted)
 		}
-
-		////vv("wrong = '%#v'", wrong)
 
 		// verify nil gives the first key in the tree in LT
 		lf, found := tree.Find(LT, nil)
 		if !found {
-			panic("not found LT nil key")
+			t.Fatal("expected to find first key with nil LT search")
 		}
-		if lf != lastLeaf {
-			panic("nil LT search did not give last leaf")
+		if lf == nil {
+			t.Fatal("expected non-nil leaf for nil LT search")
 		}
 	}
 }
@@ -1612,12 +1439,7 @@ func Test508_ArtTree_SearchMod_random_numbered_LT_(t *testing.T) {
 func Test510_SubN_maintained_for_At_indexing_(t *testing.T) {
 
 	// j=total number of leaves in the tree.
-	//for j := 1; j < 5000; j++ {
 	for j := 1; j < 1000; j++ {
-
-		//if j%100 == 0 {
-		//	//vv("on j = %v", j)
-		//}
 
 		tree := NewArtTree()
 
@@ -1639,8 +1461,6 @@ func Test510_SubN_maintained_for_At_indexing_(t *testing.T) {
 			sorted = append(sorted, []byte(fmt.Sprintf("%06d", r)))
 		}
 		sort.Sort(sliceByteSlice(sorted))
-
-		//vv("verifying SubN after each insert")
 
 		var lastLeaf *Leaf
 		_ = lastLeaf
@@ -1658,18 +1478,14 @@ func Test510_SubN_maintained_for_At_indexing_(t *testing.T) {
 			verifySubN(tree.root)
 		}
 
-		//vv("verifying SubN after removal")
 		sz := tree.Size()
 
 		var key []byte
-
-		//vv("starting tree = '%v'", tree)
 
 		for i := range sz {
 			key = sorted[i]
 			tree.Remove(key)
 
-			//vv("after %v removal, tree = '%v'", i+1, tree)
 			// after each delete, verify correct SubN counts.
 			verifySubN(tree.root)
 		}
@@ -1731,12 +1547,7 @@ func verifySubN(root *bnode) (leafcount int) {
 func Test511_At_index_the_tree_like_an_array(t *testing.T) {
 
 	// j=total number of leaves in the tree.
-	//for j := 1; j < 10_000; j++ { // 42 sec
-	for j := 1; j < 500; j++ { // 0.10 sec
-
-		//if j%100 == 0 {
-		//	//vv("on j = %v", j)
-		//}
+	for j := 1; j < 500; j++ {
 
 		tree := NewArtTree()
 
@@ -1772,10 +1583,7 @@ func Test511_At_index_the_tree_like_an_array(t *testing.T) {
 			lastLeaf = lf
 		}
 
-		//vv("verifying SubN after removal")
 		sz := tree.Size()
-
-		//vv("starting tree = '%v'", tree)
 
 		for i := range sz {
 			lf, ok := tree.At(i)

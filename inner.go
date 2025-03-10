@@ -316,57 +316,6 @@ func (n *Inner) String() string {
 	return n.FlatString(0, 0) // -1 to recurse.
 }
 
-//func (n *Inner) String() string {
-//	return n.DepthString(0, []byte{}, -1)
-//}
-
-func (n *Inner) DepthString(depth int, prior []byte, recurse int) (s string) {
-
-	rep := strings.Repeat("    ", depth)
-
-	s += fmt.Sprintf(`
-%[1]v       prior: "%[2]v"
-%[1]v Inner{ kind: %[3]v,
-%[1]v  compressed: "%[4]v" (len %[5]v),
-%[1]v      nchild: %[6]v,
-%[1]v   childkeys: %[7]v,
-%[1]v       depth: %[8]v - %[9]v,
-%[1]v }
-`, rep,
-		string(prior),
-		n.Kind().String(),
-		string(n.compressed),
-		len(n.compressed),
-		n.Node.nchild(),
-		n.Node.childkeysString(),
-
-		// stubbed out depth since we removed it.
-		0, //n.Node.depth(),
-		0, // n.Node.depth()+len(n.compressed),
-	)
-
-	if recurse == 0 {
-		return s // just this node.
-	}
-	key, node := n.Node.next(nil)
-	k := 0
-	for node != nil {
-		keystr := fmt.Sprintf("'%v'", string(key))
-		if key == 0 {
-			keystr = "(zero)"
-		}
-		s += fmt.Sprintf("%v child %v with key %v:\n", rep, k, keystr)
-
-		guess2 := append(append(append([]byte{}, prior...), n.compressed...), key)
-		s += fmt.Sprintf("%v prior + compressed + key = guess2: \"%v\"\n", rep, string(guess2))
-		//s += node.DepthString(depth+1, guessAtPathToHere)
-		s += node.DepthString(depth+1, guess2, recurse-1) // "prior"
-		key, node = n.Node.next(&key)
-		k++
-	}
-	return s
-}
-
 func (n *Inner) isLeaf() bool {
 	return false
 }
