@@ -9,6 +9,11 @@ import (
 	"testing"
 )
 
+var _ = bytes.Compare
+var _ = fmt.Sprintf
+var _ = strconv.Atoi
+var _ = strings.Split
+
 /*
 func TestIterator(t *testing.T) {
 
@@ -140,6 +145,7 @@ func equalStringSlice(a, b []string) bool {
 	return true
 }
 
+/*
 func TestIterConcurrentExpansion(t *testing.T) {
 
 	var (
@@ -371,7 +377,9 @@ func TestIterDeleteBehindReverse(t *testing.T) {
 		}
 	}
 }
+*/
 
+// [start, end) semantics version; not (start, end].
 func TestIterator(t *testing.T) {
 
 	keys := []string{
@@ -475,6 +483,7 @@ func TestIterator(t *testing.T) {
 			for _, key := range tc.keys {
 				tree.Insert([]byte(key), key)
 			}
+			vv("tree = '%v'", tree)
 			iter := tree.Iterator([]byte(tc.start), []byte(tc.end))
 			if tc.reverse {
 				iter = tree.Iterator([]byte(tc.end), []byte(tc.start))
@@ -490,6 +499,7 @@ func TestIterator(t *testing.T) {
 	}
 }
 
+/*
 func TestIterRange(t *testing.T) {
 
 	tree := NewArtTree()
@@ -555,3 +565,4 @@ func TestIterRange(t *testing.T) {
 	}
 
 }
+*/

@@ -439,28 +439,36 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 
 	if t.root == nil || t.size < 1 {
 		return &iterator{
-			initialized: true,
-			closed:      true,
+			initDone: true,
+			closed:   true,
 		}
 	}
 
 	// get the integer range [begIdx, endIdx]
 	_, begIdx, ok := t.FindGTE(start)
 	if !ok {
-		panic("what? internal logic error, t.size was >= 1")
+		// no such key to start from, iteration already over.
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
 	}
 
 	_, endIdx, ok := t.FindLT(end)
 	if !ok {
-		panic("what? internal logic error, t.size was >= 1")
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
 	}
 
 	return &iterator{
-		tree:    t,
-		start:   start,
-		end:     end,
-		begIdx:  begIdx,
-		endxIdx: endIdx + 1,
+		tree:        t,
+		treeVersion: t.treeVersion,
+		cursor:      start,
+		terminate:   end,
+		begIdx:      begIdx,
+		endxIdx:     endIdx + 1,
 	}
 }
 
@@ -488,28 +496,35 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 func (t *Tree) ReverseIterator(end, start []byte) *iterator {
 	if t.root == nil || t.size < 1 {
 		return &iterator{
-			initialized: true,
-			closed:      true,
+			initDone: true,
+			closed:   true,
 		}
 	}
 
 	// get the integer range [endIdx, begIdx]
 	_, begIdx, ok := t.FindLTE(start)
 	if !ok {
-		panic("what? internal logic error, t.size was >= 1")
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
 	}
 
 	_, endIdx, ok := t.FindGT(end)
 	if !ok {
-		panic("what? internal logic error, t.size was >= 1")
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
 	}
 
 	return &iterator{
-		tree:    t,
-		start:   start,
-		end:     end,
-		begIdx:  begIdx,
-		endxIdx: endIdx - 1,
+		tree:        t,
+		treeVersion: t.treeVersion,
+		cursor:      start,
+		terminate:   end,
+		begIdx:      begIdx,
+		endxIdx:     endIdx - 1,
 	}
 }
 
