@@ -203,7 +203,7 @@ func TestInsertWithSameByteSliceAddress(t *testing.T) {
 	}
 
 	for k, _ := range keys {
-		n, ok := tree.FindExact([]byte(k))
+		n, _, ok := tree.FindExact([]byte(k))
 		if !ok || n == nil {
 			t.Errorf("Did not find entry for key: %v\n", []byte(k))
 		}
@@ -254,7 +254,7 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		if i == 0 {
 			continue
 		}
-		g, ok := tree.FindExact(w)
+		g, _, ok := tree.FindExact(w)
 		got := string(g.([]byte))
 		want := string(paths[i-1])
 		if !ok || want != got {

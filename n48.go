@@ -12,9 +12,6 @@ type node48 struct {
 	// keys[j] non-zero maps to children[keys[j]-1]
 	keys     [256]uint16
 	children [48]*bnode
-
-	//dep        int
-	//compressed []byte
 }
 
 func (n *node48) last() (byte, *bnode) {
@@ -37,22 +34,6 @@ func (n *node48) first() (byte, *bnode) {
 	//panic("unreachable since node48 must have >= 17 children")
 	return 0, nil // forgo panic, try to make inline-able.
 }
-
-/*
-func (n *node48) getCompressed() []byte {
-	return n.compressed
-}
-func (n *node48) setCompressed(pathpart []byte) {
-	n.compressed = pathpart
-}
-
-func (n *node48) setDepth(d int) {
-	n.dep = d
-}
-func (n *node48) depth() int {
-	return n.dep
-}
-*/
 
 func (n *node48) nchild() int {
 	return int(n.lth)
@@ -158,17 +139,29 @@ func (n *node48) addChild(k byte, child *bnode) {
 			n.keys[k] = uint16(idx + 1)
 			n.children[idx] = child
 			n.lth++
+			n.redoPren()
 			return
 		}
 	}
 	panic("no empty slots")
 }
 
+// update pren cache of cumulative SubN
+func (n *node48) redoPren() {
+	tot := 0
+	for _, idx := range n.keys {
+		if idx == 0 {
+			continue
+		}
+		ch := n.children[idx-1]
+		ch.pren = tot
+		tot += ch.subn()
+	}
+}
+
 func (n *node48) grow() Inode {
 	nn := &node256{
 		lth: n.lth,
-		//compressed: append([]byte{}, n.compressed...),
-		//dep:        n.dep,
 	}
 	for b, i := range n.keys {
 		if i == 0 {
@@ -176,10 +169,11 @@ func (n *node48) grow() Inode {
 		}
 		nn.children[b] = n.children[i-1]
 	}
+	nn.redoPren()
 	return nn
 }
 
-func (n *node48) replace(k int, child *bnode) (old *bnode) {
+func (n *node48) replace(k int, child *bnode, del bool) (old *bnode) {
 	idx := n.keys[k]
 	if idx == 0 {
 		panic("replace can't be called for idx=0")
@@ -189,6 +183,13 @@ func (n *node48) replace(k int, child *bnode) (old *bnode) {
 	if child == nil {
 		n.keys[k] = 0
 		n.lth--
+		if del {
+			n.redoPren()
+		}
+	} else {
+		if del && child.pren != old.pren {
+			n.redoPren()
+		}
 	}
 	return
 }
@@ -200,8 +201,6 @@ func (n *node48) min() bool {
 func (n *node48) shrink() Inode {
 	nn := &node16{
 		lth: n.lth,
-		//compressed: append([]byte{}, n.compressed...),
-		//dep:        n.dep,
 	}
 	nni := 0
 	for i, idx := range n.keys {
@@ -215,6 +214,7 @@ func (n *node48) shrink() Inode {
 			nni++
 		}
 	}
+	nn.redoPren()
 	return nn
 }
 

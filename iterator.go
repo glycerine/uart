@@ -65,21 +65,6 @@ func (i *iterator) Next() (ok bool) {
 	if i.closed {
 		return false
 	}
-	if i.allowDel {
-		var lf *Leaf
-		if i.reverse {
-			lf, ok = i.tree.Find(LT, i.key)
-		} else {
-			lf, ok = i.tree.Find(GT, i.key)
-		}
-		if !ok {
-			return false
-		}
-		i.leaf = lf
-		i.value = lf.Value
-		i.key = lf.Key
-		return true
-	}
 	if i.stack == nil {
 		// initialize iterator
 		if exit, next := i.init(); exit {

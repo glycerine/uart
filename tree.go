@@ -114,11 +114,14 @@ type Tree struct {
 	// lost data, and panic segfaults from torn reads.
 	//
 	// The easiest way to do this is with a sync.RWMutex.
-	// One will be deployed for you if SkipLocking
-	// defaults to false.
+	// One such, the Rwmut on this Tree, will be
+	// employed for you if SkipLocking is allowed to
+	// default to false.
 	SkipLocking bool `msg:"-"`
 }
 
+// NewArtTree creates and returns a new ART Tree,
+// ready for use.
 func NewArtTree() *Tree {
 	return &Tree{}
 }
@@ -227,9 +230,9 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 
 // FindGT returns the first element whose key
 // is greater than the supplied key.
-func (t *Tree) FindGT(key Key) (val any, found bool) {
+func (t *Tree) FindGT(key Key) (val any, idx int, found bool) {
 	var lf *Leaf
-	lf, found = t.Find(GT, key)
+	lf, idx, found = t.Find(GT, key)
 	if found && lf != nil {
 		val = lf.Value
 	}
@@ -238,9 +241,9 @@ func (t *Tree) FindGT(key Key) (val any, found bool) {
 
 // FindGTE returns the first element whose key
 // is greater than, or equal to, the supplied key.
-func (t *Tree) FindGTE(key Key) (val any, found bool) {
+func (t *Tree) FindGTE(key Key) (val any, idx int, found bool) {
 	var lf *Leaf
-	lf, found = t.Find(GTE, key)
+	lf, idx, found = t.Find(GTE, key)
 	if found && lf != nil {
 		val = lf.Value
 	}
@@ -249,9 +252,9 @@ func (t *Tree) FindGTE(key Key) (val any, found bool) {
 
 // FindGT returns the first element whose key
 // is less than the supplied key.
-func (t *Tree) FindLT(key Key) (val any, found bool) {
+func (t *Tree) FindLT(key Key) (val any, idx int, found bool) {
 	var lf *Leaf
-	lf, found = t.Find(LT, key)
+	lf, idx, found = t.Find(LT, key)
 	if found && lf != nil {
 		val = lf.Value
 	}
@@ -260,9 +263,9 @@ func (t *Tree) FindLT(key Key) (val any, found bool) {
 
 // FindLTE returns the first element whose key
 // is less-than-or-equal to the supplied key.
-func (t *Tree) FindLTE(key Key) (val any, found bool) {
+func (t *Tree) FindLTE(key Key) (val any, idx int, found bool) {
 	var lf *Leaf
-	lf, found = t.Find(LTE, key)
+	lf, idx, found = t.Find(LTE, key)
 	if found && lf != nil {
 		val = lf.Value
 	}
@@ -271,9 +274,9 @@ func (t *Tree) FindLTE(key Key) (val any, found bool) {
 
 // FindExact returns the element whose key
 // matches the supplied key.
-func (t *Tree) FindExact(key Key) (val any, found bool) {
+func (t *Tree) FindExact(key Key) (val any, idx int, found bool) {
 	var lf *Leaf
-	lf, found = t.Find(Exact, key)
+	lf, idx, found = t.Find(Exact, key)
 	if found && lf != nil {
 		val = lf.Value
 	}
@@ -281,12 +284,12 @@ func (t *Tree) FindExact(key Key) (val any, found bool) {
 }
 
 // FirstLeaf returns the first leaf in the Tree.
-func (t *Tree) FirstLeaf() (lf *Leaf, found bool) {
+func (t *Tree) FirstLeaf() (lf *Leaf, idx int, found bool) {
 	return t.Find(GTE, nil)
 }
 
 // FirstLeaf returns the last leaf in the Tree.
-func (t *Tree) LastLeaf() (lf *Leaf, found bool) {
+func (t *Tree) LastLeaf() (lf *Leaf, idx int, found bool) {
 	return t.Find(LTE, nil)
 }
 
@@ -313,7 +316,7 @@ func (t *Tree) LastLeaf() (lf *Leaf, found bool) {
 // If key is nil, then GTE and GT return
 // the first leaf in the tree, while LTE
 // and LT return the last leaf in the tree.
-func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, found bool) {
+func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool) {
 	if !t.SkipLocking {
 		t.Rwmut.RLock()
 		defer t.Rwmut.RUnlock()
@@ -324,16 +327,16 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, found bool) {
 	if len(key) == 0 && t.size == 1 {
 		// nil query asks for first leaf, or last, depending.
 		// here it is the same.
-		return t.root.leaf, true
+		return t.root.leaf, 0, true
 	}
 	var b *bnode
 	switch smod {
 	case GTE, GT:
-		b, found, _, _ = t.root.getGTE(key, 0, smod, t.root, t, 0, false, 0)
+		b, found, _, idx = t.root.getGTE(key, 0, smod, t.root, t, 0, false, 0)
 	case LTE, LT:
-		b, found, _, _ = t.root.getLTE(key, 0, smod, t.root, t, 0, false, 0)
+		b, found, _, idx = t.root.getLTE(key, 0, smod, t.root, t, 0, false, 0)
 	default:
-		b, found, _, _ = t.root.get(key, 0, t.root)
+		b, found, _, idx = t.root.get(key, 0, t.root)
 	}
 	if b != nil {
 		lf = b.leaf
@@ -404,9 +407,24 @@ func (t *Tree) IsEmpty() (empty bool) {
 	return
 }
 
-// Iterator in range (start, end].
-// Iterator is concurrently safe, but doesn't guarantee to provide consistent
-// snapshot of the tree state.
+// Iterator starts a traversal over the range [start, end).
+// Use a nil start to begin with the first key.
+// Use a nil end to proceed through the last key.
+//
+// If Reverse() is called on the iterator before Next(),
+// this does not change the returned range,
+// but it does reverse the order in which keys in
+// that range are returned.
+//
+// For example, suppose the keys {0, 1, 2} are
+// in the tree, and tree.Iterator(0, 2) is called.
+// Forward iteration will return 0, then 1.
+// Reverse iteration will return 1, then 0.
+//
+// The returned iterator is not concurrent/multiple goroutine safe.
+// If you need synchronization, read-lock
+// the tree with tree.Rwmut.Rlock()
+// and read-unlock with the tree.Rwmut.RUnlock().
 func (t *Tree) Iterator(start, end []byte) *iterator {
 	return &iterator{
 		tree:      t,
@@ -415,7 +433,21 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 	}
 }
 
-// At(i) lets us think of the tree as an
+// ReverseIterator starts a traversal over
+// the range [start, end) but returns keys
+// in the reverse order. It is equivalent
+// to doing it := tree.Iterator() and then
+// it.Reverse().  See Iterator() for further detail.
+func (t *Tree) ReverseIterator(start, end []byte) *iterator {
+	return &iterator{
+		tree:      t,
+		cursor:    end,
+		terminate: start,
+		reverse:   true,
+	}
+}
+
+// At(i) lets us think of the tree as a
 // array, returning the i-th leaf
 // from the sorted leaf nodes, using
 // an efficient O(log N) time algorithm.
@@ -455,6 +487,13 @@ func (t *Tree) Atv(i int) (val any, ok bool) {
 	if ok {
 		val = lf.Value
 	}
+	t.Rwmut.RUnlock()
+	return
+}
+
+func (t *Tree) LeafIndex(leaf *Leaf) (idx int, ok bool) {
+	t.Rwmut.RLock()
+	_, idx, ok = t.FindExact(leaf.Key)
 	t.Rwmut.RUnlock()
 	return
 }

@@ -120,7 +120,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	if next.isLeaf {
 
 		replacement, updated = next.insert(lf, nextDepth+1, next, tree, n)
-		n.Node.replace(idx, replacement)
+		n.Node.replace(idx, replacement, false)
 		n.SubN++
 		if !replacement.isLeaf {
 			replacement.inner.Keybyte = nextkey
@@ -133,7 +133,6 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	}
 	// INVAR: next is not a leaf.
 
-	//vv("recursing on next; nextDepth+1 = %v", nextDepth+1)
 	_, updated = next.insert(lf, nextDepth+1, next, tree, n)
 	n.SubN++
 	return selfb, updated
@@ -164,17 +163,13 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 		if isNode4 && atmin {
 			// update parent pointer. current node will
 			// be collapsed from n4 -> leaf.
-			//vv("del('%v'); collapsing from n4 -> leaf, idx = '%v'; delkey='%v'", viznlString(key), idx, viznl(string(delkey)))
 
-			//vv("before c.Node.replace, c = '%v'", c.String())
-			deletedNode = n.Node.replace(idx, nil)
-			//vv(" after c.Node.replace, c = '%v'", c.String())
-			//vv("deletedNode = '%v'", deletedNode.String())
+			deletedNode = n.Node.replace(idx, nil, true)
+
 			// get the left node
 			leftKey, left := n.Node.next(nil)
 
 			// during delete of n, have to give leftB n's prefix
-			//vv("leftKey = '%v'; left = '%v'", viznl(string(leftKey)), ll.FlatString(depth, nil, 0))
 			if left.isLeaf {
 				left.leaf.addPrefixBefore(n, leftKey)
 			} else {
@@ -196,9 +191,9 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 		// deleting a leaf in next.
 		// n is > node4
 
-		// local change. parent lock won't be required
+		// local change. parent not affected.
 
-		deletedNode = n.Node.replace(idx, nil)
+		deletedNode = n.Node.replace(idx, nil, true)
 		if atmin && !isNode4 {
 			n.Node = n.Node.shrink()
 		}
@@ -211,8 +206,9 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 	// INVAR: next is not a leaf
 
 	deleted, deletedNode = next.del(key, nextDepth+1, next, func(bn *bnode) {
-		n.Node.replace(idx, bn)
+		n.Node.replace(idx, bn, true)
 	})
+	n.Node.redoPren() // essential! for LeafIndex/id to be correct.
 	return deleted, deletedNode
 }
 
@@ -289,7 +285,9 @@ func (n *Inner) get(key Key, depth int, selfb *bnode) (value *bnode, found bool,
 
 	//pp("about to call next.get on next = '%v' with inquiry '%v'", next.FlatString(nextDepth+1, 0), string(key[:nextDepth]))
 
-	return next.get(key, nextDepth+1, next)
+	value, found, dir, id = next.get(key, nextDepth+1, next)
+	id += next.pren
+	return
 }
 
 func memcpy[T any](dst []T, src []T, len int) {
@@ -425,11 +423,5 @@ func (n *Inner) rlast() *Leaf {
 			return b.leaf
 		}
 		_, b = b.last()
-	}
-}
-
-func panicOn(err error) {
-	if err != nil {
-		panic(err)
 	}
 }

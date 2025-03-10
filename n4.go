@@ -6,26 +6,7 @@ type node4 struct {
 	lth      int
 	keys     [4]byte
 	children [4]*bnode
-
-	//dep int // depth()
-	//compressed []byte
 }
-
-/*
-func (n *node4) getCompressed() []byte {
-	return n.compressed
-}
-func (n *node4) setCompressed(pathpart []byte) {
-	n.compressed = pathpart
-}
-
-func (n *node4) setDepth(d int) {
-	n.dep = d
-}
-func (n *node4) depth() int {
-	return n.dep
-}
-*/
 
 func (n *node4) Kind() Kind {
 	return Node4
@@ -155,9 +136,21 @@ func (n *node4) addChild(k byte, child *bnode) {
 	n.keys[idx] = k
 	n.children[idx] = child
 	n.lth++
+	n.redoPren()
 }
 
-func (n *node4) replace(idx int, child *bnode) (old *bnode) {
+// update pren cache of cumulative SubN
+func (n *node4) redoPren() {
+	tot := 0
+	for i, ch := range n.children {
+		if i >= n.lth {
+			break
+		}
+		ch.pren = tot
+		tot += ch.subn()
+	}
+}
+func (n *node4) replace(idx int, child *bnode, del bool) (old *bnode) {
 	old = n.children[idx]
 	if child == nil {
 		copy(n.keys[idx:], n.keys[idx+1:])
@@ -165,8 +158,14 @@ func (n *node4) replace(idx int, child *bnode) (old *bnode) {
 		n.keys[n.lth-1] = 0
 		n.children[n.lth-1] = nil
 		n.lth--
+		if del && idx < n.lth {
+			n.redoPren()
+		}
 	} else {
 		n.children[idx] = child
+		if del && child.pren != old.pren {
+			n.redoPren()
+		}
 	}
 	return
 }
@@ -180,6 +179,7 @@ func (n *node4) grow() Inode {
 	nn.lth = n.lth
 	copy(nn.keys[:], n.keys[:])
 	copy(nn.children[:], n.children[:])
+	nn.redoPren()
 	return nn
 }
 

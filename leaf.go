@@ -166,3 +166,10 @@ func (n *Leaf) FlatString(depth int, recurse int) (s string) {
 func (n *Leaf) str() string {
 	return string(n.Key)
 }
+
+// essential utility.
+func panicOn(err error) {
+	if err != nil {
+		panic(err)
+	}
+}

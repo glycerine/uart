@@ -25,16 +25,16 @@ func TestBinaryKeyHandling(t *testing.T) {
 	}
 
 	// Search test
-	if v, ok := tree.FindExact(key1); !ok || v != "value1" {
+	if v, _, ok := tree.FindExact(key1); !ok || v != "value1" {
 		t.Errorf("Expected value1 for key1, got %#v", v)
 	}
-	if v, ok := tree.FindExact(key2); !ok || v != "value2" {
+	if v, _, ok := tree.FindExact(key2); !ok || v != "value2" {
 		t.Errorf("Expected value2 for key2, got %v", v)
 	}
-	if v, ok := tree.FindExact(key3); !ok || v != "value3" {
+	if v, _, ok := tree.FindExact(key3); !ok || v != "value3" {
 		t.Errorf("Expected value3 for key3, got %v", v)
 	}
-	if v, ok := tree.FindExact(key4); !ok || v != "value4" {
+	if v, _, ok := tree.FindExact(key4); !ok || v != "value4" {
 		t.Errorf("Expected value4 for key4, got %v", v)
 	}
 
@@ -62,7 +62,7 @@ func TestBinaryKeyHandling(t *testing.T) {
 	}
 
 	//vv("about to search for key1 = '%v'", key1)
-	if v, ok := tree.FindExact(key1); ok {
+	if v, _, ok := tree.FindExact(key1); ok {
 		t.Errorf("key1 still found after deletion: ok = %v; v = '%#v'", ok, v)
 	}
 	if tree.Size() != 3 {
@@ -77,7 +77,7 @@ func TestEmptyKeyHandling(t *testing.T) {
 	emptyKey := []byte{}
 	tree.Insert(emptyKey, "empty")
 
-	if v, ok := tree.FindExact(emptyKey); !ok || v != "empty" {
+	if v, _, ok := tree.FindExact(emptyKey); !ok || v != "empty" {
 		t.Errorf("Expected 'empty' for empty key, got %v", v)
 	}
 
@@ -96,10 +96,10 @@ func TestLongBinaryKeys(t *testing.T) {
 	tree.Insert(key1, "long1")
 	tree.Insert(key2, "long2")
 
-	if v, ok := tree.FindExact(key1); !ok || v != "long1" {
+	if v, _, ok := tree.FindExact(key1); !ok || v != "long1" {
 		t.Errorf("Expected 'long1' for key1, got %v", v)
 	}
-	if v, ok := tree.FindExact(key2); !ok || v != "long2" {
+	if v, _, ok := tree.FindExact(key2); !ok || v != "long2" {
 		t.Errorf("Expected 'long2' for key2, got %v", v)
 	}
 }

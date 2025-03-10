@@ -80,6 +80,7 @@ func (n *Inner) getLTE(
 		dir = 0
 		found = true
 		value, _ = n.recursiveLast()
+		id = n.SubN - 1
 		return
 	}
 
@@ -94,6 +95,7 @@ func (n *Inner) getLTE(
 	// leaf in the tree.
 	if len(key) == 0 {
 		value, found = n.recursiveLast()
+		id = n.SubN - 1
 		return
 	}
 
@@ -218,7 +220,7 @@ func (n *Inner) getLTE(
 	// a next.getLTE() call.
 
 	// This is the first recursive getLTE call.
-	value, found, dir, _ = prev.getLTE(
+	value, found, dir, id = prev.getLTE(
 		key,
 		nextDepth+1,
 		smod,
@@ -229,16 +231,17 @@ func (n *Inner) getLTE(
 		byteCmp(querykey, prevKeyb, keyCmpPath),
 	)
 
+	id += prev.pren
 	if found {
 		// exact LTE match
 		switch smod {
 		case LTE:
-			return value, true, 0, 0
+			return value, true, 0, id
 		case LT:
 			cmp := bytes.Compare(value.leaf.Key, key)
 			if cmp < 0 {
 				// strictly less, done!
-				return value, true, 0, 0
+				return value, true, 0, id
 			}
 			// check do we have other sibs before returning
 			_, prevLocal := n.Node.prev(&prevKeyb)
@@ -253,6 +256,7 @@ func (n *Inner) getLTE(
 			value, _ = prevLocal.recursiveLast()
 			found = true
 			dir = 0
+			id = prevLocal.pren + prevLocal.subn() - 1
 			return
 			// end LT
 		}
@@ -286,7 +290,7 @@ func (n *Inner) getLTE(
 		}
 
 		// the second recursive getLTE() call.
-		value2, found2, dir2, _ := prevprev.getLTE(
+		value2, found2, dir2, id2 := prevprev.getLTE(
 			key,
 			nextDepth,
 			smod,
@@ -297,8 +301,9 @@ func (n *Inner) getLTE(
 			byteCmp(querykey, prevprevKeyb, keyCmpPath),
 		)
 
+		id2 += prevprev.pren
 		if found2 {
-			return value2, true, 0, 0
+			return value2, true, 0, id2
 		}
 
 		// dir < 0 here.
@@ -306,8 +311,9 @@ func (n *Inner) getLTE(
 			// The adjacency condition holds,
 			// we have found our LTE value.
 			found = true
-			value, _ = value2.recursiveLast()
+			value = value2
 			dir = 0
+			id = id2
 			return
 		}
 
@@ -341,7 +347,7 @@ func (n *Inner) getLTE(
 	}
 
 	// the third recursive getLTE() call.
-	value2, found2, dir2, _ := next.getLTE(
+	value2, found2, dir2, id2 := next.getLTE(
 		key,
 		nextDepth+1,
 		smod,
@@ -352,15 +358,17 @@ func (n *Inner) getLTE(
 		byteCmp(querykey, nextKeyb, keyCmpPath),
 	)
 
+	id2 += next.pren
 	if found2 {
-		return value2, true, 0, 0
+		return value2, true, 0, id2
 	}
 
 	if dir2 < 0 {
 		// adjacency conclusion holds: the
 		// prev.recursiveLast() is our goal node.
-		value, _ = value.recursiveLast()
-		return value, true, 0, 0
+		//value, _ = value.recursiveLast()
+		value, _ = prev.recursiveLast()
+		return value, true, 0, prev.pren + prev.subn() - 1
 	}
 	if dir2 < 0 && largestWillDo {
 		dir2 = -2

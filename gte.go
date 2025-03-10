@@ -80,6 +80,7 @@ func (n *Inner) getGTE(
 		dir = 0
 		found = true
 		value, _ = n.recursiveFirst()
+		// id 0 is correct.
 		return
 	}
 
@@ -219,7 +220,7 @@ func (n *Inner) getGTE(
 	// a prev.getGTE() call.
 
 	// This is the first recursive getGTE call.
-	value, found, dir, _ = next.getGTE(
+	value, found, dir, id = next.getGTE(
 		key,
 		nextDepth+1,
 		smod,
@@ -230,16 +231,17 @@ func (n *Inner) getGTE(
 		byteCmp(querykey, nextKeyb, keyCmpPath),
 	)
 
+	id += next.pren
 	if found {
 		// exact GTE match
 		switch smod {
 		case GTE:
-			return value, true, 0, 0
+			return value, true, 0, id
 		case GT:
 			cmp := bytes.Compare(value.leaf.Key, key)
 			if cmp > 0 {
 				// strictly greater, done!
-				return value, true, 0, 0
+				return value, true, 0, id
 			}
 			// check do we have other sibs before returning
 			_, nextLocal := n.Node.next(&nextKeyb)
@@ -254,6 +256,7 @@ func (n *Inner) getGTE(
 			value, _ = nextLocal.recursiveFirst()
 			found = true
 			dir = 0
+			id = nextLocal.pren
 			return
 			// end GT
 		}
@@ -287,7 +290,7 @@ func (n *Inner) getGTE(
 		}
 
 		// the second recursive getGTE() call.
-		value2, found2, dir2, _ := nextnext.getGTE(
+		value2, found2, dir2, id2 := nextnext.getGTE(
 			key,
 			nextDepth,
 			smod,
@@ -298,8 +301,9 @@ func (n *Inner) getGTE(
 			byteCmp(querykey, nextnextKeyb, keyCmpPath),
 		)
 
+		id2 += nextnext.pren
 		if found2 {
-			return value2, true, 0, 0
+			return value2, true, 0, id2
 		}
 
 		// dir > 0 here.
@@ -307,8 +311,9 @@ func (n *Inner) getGTE(
 			// The adjacency condition holds,
 			// we have found our gte value.
 			found = true
-			value, _ = value2.recursiveFirst()
+			value = value2
 			dir = 0
+			id = id2
 			return
 		}
 
@@ -342,7 +347,7 @@ func (n *Inner) getGTE(
 	}
 
 	// the third recursive getGTE() call.
-	value2, found2, dir2, _ := prev.getGTE(
+	value2, found2, dir2, id2 := prev.getGTE(
 		key,
 		nextDepth+1,
 		smod,
@@ -353,15 +358,17 @@ func (n *Inner) getGTE(
 		byteCmp(querykey, prevKeyb, keyCmpPath),
 	)
 
+	id2 += prev.pren
 	if found2 {
-		return value2, true, 0, 0
+		return value2, true, 0, id2
 	}
 
 	if dir2 > 0 {
 		// adjacency conclusion holds: the
 		// next.recursiveFirst() is our goal node.
-		value, _ = value.recursiveFirst()
-		return value, true, 0, 0
+
+		value, _ := next.recursiveFirst()
+		return value, true, 0, next.pren
 	}
 	if dir2 > 0 && smallestWillDo {
 		dir2 = 2

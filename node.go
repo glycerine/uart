@@ -55,6 +55,15 @@ type bnode struct {
 	leaf   *Leaf
 	inner  *Inner
 	isLeaf bool
+
+	// pren is a cache of the sum of
+	// the SubN counts for all children
+	// earlier to us in our n4/n16/n48/n256 node.
+	// Found to be ssential to avoid very expensive
+	// summing on the fly of SubN counts
+	// during find/get/gte/lte. It allows
+	// the LeafIndex functionality to work and be fast.
+	pren int
 }
 
 func (a *bnode) Kind() Kind {
@@ -83,6 +92,11 @@ func (a *bnode) first() (byte, *bnode) {
 func (a *bnode) subn() int {
 	if a.isLeaf {
 		return 1
+	}
+	// gte_test.go:112 gives us
+	// a node thats not fully assembled, don't panic.
+	if a.inner == nil {
+		return 0
 	}
 	return a.inner.SubN
 }
@@ -240,8 +254,17 @@ func (n *Inner) first() (byte, *bnode) {
 	return n.Node.first()
 }
 
+func (a *bnode) redoPren() {
+	if a.isLeaf {
+		return
+	}
+	a.inner.Node.redoPren()
+}
+
 // implemented by node4, node16, node48, node256
 type Inode interface {
+	// re-compute the cumulative previous child subN cache
+	redoPren()
 	// last gives the greatest key (right-most) child
 	first() (byte, *bnode)
 	last() (byte, *bnode)
@@ -270,7 +293,7 @@ type Inode interface {
 	// replace updates node at specified index
 	// if node is nil - delete the node and adjust metadata.
 	// return replaced node
-	replace(int, *bnode) *bnode
+	replace(idx int, child *bnode, insert bool) *bnode
 
 	// full is true if node reached max size
 	full() bool

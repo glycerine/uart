@@ -6,9 +6,6 @@ type node16 struct {
 	lth      int
 	keys     [16]byte
 	children [16]*bnode
-
-	//dep        int
-	//compressed []byte
 }
 
 func (n *node16) last() (byte, *bnode) {
@@ -17,22 +14,6 @@ func (n *node16) last() (byte, *bnode) {
 func (n *node16) first() (byte, *bnode) {
 	return n.keys[0], n.children[0]
 }
-
-/*
-func (n *node16) getCompressed() []byte {
-	return n.compressed
-}
-func (n *node16) setCompressed(pathpart []byte) {
-	n.compressed = pathpart
-}
-
-func (n *node16) setDepth(d int) {
-	n.dep = d
-}
-func (n *node16) depth() int {
-	return n.dep
-}
-*/
 
 func (n *node16) nchild() int {
 	return int(n.lth)
@@ -117,11 +98,9 @@ func (n *node16) gte(k *byte) (byte, *bnode) {
 
 	for i, b := range n.keys {
 		if b >= *k {
-			//vv("node16.gte() sees byte '%v' >= *k == %v, returning child i=%v", string(b), string(*k), i)
 			return b, n.children[i]
 		}
 	}
-	//vv("node16.gte() sees all keys < *k(%v): '%v'", string(*k), n.childkeysString())
 	return 0, nil
 }
 
@@ -157,7 +136,7 @@ func (n *node16) prev(k *byte) (byte, *bnode) {
 	return 0, nil
 }
 
-func (n *node16) replace(idx int, child *bnode) (old *bnode) {
+func (n *node16) replace(idx int, child *bnode, del bool) (old *bnode) {
 	old = n.children[idx]
 	if child == nil {
 		copy(n.keys[idx:], n.keys[idx+1:])
@@ -165,8 +144,14 @@ func (n *node16) replace(idx int, child *bnode) (old *bnode) {
 		n.keys[n.lth-1] = 0
 		n.children[n.lth-1] = nil
 		n.lth--
+		if del && idx < n.lth {
+			n.redoPren()
+		}
 	} else {
 		n.children[idx] = child
+		if del && child.pren != old.pren {
+			n.redoPren()
+		}
 	}
 	return
 }
@@ -182,13 +167,24 @@ func (n *node16) addChild(k byte, child *bnode) {
 	n.keys[idx] = k
 	n.children[idx] = child
 	n.lth++
+	n.redoPren()
+}
+
+// update pren cache of cumulative SubN
+func (n *node16) redoPren() {
+	tot := 0
+	for i, ch := range n.children {
+		if i >= n.lth {
+			break
+		}
+		ch.pren = tot
+		tot += ch.subn()
+	}
 }
 
 func (n *node16) grow() Inode {
 	nn := &node48{
 		lth: n.lth,
-		//compressed: append([]byte{}, n.compressed...),
-		//dep:        n.dep,
 	}
 	copy(nn.children[:], n.children[:])
 	for i, child := range n.children {
@@ -197,6 +193,7 @@ func (n *node16) grow() Inode {
 		}
 		nn.keys[n.keys[i]] = uint16(i) + 1
 	}
+	nn.redoPren()
 	return nn
 }
 
@@ -205,13 +202,11 @@ func (n *node16) min() bool {
 }
 
 func (n *node16) shrink() Inode {
-	nn := node4{
-		//compressed: append([]byte{}, n.compressed...),
-		//dep:        n.dep,
-	}
+	nn := node4{}
 	copy(nn.keys[:], n.keys[:])
 	copy(nn.children[:], n.children[:])
 	nn.lth = n.lth
+	nn.redoPren()
 	return &nn
 }
 
@@ -219,9 +214,7 @@ func (n *node16) String() string {
 	return fmt.Sprintf("n16[%x]", n.keys[:n.lth])
 }
 
-// lt
-
-// A nil k will return the last key.
+// lt (less than): A nil k will return the last key.
 //
 // Otherwise, we return the largest
 // (right-most) key that is < *k.

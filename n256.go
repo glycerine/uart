@@ -9,9 +9,6 @@ import (
 type node256 struct {
 	lth      int
 	children [256]*bnode
-
-	//compressed []byte
-	//dep        int
 }
 
 func (n *node256) last() (byte, *bnode) {
@@ -34,22 +31,6 @@ func (n *node256) first() (byte, *bnode) {
 	//panic("unreachable since node256 must have min 49 children")
 	return 0, nil // forgo panic, try to make inline-able.
 }
-
-/*
-func (n *node256) getCompressed() []byte {
-	return n.compressed
-}
-func (n *node256) setCompressed(pathpart []byte) {
-	n.compressed = pathpart
-}
-
-func (n *node256) setDepth(d int) {
-	n.dep = d
-}
-func (n *node256) depth() int {
-	return n.dep
-}
-*/
 
 func (n *node256) nchild() int {
 	return int(n.lth)
@@ -133,11 +114,18 @@ func (n *node256) prev(k *byte) (byte, *bnode) {
 	return 0, nil
 }
 
-func (n *node256) replace(idx int, child *bnode) (old *bnode) {
+func (n *node256) replace(idx int, child *bnode, del bool) (old *bnode) {
 	old = n.children[byte(idx)]
 	n.children[byte(idx)] = child
 	if child == nil {
 		n.lth--
+		if del {
+			n.redoPren()
+		}
+	} else {
+		if del && child.pren != old.pren {
+			n.redoPren()
+		}
 	}
 	return
 }
@@ -149,6 +137,19 @@ func (n *node256) full() bool {
 func (n *node256) addChild(k byte, child *bnode) {
 	n.children[k] = child
 	n.lth++
+	n.redoPren()
+}
+
+// update pren cache of cumulative SubN
+func (n *node256) redoPren() {
+	tot := 0
+	for _, ch := range n.children {
+		if ch == nil {
+			continue
+		}
+		ch.pren = tot
+		tot += ch.subn()
+	}
 }
 
 func (n *node256) grow() Inode {
@@ -162,8 +163,6 @@ func (n *node256) min() bool {
 func (n *node256) shrink() Inode {
 	nn := &node48{
 		lth: n.lth,
-		//compressed: append([]byte{}, n.compressed...),
-		//dep:        n.dep,
 	}
 	var index uint16
 	for i := range n.children {
@@ -174,6 +173,7 @@ func (n *node256) shrink() Inode {
 		nn.keys[i] = index
 		nn.children[index-1] = n.children[i]
 	}
+	nn.redoPren()
 	return nn
 }
 
