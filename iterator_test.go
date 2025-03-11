@@ -462,9 +462,9 @@ func TestIterator(t *testing.T) {
 			reverse: true,
 		},
 		{
-			desc:    "reverse from",
+			desc:    "reverse from3",
 			keys:    keys,
-			end:     "1268",
+			start:   "1268",
 			want:    reversed[1:],
 			reverse: true,
 		},

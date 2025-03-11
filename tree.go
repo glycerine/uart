@@ -76,7 +76,7 @@ import (
 // [5] "Counted B-Trees"
 // https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html
 type Tree struct {
-	Rwmut sync.RWMutex `msg:"-"`
+	RWmut sync.RWMutex `msg:"-"`
 
 	root *bnode
 	size int64
@@ -126,7 +126,7 @@ type Tree struct {
 	// lost data, and panic segfaults from torn reads.
 	//
 	// The easiest way to do this is with a sync.RWMutex.
-	// One such, the Rwmut on this Tree, will be
+	// One such, the RWmut on this Tree, will be
 	// employed for you if SkipLocking is allowed to
 	// default to false.
 	SkipLocking bool `msg:"-"`
@@ -157,9 +157,9 @@ func (t *Tree) Size() (sz int) {
 	if t.SkipLocking {
 		return int(t.size)
 	}
-	t.Rwmut.RLock()
+	t.RWmut.RLock()
 	sz = int(t.size)
-	t.Rwmut.RUnlock()
+	t.RWmut.RUnlock()
 	return
 }
 
@@ -216,8 +216,8 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 		panic("t *Tree cannot be nil in InsertLeaf")
 	}
 	if !t.SkipLocking {
-		t.Rwmut.Lock()
-		defer t.Rwmut.Unlock()
+		t.RWmut.Lock()
+		defer t.RWmut.Unlock()
 	}
 
 	var replacement *bnode
@@ -333,8 +333,8 @@ func (t *Tree) LastLeaf() (lf *Leaf, idx int, found bool) {
 // and LT return the last leaf in the tree.
 func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool) {
 	if !t.SkipLocking {
-		t.Rwmut.RLock()
-		defer t.Rwmut.RUnlock()
+		t.RWmut.RLock()
+		defer t.RWmut.RUnlock()
 	}
 	//vv("Find, smod='%v; key='%v'; t.size='%v'", smod, string(key), t.size)
 	if t.root == nil {
@@ -399,8 +399,8 @@ func (smod SearchModifier) String() string {
 func (t *Tree) Remove(key Key) (deleted bool, value any) {
 
 	if !t.SkipLocking {
-		t.Rwmut.Lock()
-		defer t.Rwmut.Unlock()
+		t.RWmut.Lock()
+		defer t.RWmut.Unlock()
 	}
 
 	var deletedNode *bnode
@@ -424,9 +424,9 @@ func (t *Tree) IsEmpty() (empty bool) {
 	if t.SkipLocking {
 		return t.root == nil
 	}
-	t.Rwmut.RLock()
+	t.RWmut.RLock()
 	empty = t.root == nil
-	t.Rwmut.RUnlock()
+	t.RWmut.RUnlock()
 	return
 }
 
@@ -442,9 +442,9 @@ func (t *Tree) IsEmpty() (empty bool) {
 // Iteration does no synchronization. If concurrent
 // writes are possible, the user must
 // ensure the equivalent of a read-lock is in place
-// during iteration, using the t.Rwmut if necessary.
-// Calling `tree.Rwmut.Rlock()` followed by
-// `defer tree.Rwmut.RUnlock()` is typical.
+// during iteration, using the t.RWmut if necessary.
+// Calling `tree.RWmut.Rlock()` followed by
+// `defer tree.RWmut.RUnlock()` is typical.
 func (t *Tree) Iterator(start, end []byte) *iterator {
 
 	if t.root == nil || t.size < 1 {
@@ -485,14 +485,17 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 
 // ReverseIterator starts a traversal over
 // the range (end, start] and returns keys in descending order
-// beginning with the first key that is <= start.
+// beginning with the first key that is <= start and > end.
 // The start key must be >= the end key. Either
 // can be nil to indicate the furthest possible range
 // in that direction.
+// Note that (x, x] will return the empty set.
 //
 // For example, suppose the keys {0, 1, 2} are
 // in the tree, and tree.ReverseIterator(0, 2) is called.
 // Reverse iteration will return 2, then 1.
+// The same holds true if start (2 here) is replaced by
+// by any integer > 2.
 //
 // tree.ReverseIterator(nil, 2) will yield 2, then 1, then 0;
 // as will tree.ReverseIterator(nil, nil).
@@ -501,9 +504,9 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 // Iteration does no synchronization. If concurrent
 // writes are possible, the user must
 // ensure the equivalent of a read-lock is in place
-// during iteration, using the Tree.Rwmut if necessary.
-// Calling `tree.Rwmut.Rlock()` followed by
-// `defer tree.Rwmut.RUnlock()` is typical.
+// during iteration, using the Tree.RWmut if necessary.
+// Calling `tree.RWmut.Rlock()` followed by
+// `defer tree.RWmut.RUnlock()` is typical.
 func (t *Tree) ReverseIterator(end, start []byte) *iterator {
 	if t.root == nil || t.size < 1 {
 		return &iterator{
@@ -563,9 +566,9 @@ func (t *Tree) At(i int) (lf *Leaf, ok bool) {
 		lf, ok = t.root.at(i)
 		return
 	}
-	t.Rwmut.RLock()
+	t.RWmut.RLock()
 	lf, ok = t.root.at(i)
-	t.Rwmut.RUnlock()
+	t.RWmut.RUnlock()
 	return
 }
 
@@ -582,18 +585,18 @@ func (t *Tree) Atv(i int) (val any, ok bool) {
 		}
 		return
 	}
-	t.Rwmut.RLock()
+	t.RWmut.RLock()
 	lf, ok = t.root.at(i)
 	if ok {
 		val = lf.Value
 	}
-	t.Rwmut.RUnlock()
+	t.RWmut.RUnlock()
 	return
 }
 
 func (t *Tree) LeafIndex(leaf *Leaf) (idx int, ok bool) {
-	t.Rwmut.RLock()
+	t.RWmut.RLock()
 	_, idx, ok = t.FindExact(leaf.Key)
-	t.Rwmut.RUnlock()
+	t.RWmut.RUnlock()
 	return
 }
