@@ -142,7 +142,7 @@ func (t *Tree) Size() (sz int) {
 func (t *Tree) String() string {
 	sz := t.Size()
 	if t.root == nil {
-		return "empty art.Tree"
+		return "empty uart.Tree"
 	}
 	return fmt.Sprintf("tree of size %v: ", sz) +
 		t.root.FlatString(0, -1, t.root)

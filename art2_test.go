@@ -397,11 +397,6 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 
 	fmt.Printf("done iterating. past @ should not removes.\n")
 
-	// run stats
-	//		st := tree.Stats()
-	//		fmt.Printf("st  = '%#v'\n", st)
-	//		// '&art.Stats{Node4s:49540, Node16s:4312, Node48s:262, Node256s:0, Keys:93790}'
-
 	//vv("at end of loop j = %v, vs tree.Size = %v", j, tree.Size())
 	if j != n {
 		// expected to stop earlier (asap);  j=93790; tree.Size=187579
