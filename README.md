@@ -7,6 +7,8 @@ Thus it is unserialized ART, or uart.
 
 This project provides an implemention
 of the Adaptive Radix Tree (ART) data structure[1]. 
+As a memory based sorted key/value store and a Order-Staticd tree,
+it offers range queries and integer based indexing.
 
 Why? In read-heavy situations, ART
 trees can have very good performance 
@@ -55,8 +57,8 @@ for each unique key. However, as the benchmarks
 below indicate (1440 nsec per lookup for red-black tree,
 versus 53 nsec for ART), lookups can be orders of
 magnitude faster (27x in that benchmark, for the read-only case).
-Note: red-black tree benchmarks are only in the serialization-included
-version, to avoid any 3rd party dependencies.
+Note: red-black tree benchmarks are omittted here
+to avoid any 3rd party dependencies.
 
 Ease of use: efficient greater-than/less-than key lookup
 and range iteration, as well as the
@@ -76,7 +78,7 @@ N keys in the tree. Trie operations are
 sometimes described as being O(k) time
 where k is the string length of the
 key, but in practice these are the same
-because k approximates log(N).
+because typically k approximates log(N).
 
 This ART tree supports only a single value for each
 key -- it is not a "multi-map" in the C++ sense.
