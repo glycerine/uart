@@ -18,7 +18,7 @@ import (
 
 // profile to see were allocations are, write path.
 func TestWriteForProfiling(t *testing.T) {
-	//return
+	return
 	startOnlineWebProfiling()
 
 	value := newValue(123)
@@ -36,7 +36,7 @@ func TestWriteForProfiling(t *testing.T) {
 
 // profile to see were allocations are, read path.
 func TestReadForProfiling(t *testing.T) {
-	//return
+	return
 	startOnlineWebProfiling()
 
 	paths := loadTestFile("assets/linux.txt")

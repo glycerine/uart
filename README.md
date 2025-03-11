@@ -1,31 +1,39 @@
-# Adaptive Radix Tree (ART) in Go: sorted and speedy
+# ART Trees in Go: an enhanced radix trie with path compression
 
-Note: this is a minimal-dependency version of 
+* is also an Order-Statistics tree
+
+This means you can access your dictionary 
+like a Go slice, with integer indexes.
+
+Naming? This is a minimal-dependency version of 
 my Adaptive Radix Tree (ART) implementation
 and it comes without serialization support. 
 Thus it is unserialized ART, or uart.
 
-This project provides an enhanced implemention
+What exactly? This project provides an enhanced implemention
 of the Adaptive Radix Tree (ART) data structure[1]. 
-It is both a memory-based sorted key/value store _and_
+It is both a memory-based sorted key/value store and
 an Order-Statistic tree. It offers ordered lookups,
 range queries, and integer based indexing.
 
-Why? In read-heavy situations, ART
+Why? In read-mostly situations, ART
 trees can have very good performance 
-(e.g. 49ns/op vs 32ns/op for a standard Go
-map wrapped with a RWMutex) while also providing
-sorted-ordered-key lookups, range queries,
-and remaining goroutine safe if writing
-does become necessary (see the benchmarks 
-below). Modern analytic-oriented databases 
+(e.g. 53ns/op for ART with RWMutex vs 32ns/op for a standard Go
+map wrapped with a RWMutex) while _also_ providing
+sorted-ordered-key lookups and range queries,
+things that hash tables cannot do.
+
+Who else? Modern analytics-oriented databases 
 like Tableau and DuckDB leverage ART trees
-to implement their indexes because they
-provide significant speedups[6].
-They were designed in 2013 by the German academic
-computer scientists whose HyPer database
-was bought to provide the backend engine
+to implement their indexes because of
+their read heavy workloads[6].
+ART trees are a radix tree with variable
+sized inner nodes. They were designed 
+in 2013 by the German computer scientists 
+whose HyPer database became the backend engine
 for Tableau[7].
+
+* more detail
 
 An ART tree is a sorted, key-value, in-memory
 dictionary. It maps arbitrary []byte keys to
@@ -48,31 +56,22 @@ new Redwood backend provides it as a feature[3],
 and users wish the API could be improved by
 offering it[4] in query result APIs.
 
-As an alternative to red-black trees,
-AVL trees, and other kinds of balanced binary trees,
-ART trees are attractive because of their speed and
-space savings. Like
-those trees, ART offers an ordered index
-of sorted keys allowing efficient O(log N) access
-for each unique key. However, as the benchmarks
-below indicate (1440 nsec per lookup for red-black tree,
-versus 53 nsec for ART), lookups can be orders of
-magnitude faster (27x in that benchmark, for the read-only case).
-Note: red-black tree benchmarks are omittted here
-to avoid any 3rd party dependencies.
-
 Ease of use: efficient greater-than/less-than key lookup
 and range iteration, as well as the
 ability to "treat the tree as a slice" using
 integer indexes (based on the counted B-tree
 idea -- see the tree.At(i int) method), make this ART tree implementation
-particularly easy to use in practice. Also,
-importantly, it makes it safe and efficient to
-delete from, or insert into, the tree during
+particularly easy to use in practice. 
+
+A practical feature is that it is safe to 
+delete from the tree, or insert into it, during
 iteration. The iterator will simply resume
 at the next available key beyond the previously
 returned key. Reverse iteration and prefix-only
-scanning are both supported.
+scanning are both supported. Each iterator
+Next() call is an efficient O(log N).
+A complete pass through the tree, even with 
+inter-leaved deletes, is still only O(N log N).
 
 The integer indexing makes this ART implementation
 also an Order-Statistic tree, much like 
@@ -81,12 +80,14 @@ quickly computing quantiles, medians, and
 other statistics of interest. Jumping
 forward by 500 keys, for example, is an 
 efficient O(log N) time operation for
-N keys in the tree. Trie operations are
-sometimes described as being O(k) time
+N keys in the tree. 
+
+Trie operations are sometimes described as being O(k) time
 where k is the string length of the
-key, but I'ved opted for the more familiar
-O(log N) description under the assumption, that,
-in practice k will approximate log(N).
+key. That may be technically more correct,
+but I'ved opted for the more familiar
+O(log N) description under the assumption that,
+in practice, k will approximate log(N).
 Path compression means there is an inner
 node in the radix trie only where two keys differ, and this
 closely resembles an (unbalanced) binary search tree.
@@ -108,14 +109,14 @@ single writer at a time, and any number
 of readers when there is no writing. Readers will block until
 the writer is done, and thus they see
 a fully consistent view of the tree.
-The RWMutex approach was the fastest
-and easiest to reason about in our
-applications without overly complicating
-the code base. The SkipLocking flag can
-be set to omit all locking if goroutine
-coordination is provided by other means,
-or unneeded (in the case of single goroutine
-only access).
+The SkipLocking flag can be set to omit 
+all locking if goroutine coordination 
+is provided by other means, or unneeded 
+(in the case of single goroutine only access). 
+
+Iterators are available. Be aware
+they do no locking of their own, much
+like the built-in Go map.
 
 [1] "The Adaptive Radix Tree: ARTful
 Indexing for Main-Memory Databases"
@@ -186,27 +187,59 @@ cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
 
 BenchmarkArtReadWrite
 BenchmarkArtReadWrite/frac_0
-BenchmarkArtReadWrite/frac_0-8                 	 1000000	      1418 ns/op	     120 B/op	       4 allocs/op
+BenchmarkArtReadWrite/frac_0-8                 	  999542	      3083 ns/op	     119 B/op	       4 allocs/op
 BenchmarkArtReadWrite/frac_1
-BenchmarkArtReadWrite/frac_1-8                 	 1000000	      1286 ns/op	     107 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_1-8                 	 1000000	      2629 ns/op	     107 B/op	       3 allocs/op
 BenchmarkArtReadWrite/frac_2
-BenchmarkArtReadWrite/frac_2-8                 	 1000000	      1201 ns/op	      95 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_2-8                 	 1000000	      2370 ns/op	      95 B/op	       3 allocs/op
 BenchmarkArtReadWrite/frac_3
-BenchmarkArtReadWrite/frac_3-8                 	 1000000	      1065 ns/op	      83 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_3-8                 	 1000000	      1955 ns/op	      83 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_4
-BenchmarkArtReadWrite/frac_4-8                 	 1267842	       940.6 ns/op	      71 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_4-8                 	 1000000	      1602 ns/op	      71 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_5
-BenchmarkArtReadWrite/frac_5-8                 	 1542188	       865.0 ns/op	      59 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_5-8                 	 1000000	      1285 ns/op	      59 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_6
-BenchmarkArtReadWrite/frac_6-8                 	 1891710	       705.0 ns/op	      47 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_6-8                 	 1263609	      1166 ns/op	      47 B/op	       1 allocs/op
 BenchmarkArtReadWrite/frac_7
-BenchmarkArtReadWrite/frac_7-8                 	 2465361	       639.1 ns/op	      35 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_7-8                 	 1807928	       926.8 ns/op	      35 B/op	       1 allocs/op
 BenchmarkArtReadWrite/frac_8
-BenchmarkArtReadWrite/frac_8-8                 	 3296506	       538.8 ns/op	      23 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_8-8                 	 2670330	       718.9 ns/op	      23 B/op	       0 allocs/op
 BenchmarkArtReadWrite/frac_9
-BenchmarkArtReadWrite/frac_9-8                 	 5126754	       363.6 ns/op	      12 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_9-8                 	 4315306	       446.3 ns/op	      11 B/op	       0 allocs/op
 BenchmarkArtReadWrite/frac_10
-BenchmarkArtReadWrite/frac_10-8                	23695676	        46.43 ns/op	       0 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_10-8                	22912306	        52.65 ns/op	       0 B/op	       0 allocs/op
+
+
+// Our ART tree, with RWMutex, but now
+// without the Order-Statistics facilities.
+//
+// It looks like they trash cache lines
+// pretty badly when there are mutliple
+// writers. Without them we go up to 5x faster.
+
+BenchmarkArtReadWrite
+BenchmarkArtReadWrite/frac_0
+BenchmarkArtReadWrite/frac_0-8                 	 1855828	       616.9 ns/op	     121 B/op	       4 allocs/op
+BenchmarkArtReadWrite/frac_1
+BenchmarkArtReadWrite/frac_1-8                 	 2153430	       560.5 ns/op	     108 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_2
+BenchmarkArtReadWrite/frac_2-8                 	 2620251	       507.5 ns/op	      95 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_3
+BenchmarkArtReadWrite/frac_3-8                 	 2843442	       442.2 ns/op	      83 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_4
+BenchmarkArtReadWrite/frac_4-8                 	 3177483	       421.0 ns/op	      71 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_5
+BenchmarkArtReadWrite/frac_5-8                 	 3872078	       425.9 ns/op	      59 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_6
+BenchmarkArtReadWrite/frac_6-8                 	 4407831	       405.9 ns/op	      47 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_7
+BenchmarkArtReadWrite/frac_7-8                 	 5084798	       387.1 ns/op	      35 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_8
+BenchmarkArtReadWrite/frac_8-8                 	 5877248	       283.1 ns/op	      23 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_9
+BenchmarkArtReadWrite/frac_9-8                 	 6440737	       248.2 ns/op	      11 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_10
+BenchmarkArtReadWrite/frac_10-8                	21996576	        53.03 ns/op	       0 B/op	       0 allocs/op
 
 
 // standard Go map wrapped with a sync.RWMutex (no range queries)
