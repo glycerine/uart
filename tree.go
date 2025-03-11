@@ -125,7 +125,7 @@ type Tree struct {
 	// overlap) of readers and writers from
 	// different goroutines who access the Tree
 	// simultaneously. Under this setting,
-	// the Tree will not do locking.
+	// the Tree will not do locking itself
 	// (it does by default, with SkipLocking false).
 	// Without synchronization, multiple goroutines
 	// will create data races, lost data, and panic
@@ -156,7 +156,10 @@ func (t *Tree) Size() (sz int) {
 	return
 }
 
-// String does no locking.
+// String does no locking. It returns
+// a string representation of the tree.
+// This is mostly for debugging, and
+// can be quite slow for large trees.
 func (t *Tree) String() string {
 	sz := t.Size()
 	if t.root == nil {
@@ -360,11 +363,11 @@ func (t *Tree) find_unlocked(smod SearchModifier, key Key) (lf *Leaf, idx int, f
 		b, found, dir, idx = t.root.get(key, 0, t.root, 0)
 	}
 	if t.size == 1 {
-		// 505 tree_test wanted this, maybe.
+		// Test 505 in tree_test.go needs this.
 		//
-		// special case is a leaf at the root, as
+		// We special case is a leaf at the root, as
 		// we don't want to slow down the hot path
-		// leaf code with this uncommon situation.
+		// leaf.go code with this uncommon situation.
 		//vv("smod = %v; dir=%v; found=%v; b=%v", smod, dir, found, b)
 		switch smod {
 		// note the dir is opposite of might be expected. correctly.
@@ -426,9 +429,10 @@ func (smod SearchModifier) String() string {
 
 // Remove deletes the key from the Tree.
 // If the key is not present deleted will return false.
-// If the key was present, value will supply
-// its associated value.
-func (t *Tree) Remove(key Key) (deleted bool, value any) {
+// If the key was present, deletedLeaf will supply
+// its associated Leaf from which value, in
+// the deletedLeaf.Value field, can be obtained.
+func (t *Tree) Remove(key Key) (deleted bool, deletedLeaf *Leaf) {
 
 	if !t.SkipLocking {
 		t.RWmut.Lock()
@@ -444,11 +448,11 @@ func (t *Tree) Remove(key Key) (deleted bool, value any) {
 		t.root = rn
 	})
 	if deleted {
-		value = deletedNode.leaf.Value
+		deletedLeaf = deletedNode.leaf
 		t.size--
 		t.treeVersion++
 	}
-	return deleted, value
+	return
 }
 
 // IsEmpty returns true iff the Tree is empty.
@@ -470,7 +474,7 @@ func (t *Tree) IsEmpty() (empty bool) {
 // stored in the tree.
 //
 // At() uses the counted B-tree approach
-// described by Simon Tatham of PuTTY fame[1].
+// described by Simon Tatham[1].
 // This is also known as an Order-Statistic tree
 // in the literature[2].
 //
@@ -514,7 +518,7 @@ func (t *Tree) Atv(i int) (val any, ok bool) {
 // key matching. The index represents
 // the position in the lexicographic
 // sorted order of keys, and so can be
-// used to compute quantile statistics
+// used to compute quantile and other statistics
 // efficiently. The time complexity
 // is O(log N).
 func (t *Tree) LeafIndex(leaf *Leaf) (idx int, ok bool) {

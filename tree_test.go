@@ -222,7 +222,7 @@ func TestArtTree_Remove(t *testing.T) {
 	tree.Insert(Key("sharedKey::2"), ByteSliceValue("value2"))
 
 	deleted, value := tree.Remove(Key("sharedKey::2"))
-	if got, want := value.(ByteSliceValue), ByteSliceValue("value2"); !bytes.Equal(got, want) {
+	if got, want := value.Value.(ByteSliceValue), ByteSliceValue("value2"); !bytes.Equal(got, want) {
 		t.Errorf("got value %v, want %v", got, want)
 	}
 	if !deleted {
@@ -356,7 +356,7 @@ func TestArtTree_Remove2(t *testing.T) {
 		if !deleted {
 			t.Errorf("[run:%d] expected key %v to be deleted", i, set.key)
 		}
-		if got, want := value.(ByteSliceValue), set.value; !bytes.Equal(got, want) {
+		if got, want := value.Value.(ByteSliceValue), set.value; !bytes.Equal(got, want) {
 			t.Errorf("[run:%d] got deleted value %v, but got %v", i, set.value, value)
 		}
 	}
@@ -470,7 +470,7 @@ func TestArtTree_Shrink(t *testing.T) {
 		if !deleted {
 			t.Errorf("expected key %v to be deleted", k)
 		}
-		if !bytes.Equal(old.(ByteSliceValue), v) {
+		if !bytes.Equal(old.Value.(ByteSliceValue), v) {
 			t.Errorf("got %v, want %v", old, v)
 		}
 		switch tree.size {
@@ -544,7 +544,7 @@ func TestArtTree_LargeKeyShrink(t *testing.T) {
 		if !deleted {
 			t.Errorf("expected key %v to be deleted", k)
 		}
-		if !bytes.Equal(old.(ByteSliceValue), v) {
+		if !bytes.Equal(old.Value.(ByteSliceValue), v) {
 			t.Errorf("got %v, want %v", old, v)
 		}
 		switch tree.size {
@@ -622,7 +622,7 @@ func TestArtTree_InsertOneAndDeleteOne(t *testing.T) {
 
 	// delete inserted
 	deleted, oldValue := tree.Remove(k)
-	if !bytes.Equal(oldValue.(ByteSliceValue), v) {
+	if !bytes.Equal(oldValue.Value.(ByteSliceValue), v) {
 		t.Errorf("got %v, want %v", oldValue, v)
 	}
 	if !deleted {
@@ -679,7 +679,7 @@ func TestArtTest_InsertAndDelete(t *testing.T) {
 	for i := 0; i < N; i++ {
 		k, v := g.next()
 		deleted, got := tree.Remove(k)
-		if !bytes.Equal(got.(ByteSliceValue), v) {
+		if !bytes.Equal(got.Value.(ByteSliceValue), v) {
 			t.Errorf("got %v, want %v", got, v)
 		}
 		if !deleted {
@@ -715,7 +715,7 @@ func TestArtTree_InsertLargeKeyAndDelete(t *testing.T) {
 	for i := 0; i < N; i++ {
 		k, v := g.next()
 		deleted, got := tree.Remove(k)
-		if !bytes.Equal(got.(ByteSliceValue), v) {
+		if !bytes.Equal(got.Value.(ByteSliceValue), v) {
 			t.Errorf("got %v, want %v", got, v)
 		}
 		if !deleted {
@@ -776,7 +776,7 @@ func TestTree_InsertWordSets(t *testing.T) {
 		if !deleted {
 			t.Errorf("[run:%d] should got %s,but got %s", i, w, v)
 		}
-		if !bytes.Equal(v.([]byte), w) {
+		if !bytes.Equal(v.Value.([]byte), w) {
 			t.Errorf("[run:%d] should got %s,but got %s", i, w, v)
 		}
 	}

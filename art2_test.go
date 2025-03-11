@@ -128,7 +128,7 @@ func TestInsertManyWordsAndRemoveThemAll(t *testing.T) {
 			//vv("sz = %v", tree.Size()) // sz = 235872
 			panic(fmt.Sprintf("Remove did not delete '%v', wat? dup = '%v'", line, dup))
 		}
-		got := string(delval.(*TestBytes).Slc)
+		got := string(delval.Value.(*TestBytes).Slc)
 		if got != line {
 			panic(fmt.Sprintf("delval: '%v' != Remove key line: '%v' as it should", got, line))
 		}
@@ -682,7 +682,7 @@ func Test_n4replace_buggy_test(t *testing.T) {
 			_, dup := removed[line]
 			panic(fmt.Sprintf("Remove did not delete '%v', wat? dup = '%v'", line, dup))
 		}
-		got := string(delval.(*TestBytes).Slc)
+		got := string(delval.Value.(*TestBytes).Slc)
 		if got != line {
 			panic(fmt.Sprintf("delval: '%v' != Remove key line: '%v' as it should", got, line))
 		}
