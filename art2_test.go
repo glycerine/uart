@@ -705,6 +705,14 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 	tree := NewArtTree()
 	paths := loadTestFile("assets/linux.txt")
 
+	limit := 10
+	if limit > 0 {
+		paths = paths[:limit]
+	}
+
+	// fixme: sort paths first so our
+	// check is actually correct.
+
 	var sorted [][]byte
 	for i, w := range paths {
 		_ = i
@@ -715,6 +723,8 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		sorted = append(sorted, w)
 	}
 	sort.Sort(sliceByteSlice(sorted))
+
+	vv("tree = %v", tree.stringNoKeys(-1))
 
 	j := 0
 	for key, leaf := range Ascend(tree, nil, nil) {

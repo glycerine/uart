@@ -163,6 +163,15 @@ func (n *Leaf) FlatString(depth int, recurse int) (s string) {
 	)
 }
 
+func (n *Leaf) stringNoKeys(depth int) (s string) {
+	rep := strings.Repeat("    ", depth)
+	return fmt.Sprintf(`%[1]v %p leaf:%v`,
+		rep,
+		n,
+		"\n",
+	)
+}
+
 func (n *Leaf) str() string {
 	return string(n.Key)
 }

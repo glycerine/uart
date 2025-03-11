@@ -182,6 +182,13 @@ func (a *bnode) FlatString(depth int, recurse int, selfb *bnode) (s string) {
 	return a.inner.FlatString(depth, recurse, a)
 }
 
+func (a *bnode) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
+	if a.isLeaf {
+		return a.leaf.stringNoKeys(depth)
+	}
+	return a.inner.stringNoKeys(depth, recurse, a)
+}
+
 func (k Kind) String() string {
 	switch k {
 	case Leafy:

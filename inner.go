@@ -454,3 +454,47 @@ func (n *Inner) rlast() *Leaf {
 		_, b = b.last()
 	}
 }
+
+func (n *Inner) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
+
+	keystr := string(n.Keybyte)
+
+	if n.Keybyte == 0 {
+		keystr = "(zero)"
+	}
+	pren := "na"
+	if selfb != nil {
+		pren = fmt.Sprintf("%v", selfb.pren)
+	}
+
+	rep := strings.Repeat("    ", depth)
+
+	s += fmt.Sprintf(`%v %p %v, key '%v' childkeys: %v (treedepth %v) compressed='%v' path='%v' (subN: %v; pren: %v)%v`,
+		rep,
+		n,
+		n.Kind().String(),
+		keystr,
+		n.Node.childkeysString(),
+		depth,
+		string(n.compressed),
+		// keep commented out path stuff for debugging!
+		//string(n.path),
+		"(paths commented out atm)",
+		n.SubN,
+		pren,
+		"\n",
+	)
+
+	if recurse == 0 {
+		return s // just this node.
+	}
+	key, node := n.Node.next(nil)
+	k := 0
+	_ = k
+	for node != nil {
+		s += node.stringNoKeys(depth+1, recurse-1, node)
+		key, node = n.Node.next(&key)
+		k++
+	}
+	return s
+}

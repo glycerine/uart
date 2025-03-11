@@ -148,6 +148,17 @@ func (t *Tree) String() string {
 		t.root.FlatString(0, -1, t.root)
 }
 
+// recurse -1 for full tree; otherwise only
+// that many levels.
+func (t *Tree) stringNoKeys(recurse int) string {
+	sz := t.Size()
+	if t.root == nil {
+		return "empty uart.Tree"
+	}
+	return fmt.Sprintf("tree of size %v: ", sz) +
+		t.root.stringNoKeys(0, recurse, t.root)
+}
+
 // InsertX now copies the key to avoid bugs.
 // The value is held by pointer in the interface.
 // The x slice is not copied.
