@@ -1,11 +1,9 @@
-# the Adaptive radix tree (ART): sorted and speedy
+# Adaptive Radix Tree (ART) in Go: sorted and speedy
 
 Note: this is a minimal-dependency version of 
-the Adaptive Radix Tree (ART) implementation at
-https://github.com/glycerine/art-adaptive-radix-tree
-and it comes without greenpack serialization support. 
-Thus it is unserialized ART, or uart. See the mother project
-above for full benchmark code and built-in serialization capabilities.
+my Adaptive Radix Tree (ART) implementation
+and it comes without serialization support. 
+Thus it is unserialized ART, or uart.
 
 This project provides an implemention
 of the Adaptive Radix Tree (ART) data structure[1]. 

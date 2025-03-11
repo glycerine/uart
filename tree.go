@@ -95,27 +95,6 @@ type Tree struct {
 	// fast path is used.
 	treeVersion int64
 
-	// Note: applies to the version with serialization only.
-	//
-	// Leafz is for serialization. You must
-	// set leafByLeaf=false if you want to
-	// automatically serialize a Tree when it is
-	// a field in other structs. In that case,
-	// the pre-save and post-load hooks will
-	// use Leafz as a serialization buffer.
-	// Otherwise Leafz is unused.
-	//
-	// Using Leafz may require more memory, since
-	// the tree is fully serialized (temporarily)
-	// into Leafz before writing anything to disk.
-	// When leafByLeaf is true, the tree is
-	// streamed to disk incrementally. See
-	// saver.go and the TreeSaver and TreeLoader
-	// for standalone save/load facilities.
-	//
-	// Only leaf nodes are serialized to disk.
-	Leafz []*Leaf `zid:"0"`
-
 	// SkipLocking means do no internal
 	// synchronization, because a higher
 	// component is doing so.
