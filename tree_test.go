@@ -284,9 +284,13 @@ func TestArtTree_FindExact(t *testing.T) {
 
 	tree.Insert(Key("sharedKey::1"), ByteSliceValue("value1"))
 
-	value, _, found = tree.FindExact(Key("sharedKey"))
+	//vv("tree = %v", tree)
+	var idx int
+	value, idx, found = tree.FindExact(Key("sharedKey"))
+	_ = idx
+	//vv("idx = %v", idx)
 	if value != nil {
-		t.Errorf("expected nil value, got %v", value)
+		t.Errorf("expected nil value, got %v", string(value.(ByteSliceValue)))
 	}
 	if found {
 		t.Error("expected key not to be found")
@@ -294,7 +298,7 @@ func TestArtTree_FindExact(t *testing.T) {
 
 	value, _, found = tree.FindExact(Key("sharedKey::2"))
 	if value != nil {
-		t.Errorf("expected nil value, got %v", value)
+		t.Errorf("expected nil value, got %v", string(value.(ByteSliceValue)))
 	}
 	if found {
 		t.Error("expected key not to be found")
@@ -304,7 +308,7 @@ func TestArtTree_FindExact(t *testing.T) {
 
 	value, _, found = tree.FindExact(Key("sharedKey::3"))
 	if value != nil {
-		t.Errorf("expected nil value, got %v", value)
+		t.Errorf("expected nil value, got %v", string(value.(ByteSliceValue)))
 	}
 	if found {
 		t.Error("expected key not to be found")
@@ -1182,7 +1186,12 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 				bytes.Equal(lf.Key, sorted[0]) {
 				// good. correct. okay.
 			} else {
-				panic(fmt.Sprintf("bad GTE smaller-than-smallest response! want key='%v', got='%v'; found=%v; idx=%v", string(sorted[0]), string(lf.Key), found, idx))
+				if lf == nil {
+					panic(fmt.Sprintf("bad GTE smaller-than-smallest response! want key='%v', found=%v (wanted true); idx=%v (wanted 0)", string(sorted[0]), found, idx))
+				} else {
+					vv("sz = %v", tree.Size())
+					panic(fmt.Sprintf("bad GTE smaller-than-smallest response! want key='%v', got='%v'; found=%v; idx=%v", string(sorted[0]), string(lf.Key), found, idx))
+				}
 			}
 		}
 

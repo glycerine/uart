@@ -347,20 +347,45 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool
 		return t.root.leaf, 0, true
 	}
 	var b *bnode
+	var dir direc
 	switch smod {
 	case GTE, GT:
-		b, found, _, idx = t.root.getGTE(key, 0, smod, t.root, t, 0, false, 0)
+		b, found, dir, idx = t.root.getGTE(key, 0, smod, t.root, t, 0, false, 0)
 	case LTE, LT:
-		b, found, _, idx = t.root.getLTE(key, 0, smod, t.root, t, 0, false, 0)
+		b, found, dir, idx = t.root.getLTE(key, 0, smod, t.root, t, 0, false, 0)
 	default:
-		b, found, _, idx = t.root.get(key, 0, t.root, 0)
+		b, found, dir, idx = t.root.get(key, 0, t.root, 0)
 	}
 	if t.size == 1 {
+		// 505 tree_test wanted this, maybe.
+		//
 		// special case is a leaf at the root, as
 		// we don't want to slow down the hot path
 		// leaf code with this uncommon situation.
-		if b != nil {
-			found = true
+		//vv("smod = %v; dir=%v; found=%v; b=%v", smod, dir, found, b)
+		switch smod {
+		// note the dir is opposite of might be expected.
+		case GTE:
+			if dir <= 0 && b != nil {
+				found = true
+			}
+		case GT:
+			if dir < 0 && b != nil {
+				found = true
+			}
+		case LTE:
+			if dir >= 0 && b != nil {
+				found = true
+			}
+		case LT:
+			if dir > 0 && b != nil {
+				found = true
+			}
+		default:
+			// Exact match on leaf
+			if !found {
+				b = nil
+			}
 		}
 	}
 	if b != nil {
