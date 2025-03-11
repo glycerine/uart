@@ -351,14 +351,14 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 	fmt.Printf("begin iterating\n")
 
 	// it is size 8 in minimal problem case here. ok to print.
-	vv("sz = %v; tree = '%v'", tree.Size(), tree)
+	//vv("sz = %v; tree = '%v'", tree.Size(), tree)
 
 	// finds a LeafIndex() problem, nothing to do with iteration!
-	verifyLeafIndexAt(tree)
-	vv("past verifyLeafIndexAt() here.") // seen
+	//verifyLeafIndexAt(tree)
+	//vv("past verifyLeafIndexAt() here.") // seen
 
-	// our SubN are off, which will make pren off.<- might have just been that FlatString cannot get the right info? why not? b/c it doesn't have a selfb pointer to itself, rather *Inner.
-	verifySubN(tree.root) // why not detected? b/c del is messing it up below!
+	// our SubN were off due to premature n.SubN-- in del()
+	//verifySubN(tree.root)
 
 	var beg, endx []byte
 	it := tree.Iter(beg, endx)
@@ -367,20 +367,10 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		key := it.Key()
 		val := it.Value()
 		idx := it.Index()
-		vv("k=%v; idx=%v; see key = '%v'", k, idx, string(key))
+		_ = idx
+		//vv("k=%v; idx=%v; see key = '%v'", k, idx, string(key))
 
-		verifySubN(tree.root) // detects problem k=2 printed, so on k=1
-
-		// TODO remove
-		if k == 1 {
-			verboseVerbose = true
-		} else {
-			verboseVerbose = false
-		}
-		if k == 1 {
-			verifySubN(tree.root)
-			vv("at k=1, tree = '%v'", tree)
-		}
+		//verifySubN(tree.root) // detects problem k=2 printed, so on k=1
 
 		_ = key
 		w := string(val.([]byte))
@@ -402,8 +392,8 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		k++
 	}
 
-	verifyLeafIndexAt(tree)
-	verifySubN(tree.root)
+	//verifyLeafIndexAt(tree)
+	//verifySubN(tree.root)
 
 	fmt.Printf("done iterating. past @ should not removes.\n")
 

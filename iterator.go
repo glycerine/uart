@@ -227,7 +227,7 @@ func (i *iterator) Next() (ok bool) {
 		if i.reverse {
 			i.curIdx--
 		} else {
-			vv("incrementing i.curIdx to %v", i.curIdx+1)
+			//vv("incrementing i.curIdx to %v", i.curIdx+1)
 			i.curIdx++
 		}
 	}

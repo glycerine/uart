@@ -150,7 +150,7 @@ func (n *node4) redoPren() {
 		if chSubN == 0 {
 			panic(fmt.Sprintf("where? subn() gave 0 back for i=%v; ch='%v' (p=%p); n.lth=%v", i, ch, ch, n.lth)) // during delete! of not a node!?!
 		}
-		vv("%p on child i=%v, set pren to %v, then add ch.subn() = %v", n, i, tot, ch.subn())
+		//vv("%p on child i=%v, set pren to %v, then add ch.subn() = %v", n, i, tot, ch.subn())
 		ch.pren = tot
 		tot += ch.subn()
 	}
