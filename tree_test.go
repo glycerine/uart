@@ -1647,7 +1647,7 @@ func verifySubN(root *bnode) (leafcount int) {
 		}
 
 		if root.inner.SubN != leafcount {
-			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, root.inner.SubN))
+			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v; node='%v'", leafcount, root.inner.SubN, root))
 		}
 		if leafcount == 0 {
 			panic("leafcount of 0?")

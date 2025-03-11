@@ -368,7 +368,6 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		val := it.Value()
 		idx := it.Index()
 		vv("k=%v; idx=%v; see key = '%v'", k, idx, string(key))
-		k++
 
 		verifySubN(tree.root) // detects problem k=2 printed, so on k=1
 
@@ -377,6 +376,10 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 			verboseVerbose = true
 		} else {
 			verboseVerbose = false
+		}
+		if k == 1 {
+			verifySubN(tree.root)
+			vv("at k=1, tree = '%v'", tree)
 		}
 
 		_ = key
@@ -396,6 +399,7 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 			t.Fatalf("expected size %v, saw %v", n, tree.Size())
 		}
 		j++
+		k++
 	}
 
 	verifyLeafIndexAt(tree)

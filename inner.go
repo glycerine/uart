@@ -164,9 +164,11 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 		// key is not found
 		return false, nil
 	}
-	n.SubN--
+	// too early! might not actually delete!
+	//n.SubN--
 
 	if next.isLeaf && next.leaf.cmp(key) {
+		n.SubN--
 
 		// deleting a leaf in next
 		_, isNode4 := n.Node.(*node4)
