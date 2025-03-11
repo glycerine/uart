@@ -132,7 +132,8 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 			//replacement.inner.path = next.inner.path
 		}
 
-		// this fixes a stale issue we detected. art2_test.go:357
+		// this fixes a stale issue we detected. art2_test.go:357;
+		// makes Test_Seq2_Iter_on_LongCommonPrefixes green.
 		n.Node.redoPren()
 
 		return selfb, updated
@@ -141,10 +142,6 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 
 	_, updated = next.insert(lf, nextDepth+1, next, tree, n)
 	n.SubN++
-
-	// needed?
-	//n.Node.redoPren()
-	//next.redoPren()
 
 	return selfb, updated
 }
@@ -228,9 +225,8 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 	// once we stop del from trashing pren, put this condition back for speed.
 	if deleted {
 		n.SubN--
+		n.Node.redoPren() // essential! for LeafIndex/id to be correct.
 	}
-	n.Node.redoPren() // essential! for LeafIndex/id to be correct.
-	//}
 	return deleted, deletedNode
 }
 
