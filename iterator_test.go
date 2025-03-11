@@ -39,6 +39,7 @@ func TestIterConcurrentExpansion(t *testing.T) {
 	for _, key := range keys {
 		tree.Insert(key, key)
 	}
+	vv("orig tree: %v", tree)
 	iter := tree.Iter(nil, nil)
 	if !iter.Next() {
 		t.Fatal("expected Next() to return true")
@@ -50,6 +51,9 @@ func TestIterConcurrentExpansion(t *testing.T) {
 	// adding a 3rd key, after iter started,
 	// that is after the 2nd key we have not read yet.
 	tree.Insert([]byte("aaca"), nil)
+
+	vv("after adding 'aaca', tree: %v", tree)
+
 	if !iter.Next() {
 		t.Fatal("expected Next() to return true")
 	}

@@ -199,11 +199,37 @@ func (i *iterator) Next() (ok bool) {
 		// to the tree, reset the stack and
 		// indexes. Proceed from the
 		// last provided key+1 (-1 for reverse).
-	}
-	if i.reverse {
-		i.curIdx--
+		vv("tree modified, reseting iterator state")
+
+		smod := GT
+		if i.reverse {
+			smod = LT
+		}
+		leaf, idx, ok := i.tree.Find(smod, i.cursor)
+		if !ok {
+			vv("ugh. could not find successor to i.cursor '%v'. terminating iteration", string(i.cursor))
+			i.closed = true
+			return false
+		}
+		i.curIdx = idx
+		i.leaf = leaf
+		i.key = leaf.Key
+		i.value = leaf.Value
+		i.treeVersion = i.tree.treeVersion
+
+		// reset the stack from scratch
+		i.cursor = leaf.Key
+		i.stack = nil
+		if exit, next := i.init(); exit {
+			return next
+		}
 	} else {
-		i.curIdx++
+		// no change in treeVersion
+		if i.reverse {
+			i.curIdx--
+		} else {
+			i.curIdx++
+		}
 	}
 
 	if i.stack == nil {
@@ -331,6 +357,18 @@ func (i *iterator) Value() any {
 	return i.value
 }
 
+// Key returns the current value of
+// the iterator after the first successful
+// Next() call.
+//
+// Warning: the user must not modify
+// the key -- in particular if concurrent changes to
+// the tree are made. We depend
+// on its value to reset and continue
+// the iteration after any tree changes.
+//
+// After tree modification, we continue
+// from the successor to the last good key.
 func (i *iterator) Key() Key {
 	return i.key
 }
