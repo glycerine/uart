@@ -248,15 +248,18 @@ func (i *iterator) Next() (ok bool) {
 	}
 	ok = i.iterate()
 
-	// todo: turn off these assertions.
-	if ok {
-		// confirm our indexes are in correspondence.
-		_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
-		if !leafIdxOK {
-			panic("iterate was ok but LeafIndex was not")
-		}
-		if leafIdx != i.curIdx {
-			panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v; i.leaf='%v'", leafIdx, i.curIdx, i.leaf)) // red panic: leafIdx = 21 but i.curIdx = 24; i.leaf=' 0xc0026ffdd0 leaf: key '../../torvalds/linux/.git/hooks/prepare-commit-msg.sample'
+	// these are assertions that were useful for catching issues,
+	// but just slow down production use.
+	if false {
+		if ok {
+			// confirm our indexes are in correspondence.
+			_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
+			if !leafIdxOK {
+				panic("iterate was ok but LeafIndex was not")
+			}
+			if leafIdx != i.curIdx {
+				panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v; i.leaf='%v'", leafIdx, i.curIdx, i.leaf))
+			}
 		}
 	}
 	return

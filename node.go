@@ -226,7 +226,7 @@ type Inner struct {
 	// Note: keep this commented out path field for debugging!
 	// For sane debugging, comment this in
 	// back in to store the full path on each Inner node.
-	path []byte
+	//path []byte
 
 	// counted B-tree style: how many
 	// leaves are stored in our sub-tree.

@@ -928,8 +928,8 @@ func Test_808_ArtTree_SearchMod_big_GTE(t *testing.T) {
 	sorted := loadTestFile("assets/linux.txt")
 	sort.Sort(sliceByteSlice(sorted))
 
-	// while debugging
-	smalltest := true
+	// set true for quicker debugging
+	smalltest := false
 	if smalltest {
 		sorted = sorted[:1200] // 306,600 green, 1200 red on i=302
 		//sorted = sorted[93774:]
