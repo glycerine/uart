@@ -248,15 +248,17 @@ func (i *iterator) Next() (ok bool) {
 	}
 	ok = i.iterate()
 
-	// todo: turn off these assertions.
-	if ok {
-		// confirm our indexes are in correspondence.
-		_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
-		if !leafIdxOK {
-			panic("iterate was ok but LeafIndex was not")
-		}
-		if leafIdx != i.curIdx {
-			panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v; i.leaf='%v'", leafIdx, i.curIdx, i.leaf))
+	if false {
+		// todo: turn off these assertions.
+		if ok {
+			// confirm our indexes are in correspondence.
+			_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
+			if !leafIdxOK {
+				panic("iterate was ok but LeafIndex was not")
+			}
+			if leafIdx != i.curIdx {
+				panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v; i.leaf='%v'", leafIdx, i.curIdx, i.leaf))
+			}
 		}
 	}
 	return
@@ -397,6 +399,9 @@ func (i *iterator) inRange(key []byte) (inside bool) {
 	return bytes.Compare(key, i.cursor) >= 0 && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) < 0)
 }
 
+// Ascend wraps a tree.Iter() iteration in
+// ascending lexicographic order. See the
+// Tree.Iter description for details.
 func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {
 	return func(yield func(key Key, value any) bool) {
 		it := t.Iter(beg, endx)
