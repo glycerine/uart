@@ -2085,3 +2085,79 @@ func Test600_fuzz_compare_random_insert_delete_to_map(t *testing.T) {
 
 	}
 }
+
+func Test620_unlocked_read_comparison(t *testing.T) {
+
+	// with data already in, how fast are we vs a map?
+
+	// K = total number of keys (leaves) in the starting tree.
+	// nothing fancy, just sequential integers -> strings.
+	K := 10_000_000
+
+	var keys []string
+	var keyb [][]byte
+	for k := range K {
+		key := fmt.Sprintf("%09d", k)
+		keys = append(keys, key)
+		keyb = append(keyb, []byte(key))
+	}
+
+	tree := NewArtTree()
+	tree.SkipLocking = true
+
+	gomap := make(map[string]bool)
+	t0 := time.Now()
+	for _, key := range keys {
+		gomap[key] = true
+	}
+	e0 := time.Since(t0)
+	rate0 := e0 / time.Duration(K)
+	fmt.Printf("map time to store %v keys: %v (%v/op)\n", K, e0, rate0)
+
+	t0 = time.Now()
+	for k, v := range gomap {
+		_, _ = k, v
+	}
+	e0 = time.Since(t0)
+	rate0 = e0 / time.Duration(K)
+	fmt.Printf("map reads %v keys: elapsed %v (%v/op)\n", K, e0, rate0)
+
+	t1 := time.Now()
+	for _, kb := range keyb {
+		tree.Insert(kb, true)
+	}
+	e1 := time.Since(t1)
+	rate1 := e1 / time.Duration(K)
+	fmt.Printf("uart.Tree time to store %v keys: %v (%v/op)\n", K, e1, rate1)
+
+	t1 = time.Now()
+	for lf := range Ascend(tree, nil, nil) {
+		_ = lf
+	}
+	e1 = time.Since(t1)
+	rate1 = e1 / time.Duration(K)
+	fmt.Printf("uart.Tree reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+
+	// try the native iterator instead of iter.Seq
+
+	it := tree.Iter(nil, nil)
+	t1 = time.Now()
+	for it.Next() {
+		_ = it.Key
+	}
+	e1 = time.Since(t1)
+	rate1 = e1 / time.Duration(K)
+	fmt.Printf("uart Iter() reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+
+	/*
+		go test -v -run 620
+		=== RUN   Test620_unlocked_read_comparison
+		map time to store 10_000_000 keys: 2.706811659s (270ns/op)
+		map reads 10_000_000 keys: elapsed 103.825162ms (10ns/op)
+
+		uart.Tree time to store 10_000_000 keys: 3.205033649s (320ns/op)
+		tree reads 10_000_000 keys: elapsed 350.897572ms (35ns/op)
+		uart Iter() reads 10_000_000 keys: elapsed 342.95423ms (34ns/op)
+		--- PASS: Test620_unlocked_read_comparison (8.27s)
+	*/
+}

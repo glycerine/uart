@@ -178,6 +178,25 @@ exact-match lookups.
 
 ```bash
 
+Unlocked apples-to-apples versus the Go map:
+
+(To take synchronization overhead out of the picture.)
+
+go test -v -run 620
+=== RUN   Test620_unlocked_read_comparison
+
+map time to store 10_000_000 keys: 2.706811659s (270ns/op)
+map reads 10_000_000 keys: elapsed 103.825162ms (10ns/op)
+
+uart.Tree time to store 10_000_000 keys: 3.205033649s (320ns/op)
+tree reads 10_000_000 keys: elapsed 350.897572ms (35ns/op)
+
+Using the native iterator instead of iter.Seq is a tiny bit faster:
+uart Iter() reads 10_000_000 keys: elapsed 342.95423ms (34ns/op)
+
+--- PASS: Test620_unlocked_read_comparison (8.27s)
+
+
 started at Tue 2025 Mar 11 11:14:51
 
 go test -v -run=blah -bench=. -benchmem
