@@ -9,10 +9,6 @@ import (
 
 var _ = sync.RWMutex{}
 
-const (
-	XTypBytes int = 0
-)
-
 type TestBytes struct {
 	Slc []byte `zid:"0"`
 }
