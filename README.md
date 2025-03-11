@@ -33,6 +33,12 @@ in 2013 by the German computer scientists
 whose HyPer database became the backend engine
 for Tableau[7].
 
+Here is a nice slide deck summarizing the
+paper.
+
+https://bu-disc.github.io/CS561-Spring2023/slides/CAS-CS561-Class12.pdf
+
+
 * more detail
 
 An ART tree is a sorted, key-value, in-memory
