@@ -217,7 +217,8 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 
 	expect := len(paths)
 	if true { //underRaceDetector {
-		expect = 100
+		expect = 8
+		//expect = 100
 		paths = paths[:expect]
 	}
 
@@ -288,6 +289,16 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		if updated := tree.Insert(w, w); updated {
 			t.Fatalf("i=%v, could not add '%v', already in tree", i, string(w))
 		}
+		// when does our stale pren happen? at i=7
+		//vv("doing i = %v", i)
+		//if i == 6 {
+		//	verboseVerbose = true
+		//}
+
+		//verifyPren(tree.root) // panic, stale pren detected.
+
+		//verifyLeafIndexAt(tree) // panic! wrong indexes here detected
+
 		if tree.Size() != (i + 1) {
 			// expected 0 paths in tree, got different
 			t.Fatalf("expected %v paths in tree, got size: %v", i, tree.Size())
@@ -295,6 +306,10 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 	}
 
 	fmt.Printf("past all back in.\n")
+
+	// does this stop the incorrect LeafIndex() problems?
+	// no. we did fix a stale pren issue, but there is another problem too.
+	//fullTreeRedoPren(tree.root)
 
 	// try to delete with prefixes that are in tree
 	// but full paths that are not, and verify no delete happens.
@@ -335,12 +350,34 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 
 	fmt.Printf("begin iterating\n")
 
+	// it is size 8 in minimal problem case here. ok to print.
+	vv("sz = %v; tree = '%v'", tree.Size(), tree)
+
+	// finds a LeafIndex() problem, nothing to do with iteration!
+	verifyLeafIndexAt(tree)
+	vv("past verifyLeafIndexAt() here.") // seen
+
+	// our SubN are off, which will make pren off.<- might have just been that FlatString cannot get the right info? why not? b/c it doesn't have a selfb pointer to itself, rather *Inner.
+	verifySubN(tree.root) // why not detected? b/c del is messing it up below!
+
 	var beg, endx []byte
 	it := tree.Iter(beg, endx)
+	k := 0
 	for it.Next() {
 		key := it.Key()
 		val := it.Value()
-		//vv("see key = '%v'", string(key)) // only see 6 keys before deadlock on -race
+		idx := it.Index()
+		vv("k=%v; idx=%v; see key = '%v'", k, idx, string(key))
+		k++
+
+		verifySubN(tree.root) // detects problem k=2 printed, so on k=1
+
+		// TODO remove
+		if k == 1 {
+			verboseVerbose = true
+		} else {
+			verboseVerbose = false
+		}
 
 		_ = key
 		w := string(val.([]byte))
@@ -352,7 +389,7 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 
 		v := w + "@"
 		//vv("on j = %v, deleting v = '%v' which should not be present.", j, v)
-		if gone, _ := tree.Remove([]byte(v)); gone {
+		if gone, _ := tree.Remove([]byte(v)); gone { // seeing an incorrect 0 subn in here.
 			t.Fatalf("unexpected Remove of key not in tree: '%v'", v)
 		}
 		if int(tree.Size()) != n {
@@ -360,6 +397,9 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		}
 		j++
 	}
+
+	verifyLeafIndexAt(tree)
+	verifySubN(tree.root)
 
 	fmt.Printf("done iterating. past @ should not removes.\n")
 
@@ -668,62 +708,27 @@ func Test_n4replace_buggy_test(t *testing.T) {
 	}
 }
 
-/*
-red order when inserted 4:
-
-map based: removing line 'aa
-'
-map based: removing line 'aal
-'
-map based: removing line 'A
-'
-map based: removing line 'a
-'
-panic: deleted wrong key: aimed for 'a
-	', but got 'aal
-	' [recovered]
-
-another red order:
-map based: removing line 'a
-'
-map based: removing line 'aa
-'
-map based: removing line 'aal
-'
-map based: removing line 'A
-'
-panic: deleted wrong key: aimed for 'A
-	', but got 'aal <- note maybe only green when aal is deleted last
-
-panic: deleted wrong key: aimed for 'A
-	', but got 'aal
-
-
-*/
-
-/*
-red:
-art2_test.go:123 2025-03-04 07:10:37.837 -0600 CST permseed 0 => word_order = '[]string{"aa\n", "a\n", "aal\n", "A\n"}'
-
-art2_test.go:124 2025-03-04 07:18:36.694 -0600 CST permseed 3 => word_order = '[]string{"aa\n", "A\n", "aal\n", "a\n"}'
-
-art2_test.go:124 2025-03-04 07:19:17.168 -0600 CST permseed 4 => word_order = '[]string{"a\n", "A\n", "aal\n", "aa\n"}'
-
-art2_test.go:124 2025-03-04 07:20:15.62 -0600 CST permseed 5 => word_order = '[]string{"aal\n", "A\n", "aa\n", "a\n"}'
-
-art2_test.go:124 2025-03-04 07:20:38.388 -0600 CST permseed 6 => word_order = '[]string{"a\n", "aa\n", "aal\n", "A\n"}'
-
-art2_test.go:125 2025-03-04 07:23:28.262 -0600 CST permseed 7 => word_order = '[]string{"A\n", "aa\n", "aal\n", "a\n"}'
-
-art2_test.go:125 2025-03-04 07:24:27.896 -0600 CST permseed 9 => word_order = '[]string{"aa\n", "aal\n", "A\n", "a\n"}'
-
-vs green: (does not trigger bad deleted return value)
- maybe b/c aal is last, and that is what the red is getting last?
-
-art2_test.go:124 2025-03-04 07:21:13.154 -0600 CST permseed 1 => word_order = '[]string{"A\n", "aa\n", "a\n", "aal\n"}'
-
-art2_test.go:124 2025-03-04 07:21:43.819 -0600 CST permseed 2 => word_order = '[]string{"a\n", "aa\n", "A\n", "aal\n"}'
-
-art2_test.go:125 2025-03-04 07:23:57.408 -0600 CST permseed 8 => word_order = '[]string{"a\n", "A\n", "aa\n", "aal\n"}'
-
-*/
+func verifyLeafIndexAt(tree *Tree) {
+	sz := tree.Size()
+	for i := range sz {
+		lf, ok := tree.At(i)
+		if !ok {
+			panic("not okay?")
+		}
+		j, ok := tree.LeafIndex(lf)
+		if !ok || j != i {
+			// panic: want ok=true, j=i=7; got ok=true; j=6
+			panic(fmt.Sprintf("want ok=true, want j=i=%v; got ok=%v; j=%v", i, ok, j))
+		}
+		lf2, idx2, ok2 := tree.Find(Exact, lf.Key)
+		if !ok2 {
+			panic("why not ok2?")
+		}
+		if idx2 != j {
+			panic("idx2 != j")
+		}
+		if lf2 != lf {
+			panic(fmt.Sprintf("lf2 != lf. lf2 = '%v';\n\n lf = '%v'", lf2, lf))
+		}
+	}
+}

@@ -83,7 +83,7 @@ func TestNode_gte_(t *testing.T) {
 	}
 	test_gte := func(n Inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
-			n.addChild(k, &bnode{}) // can't add nil for n256
+			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256. added a fake Leaf for subn() never 0 checking in node.go:99
 		}
 		var b byte
 		var ch *bnode

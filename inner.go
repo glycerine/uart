@@ -93,6 +93,8 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		n.SubN++
 		//n.Keybyte stays the same I think. likewise n.path.
 
+		selfb.isLeaf = false
+		selfb.leaf = nil
 		selfb.inner = n
 		return selfb, false
 	}
@@ -217,7 +219,10 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 	deleted, deletedNode = next.del(key, nextDepth+1, next, func(bn *bnode) {
 		n.Node.replace(idx, bn, true)
 	})
+	// once we stop del from trashing pren, put this condition back for speed.
+	//if deleted {
 	n.Node.redoPren() // essential! for LeafIndex/id to be correct.
+	//}
 	return deleted, deletedNode
 }
 
@@ -257,9 +262,12 @@ const needPrevLeaf direc = -1
 const nextButSmallestWillDo = 2
 const prevButLargestWillDo = -2
 
-func (n *Inner) get(key Key, depth int, selfb *bnode) (value *bnode, found bool, dir direc, id int) {
+func (n *Inner) get(key Key, depth int, selfb *bnode, calldepth int) (value *bnode, found bool, dir direc, id int) {
 
-	pp("top of get(), we are '%v'", n.FlatString(depth, 0))
+	pp("top of get() calldepth=%v, we are '%v'", calldepth, n.FlatString(depth, 0, selfb))
+	defer func() {
+		pp("returning from get() calldepth=%v; id=%v", calldepth, id)
+	}()
 
 	//_, fullmatch, gt := n.checkCompressed(key, depth)
 
@@ -294,9 +302,10 @@ func (n *Inner) get(key Key, depth int, selfb *bnode) (value *bnode, found bool,
 
 	//pp("about to call next.get on next = '%v' with inquiry '%v'", next.FlatString(nextDepth+1, 0), string(key[:nextDepth]))
 
-	value, found, dir, id = next.get(key, nextDepth+1, next)
-	vv("id = %v; next.pren=%v; together %v; n = %v", id, next.pren, id+next.pren, n)
-	id += next.pren
+	value, found, dir, id = next.get(key, nextDepth+1, next, calldepth+1)
+	pp("id = %v; next.pren=%v; together %v; n = %v; calldepth=%v; next='%v'", id, next.pren, id+next.pren, n, calldepth, next) // why isn't next.pren 4 ? seeing 2.
+
+	id += next.pren //+ next.subn() - 1
 	return
 }
 
@@ -321,7 +330,7 @@ func (n *Inner) addPrefixBefore(node *Inner, key byte) {
 }
 
 func (n *Inner) String() string {
-	return n.FlatString(0, 0) // -1 to recurse.
+	return n.FlatString(0, 0, nil) // -1 to recurse.
 }
 
 func (n *Inner) isLeaf() bool {
@@ -348,16 +357,21 @@ func newCryrandSeededChaCha8() *mathrand2.ChaCha8 {
 	return mathrand2.NewChaCha8(seed)
 }
 
-func (n *Inner) FlatString(depth int, recurse int) (s string) {
+func (n *Inner) FlatString(depth int, recurse int, selfb *bnode) (s string) {
 
 	keystr := string(n.Keybyte)
+
 	if n.Keybyte == 0 {
 		keystr = "(zero)"
+	}
+	pren := "na"
+	if selfb != nil {
+		pren = fmt.Sprintf("%v", selfb.pren)
 	}
 
 	rep := strings.Repeat("    ", depth)
 
-	s += fmt.Sprintf(`%v %p %v, key '%v' childkeys: %v (treedepth %v) compressed='%v' path='%v' (subN: %v)%v`,
+	s += fmt.Sprintf(`%v %p %v, key '%v' childkeys: %v (treedepth %v) compressed='%v' path='%v' (subN: %v; pren: %v)%v`,
 		rep,
 		n,
 		n.Kind().String(),
@@ -369,6 +383,7 @@ func (n *Inner) FlatString(depth int, recurse int) (s string) {
 		//string(n.path),
 		"(paths commented out atm)",
 		n.SubN,
+		pren,
 		"\n",
 	)
 
@@ -379,7 +394,7 @@ func (n *Inner) FlatString(depth int, recurse int) (s string) {
 	k := 0
 	_ = k
 	for node != nil {
-		s += node.FlatString(depth+1, recurse-1)
+		s += node.FlatString(depth+1, recurse-1, node)
 		key, node = n.Node.next(&key)
 		k++
 	}
@@ -394,6 +409,7 @@ func viznl(s string) string {
 }
 
 func viznlString(by []byte) string {
+
 	numnl := bytes.Count(by, []byte{10})
 	out := make([]byte, 0, len(by)+numnl)
 	for _, c := range by {

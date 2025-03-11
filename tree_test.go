@@ -1608,6 +1608,7 @@ func Test510_SubN_maintained_for_At_indexing_(t *testing.T) {
 func verifySubN(root *bnode) (leafcount int) {
 
 	if root == nil {
+		panic("root should never be nil")
 		return 0
 	}
 	if root.isLeaf {
@@ -1648,6 +1649,128 @@ func verifySubN(root *bnode) (leafcount int) {
 		if root.inner.SubN != leafcount {
 			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, root.inner.SubN))
 		}
+		if leafcount == 0 {
+			panic("leafcount of 0?")
+		}
+		if root.inner.SubN == 0 {
+			panic("root.inner.SubN of 0?")
+		}
+	}
+	return leafcount
+}
+
+func verifyPren(root *bnode) (leafcount int) {
+
+	if root == nil {
+		return 0
+	}
+	if root.isLeaf {
+		return 1
+	} else {
+		var pren int
+		var subn int
+
+		inode := root.inner.Node
+		switch n := inode.(type) {
+		case *node4:
+			for i, ch := range n.children {
+				if i < n.lth {
+					subn = verifyPren(n.children[i])
+					leafcount += subn
+
+					if ch.pren != pren {
+						panic(fmt.Sprintf("pren is off: ch.pren=%v; our computed pren=%v; ch = '%v'", ch.pren, pren, ch))
+					}
+					pren += subn
+				}
+			}
+		case *node16:
+			for i, ch := range n.children {
+				if i < n.lth {
+					leafcount += verifyPren(n.children[i])
+					if ch.pren != pren {
+						panic("pren is off")
+					}
+					pren += subn
+				}
+			}
+		case *node48:
+			for _, k := range n.keys {
+
+				if k == 0 {
+					continue
+				}
+				child := n.children[k-1]
+				leafcount += verifyPren(child)
+				if child.pren != pren {
+					panic("pren is off")
+				}
+				pren += subn
+			}
+		case *node256:
+			for _, child := range n.children {
+				if child != nil {
+					leafcount += verifyPren(child)
+					if child.pren != pren {
+						panic("pren is off")
+					}
+					pren += subn
+				}
+			}
+		}
+
+		if root.inner.SubN != leafcount {
+			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, root.inner.SubN))
+		}
+	}
+	return leafcount
+}
+
+func fullTreeRedoPren(root *bnode) (leafcount int) {
+
+	if root == nil {
+		return 0
+	}
+	if root.isLeaf {
+		return 1
+	} else {
+		var subn int
+
+		inode := root.inner.Node
+		switch n := inode.(type) {
+		case *node4:
+			for i, ch := range n.children {
+				_ = ch
+				if i < n.lth {
+					subn = verifyPren(n.children[i])
+					leafcount += subn
+				}
+			}
+		case *node16:
+			for i, ch := range n.children {
+				_ = ch
+				if i < n.lth {
+					leafcount += verifyPren(n.children[i])
+				}
+			}
+		case *node48:
+			for _, k := range n.keys {
+
+				if k == 0 {
+					continue
+				}
+				child := n.children[k-1]
+				leafcount += verifyPren(child)
+			}
+		case *node256:
+			for _, child := range n.children {
+				if child != nil {
+					leafcount += verifyPren(child)
+				}
+			}
+		}
+
+		root.inner.Node.redoPren()
 	}
 	return leafcount
 }
@@ -1724,8 +1847,9 @@ func Test511_At_index_the_tree_like_an_array(t *testing.T) {
 func Test512_LeafIndex_inverse_of_At(t *testing.T) {
 
 	// j=total number of leaves in the tree.
-	//for j := 1; j < 10_000; j++ { // 42 sec
-	for j := 1; j < 500; j++ { // 0.10 sec
+	//for j := 1; j < 1000; j++ { // 10_000 => 42 sec (sans removes)
+	// 1000 => 28 sec with removes.
+	for j := 1; j < 500; j++ { // 0.10 sec, 3.5 sec with removes.
 
 		//if j%100 == 0 {
 		//	//vv("on j = %v", j)

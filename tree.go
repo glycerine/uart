@@ -169,7 +169,7 @@ func (t *Tree) String() string {
 		return "empty tree"
 	}
 	return fmt.Sprintf("tree of size %v: ", sz) +
-		t.root.FlatString(0, -1)
+		t.root.FlatString(0, -1, t.root)
 }
 
 func (t *Tree) FlatString() string {
@@ -179,7 +179,7 @@ func (t *Tree) FlatString() string {
 	}
 
 	return fmt.Sprintf("tree of size %v: \n", sz) +
-		t.root.FlatString(0, -1)
+		t.root.FlatString(0, -1, t.root)
 }
 
 // InsertX now copies the key to avoid bugs.
@@ -234,6 +234,7 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	replacement, updated = t.root.insert(lf, 0, t.root, t, nil)
 	if replacement != nil {
 		t.root = replacement
+		t.root.redoPren() // needed?
 	}
 	if !updated {
 		t.size++
@@ -352,7 +353,7 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool
 	case LTE, LT:
 		b, found, _, idx = t.root.getLTE(key, 0, smod, t.root, t, 0, false, 0)
 	default:
-		b, found, _, idx = t.root.get(key, 0, t.root)
+		b, found, _, idx = t.root.get(key, 0, t.root, 0)
 	}
 	if t.size == 1 {
 		// special case is a leaf at the root, as

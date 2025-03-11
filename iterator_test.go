@@ -69,7 +69,6 @@ func TestIterConcurrentExpansion(t *testing.T) {
 	}
 }
 
-/*
 func TestIterDeleteBehindFwd(t *testing.T) {
 
 	tree := NewArtTree()
@@ -262,7 +261,6 @@ func TestIterDeleteBehindReverse(t *testing.T) {
 		}
 	}
 }
-*/
 
 // [start, end) semantics version; not (start, end].
 func TestIterator(t *testing.T) {

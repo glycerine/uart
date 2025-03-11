@@ -199,7 +199,7 @@ func (i *iterator) Next() (ok bool) {
 		// to the tree, reset the stack and
 		// indexes. Proceed from the
 		// last provided key+1 (-1 for reverse).
-		//vv("tree modified, reseting iterator state")
+		vv("tree modified, reseting iterator state")
 
 		smod := GT
 		if i.reverse {
@@ -227,6 +227,7 @@ func (i *iterator) Next() (ok bool) {
 		if i.reverse {
 			i.curIdx--
 		} else {
+			vv("incrementing i.curIdx to %v", i.curIdx+1)
 			i.curIdx++
 		}
 	}
@@ -246,7 +247,7 @@ func (i *iterator) Next() (ok bool) {
 			panic("iterate was ok but LeafIndex was not")
 		}
 		if leafIdx != i.curIdx {
-			panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v", leafIdx, i.curIdx))
+			panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v; i.leaf='%v'", leafIdx, i.curIdx, i.leaf))
 		}
 	}
 	return
@@ -354,6 +355,10 @@ func (i *iterator) Leaf() *Leaf {
 
 func (i *iterator) Value() any {
 	return i.value
+}
+
+func (i *iterator) Index() int {
+	return i.curIdx
 }
 
 // Key returns the current value of

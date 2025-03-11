@@ -89,16 +89,21 @@ func (a *bnode) first() (byte, *bnode) {
 	return a.inner.first()
 }
 
-func (a *bnode) subn() int {
+func (a *bnode) subn() (count int) {
 	if a.isLeaf {
 		return 1
 	}
 	// gte_test.go:112 gives us
 	// a node thats not fully assembled, don't panic.
 	if a.inner == nil {
+		panic("a.inner is nil?")
 		return 0
 	}
-	return a.inner.SubN
+	count = a.inner.SubN
+	if count == 0 {
+		panic(fmt.Sprintf("where 0 subN ? a=%p/'%#v'", a, a))
+	}
+	return
 }
 
 func (a *bnode) at(i int) (r *Leaf, ok bool) {
@@ -149,7 +154,7 @@ func (a *bnode) String() string {
 	return a.inner.String()
 }
 
-func (a *bnode) get(key Key, depth int, selfb *bnode) (value *bnode, found bool, dir direc, id int) {
+func (a *bnode) get(key Key, depth int, selfb *bnode, calldepth int) (value *bnode, found bool, dir direc, id int) {
 	//sanity check:
 	if a != selfb {
 		panic("sanity check failed! TODO remove this once working")
@@ -157,7 +162,7 @@ func (a *bnode) get(key Key, depth int, selfb *bnode) (value *bnode, found bool,
 	if a.isLeaf {
 		return a.leaf.get(key, depth, a)
 	}
-	return a.inner.get(key, depth, a)
+	return a.inner.get(key, depth, a, calldepth)
 }
 
 func (a *bnode) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode)) (deleted bool, deletedNode *bnode) {
@@ -174,11 +179,11 @@ func (a *bnode) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, par *Inner
 	return a.inner.insert(lf, depth, selfb, tree, par)
 }
 
-func (a *bnode) FlatString(depth int, recurse int) (s string) {
+func (a *bnode) FlatString(depth int, recurse int, selfb *bnode) (s string) {
 	if a.isLeaf {
 		return a.leaf.FlatString(depth, recurse)
 	}
-	return a.inner.FlatString(depth, recurse)
+	return a.inner.FlatString(depth, recurse, a)
 }
 
 func (k Kind) String() string {
