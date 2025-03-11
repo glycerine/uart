@@ -5,6 +5,144 @@ import (
 	"iter"
 )
 
+// Iter starts a traversal over the range [start, end)
+// in ascending order.
+//
+// iter.Next() must be called to start the iteration before
+// iter.Key(), iter.Value(), or iter.Leaf() will be meaningful.
+//
+// We begin with the first key that is >= start and < end.
+//
+// The end key must be > the start key, or no values
+// will be returned. Either start or end
+// can be nil to indicate the furthest possible range
+// in that direction.
+//
+// For example, note that [x, x) will return the
+// empty set, unless x is nil.
+//
+// For another example, suppose the keys {0, 1, 2} are
+// in the tree, and tree.Iter(0, 2) is called.
+// Forward iteration will return 0, then 1.
+//
+// The returned iterator is not concurrent/multiple goroutine safe.
+// Iteration does no synchronization. This
+// allows for single goroutine code that deletes from
+// (or inserts into) the tree during the iteration,
+// which is not an uncommon need.
+func (t *Tree) Iter(start, end []byte) (iter *iterator) {
+
+	if t.root == nil || t.size < 1 {
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
+	}
+
+	// get the integer range [begIdx, endIdx]
+	_, begIdx, ok := t.FindGTE(start)
+	if !ok {
+		// no such key to start from, iteration already over.
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
+	}
+
+	_, endIdx, ok := t.FindLT(end)
+	if !ok {
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
+	}
+
+	return &iterator{
+		tree:        t,
+		treeVersion: t.treeVersion,
+		cursor:      start,
+		terminate:   end,
+		begIdx:      begIdx - 1,
+		curIdx:      begIdx - 1,
+		endxIdx:     endIdx + 1,
+	}
+}
+
+// RevIter starts a traversal over
+// the range (end, start] in descending order.
+//
+// iter.Next() must be called to start the iteration before
+// iter.Key(), iter.Value(), or iter.Leaf() will be meaningful.
+//
+// We begin with the first key that is <= start and > end.
+//
+// The end key must be < the start key, or no values
+// will be returned. Either start or end
+// can be nil to indicate the furthest possible range
+// in that direction.
+//
+// For example, note that (x, x] will return the
+// empty set, unless x is nil.
+//
+// For another example, suppose the keys {0, 1, 2} are
+// in the tree, and tree.RevIter(0, 2) is called.
+// Reverse iteration will return 2, then 1.
+// The same holds true if start (2 here) is replaced by
+// by any integer > 2.
+//
+// tree.RevIter(nil, 2) will yield 2, then 1, then 0;
+// as will tree.RevIter(nil, nil).
+//
+// The returned iterator is not concurrent/multiple goroutine safe.
+// Iteration does no synchronization. This
+// allows for single goroutine code that deletes from
+// (or inserts into) the tree during the iteration,
+// which is not an uncommon need.
+func (t *Tree) RevIter(end, start []byte) (iter *iterator) {
+
+	if t.root == nil || t.size < 1 {
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
+	}
+
+	// get the integer range [endIdx, begIdx]
+	_, begIdx, ok := t.FindLTE(start)
+	if !ok {
+		vv("FindLTE start found nothing!")
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
+	}
+
+	gtLeaf, endIdx, ok := t.FindGT(end)
+	_ = gtLeaf
+	if !ok {
+		//vv("in revIt: FindGT(end='%v') got ok=false, endIdx = %v; gtLeaf='%v'", string(end), endIdx, gtLeaf)
+		// this is okay if end is nil, of course
+
+		//vv("FindGT end found nothing! end='%v'", string(end))
+		return &iterator{
+			initDone: true,
+			closed:   true,
+		}
+	}
+
+	//vv("revIt starting cursor=start='%v'", string(start))
+	return &iterator{
+		tree:        t,
+		treeVersion: t.treeVersion,
+		reverse:     true,
+		cursor:      start,
+		terminate:   end,
+		begIdx:      begIdx + 1,
+		curIdx:      begIdx + 1,
+		endxIdx:     endIdx - 1,
+	}
+}
+
 type checkpoint struct {
 	node   *Inner
 	curkey *byte
@@ -26,7 +164,7 @@ type iterator struct {
 	cursor, terminate []byte
 	reverse           bool
 
-	begIdx  int // corresponding to initial cursor key
+	begIdx  int // corresponding to initial cursor key - 1
 	curIdx  int // corresponding to current key
 	endxIdx int // corresponding to 1 past the last key
 
@@ -38,7 +176,8 @@ type iterator struct {
 	leaf  *Leaf
 }
 
-// Next will iterate over all leaf nodes between specified prefixes
+// Next will iterate over all leaf nodes in
+// the specified range in the chosen direction.
 func (i *iterator) Next() (ok bool) {
 	if i.closed {
 		return false
@@ -50,29 +189,6 @@ func (i *iterator) Next() (ok bool) {
 		}
 	}
 	return i.iterate()
-}
-
-func (i *iterator) Leaf() *Leaf {
-	return i.leaf
-}
-
-func (i *iterator) Value() any {
-	return i.value
-}
-
-func (i *iterator) Key() Key {
-	return i.key
-}
-
-func (i *iterator) inRange(key []byte) (inside bool) {
-	//defer func() {
-	//vv("inRange returns inside=%v; reverse is %v; key='%v'; cursor='%v; terminate='%v'", inside, i.reverse, string(key), string(i.cursor), string(i.terminate))
-	//}()
-	if i.reverse {
-		return (bytes.Compare(key, i.cursor) <= 0 || len(i.cursor) == 0) && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) > 0)
-	}
-	// forward iteration:
-	return bytes.Compare(key, i.cursor) >= 0 && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) < 0)
 }
 
 // exit returned true means only 0 or 1 nodes in tree,
@@ -99,16 +215,6 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 		node: root.inner,
 	}
 	return false, false
-}
-
-func (i *iterator) next(n *Inner, curkey *byte) (keyb byte, b *bnode) {
-	//defer func() {
-	//	vv("it.next returning keyb='%v', b='%v'", string(keyb), b.String())
-	//}()
-	if !i.reverse {
-		return n.Node.next(curkey)
-	}
-	return n.Node.prev(curkey)
 }
 
 func (i *iterator) iterate() bool {
@@ -169,6 +275,39 @@ func (i *iterator) tryAdvance() (bool, bool) {
 		}
 		return false, false
 	}
+}
+
+func (i *iterator) next(n *Inner, curkey *byte) (keyb byte, b *bnode) {
+	//defer func() {
+	//	vv("it.next returning keyb='%v', b='%v'", string(keyb), b.String())
+	//}()
+	if !i.reverse {
+		return n.Node.next(curkey)
+	}
+	return n.Node.prev(curkey)
+}
+
+func (i *iterator) Leaf() *Leaf {
+	return i.leaf
+}
+
+func (i *iterator) Value() any {
+	return i.value
+}
+
+func (i *iterator) Key() Key {
+	return i.key
+}
+
+func (i *iterator) inRange(key []byte) (inside bool) {
+	//defer func() {
+	//vv("inRange returns inside=%v; reverse is %v; key='%v'; cursor='%v; terminate='%v'", inside, i.reverse, string(key), string(i.cursor), string(i.terminate))
+	//}()
+	if i.reverse {
+		return (bytes.Compare(key, i.cursor) <= 0 || len(i.cursor) == 0) && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) > 0)
+	}
+	// forward iteration:
+	return bytes.Compare(key, i.cursor) >= 0 && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) < 0)
 }
 
 func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {

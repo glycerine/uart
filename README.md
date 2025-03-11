@@ -28,7 +28,7 @@ for Tableau[7].
 
 An ART tree is a sorted, key-value, in-memory
 dictionary. It maps arbitrary []byte keys to
-an any value. The ART tree provides both path compression
+an `any` value. The ART tree provides both path compression
 (vertical compression) and variable
 sized inner nodes (horizontal compression)
 for space-efficient fanout.
