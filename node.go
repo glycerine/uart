@@ -197,7 +197,7 @@ func (k Kind) String() string {
 	return ""
 }
 
-// At return a char at post
+// At() returns the char at key[pos], or a 0 if out of bounds.
 func (key Key) At(pos int) byte {
 	if pos < 0 || pos >= len(key) {
 		// imitate the C-like string termination character
