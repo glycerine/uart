@@ -5,10 +5,11 @@ my Adaptive Radix Tree (ART) implementation
 and it comes without serialization support. 
 Thus it is unserialized ART, or uart.
 
-This project provides an implemention
+This project provides an enhanced implemention
 of the Adaptive Radix Tree (ART) data structure[1]. 
-As a memory based sorted key/value store and a Order-Statistic tree,
-it offers ordered lookups, range queries, and integer based indexing.
+It is both a memory-based sorted key/value store _and_
+an Order-Statistic tree. It offers ordered lookups,
+range queries, and integer based indexing.
 
 Why? In read-heavy situations, ART
 trees can have very good performance 
