@@ -147,7 +147,12 @@ func (n *node4) redoPren() {
 			break
 		}
 		ch.pren = tot
-		tot += ch.subn()
+		//tot += ch.subn()
+		if ch.isLeaf {
+			tot += 1
+		} else {
+			tot += ch.inner.SubN
+		}
 	}
 }
 func (n *node4) replace(idx int, child *bnode, del bool) (old *bnode) {

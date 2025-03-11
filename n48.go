@@ -155,7 +155,12 @@ func (n *node48) redoPren() {
 		}
 		ch := n.children[idx-1]
 		ch.pren = tot
-		tot += ch.subn()
+		//tot += ch.subn()
+		if ch.isLeaf {
+			tot += 1
+		} else {
+			tot += ch.inner.SubN
+		}
 	}
 }
 
