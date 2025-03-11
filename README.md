@@ -7,8 +7,8 @@ Thus it is unserialized ART, or uart.
 
 This project provides an implemention
 of the Adaptive Radix Tree (ART) data structure[1]. 
-As a memory based sorted key/value store and a Order-Staticd tree,
-it offers range queries and integer based indexing.
+As a memory based sorted key/value store and a Order-Statistic tree,
+it offers ordered lookups, range queries, and integer based indexing.
 
 Why? In read-heavy situations, ART
 trees can have very good performance 
