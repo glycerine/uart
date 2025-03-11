@@ -537,7 +537,7 @@ func (t *Tree) ReverseIterator(end, start []byte) *iterator {
 		}
 	}
 
-	vv("revIt starting cursor=start='%v'", string(start))
+	//vv("revIt starting cursor=start='%v'", string(start))
 	return &iterator{
 		tree:        t,
 		treeVersion: t.treeVersion,

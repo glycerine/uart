@@ -483,12 +483,12 @@ func TestIterator(t *testing.T) {
 			for _, key := range tc.keys {
 				tree.Insert([]byte(key), key)
 			}
-			vv("tree = '%v'", tree)
+			//vv("tree = '%v'", tree)
 			var iter *iterator
 			if tc.reverse {
-				vv("reverse is true")
+				//vv("reverse is true")
 				iter = tree.ReverseIterator([]byte(tc.end), []byte(tc.start))
-				vv("iter.reverse is %v", iter.reverse)
+				//vv("iter.reverse is %v", iter.reverse)
 			} else {
 				iter = tree.Iterator([]byte(tc.start), []byte(tc.end))
 			}

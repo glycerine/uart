@@ -140,7 +140,7 @@ func (i *iterator) tryAdvance() (bool, bool) {
 
 		tail := i.stack
 
-		vv("tryAdv calling i.next() with tail.curkey = '%#v'", tail.curkey) // nil on first call
+		//vv("tryAdv calling i.next() with tail.curkey = '%#v'", tail.curkey) // nil on first call
 		curkey, child := i.next(tail.node, tail.curkey)
 		if child == nil {
 
