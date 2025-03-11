@@ -417,7 +417,7 @@ func (smod SearchModifier) String() string {
 	case LT:
 		return "LT"
 	}
-	panic(fmt.Sprintf("unknown smod '%v'", int(smod)))
+	return fmt.Sprintf("unknown smod '%v'", int(smod))
 }
 
 // Remove deletes the key from the Tree.

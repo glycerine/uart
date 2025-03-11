@@ -2,7 +2,7 @@ package uart
 
 import (
 	"bytes"
-	"fmt"
+	//"fmt"
 	"iter"
 )
 
@@ -250,18 +250,18 @@ func (i *iterator) Next() (ok bool) {
 
 	// these are assertions that were useful for catching issues,
 	// but just slow down production use.
-	if false {
-		if ok {
-			// confirm our indexes are in correspondence.
-			_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
-			if !leafIdxOK {
-				panic("iterate was ok but LeafIndex was not")
-			}
-			if leafIdx != i.curIdx {
-				panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v; i.leaf='%v'", leafIdx, i.curIdx, i.leaf))
-			}
-		}
-	}
+	// if false {
+	// 	if ok {
+	// 		// confirm our indexes are in correspondence.
+	// 		_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
+	// 		if !leafIdxOK {
+	// 			panic("iterate was ok but LeafIndex was not")
+	// 		}
+	// 		if leafIdx != i.curIdx {
+	// 			panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v; i.leaf='%v'", leafIdx, i.curIdx, i.leaf))
+	// 		}
+	// 	}
+	// }
 	return
 }
 

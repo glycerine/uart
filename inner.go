@@ -151,12 +151,6 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 
 func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode)) (deleted bool, deletedNode *bnode) {
 
-	origSubN := n.SubN
-	defer func() {
-		if deleted && origSubN != n.SubN+1 {
-			panic(fmt.Sprintf("missing a n.SubN-- somewhere! origSubN=%v and now n.SubN=%v", origSubN, n.SubN))
-		}
-	}()
 	if _, fullmatch, _ := n.checkCompressed(key, depth); !fullmatch {
 		// key is not found, check for concurrent writes and exit
 		return false, nil
@@ -358,8 +352,7 @@ var chacha8rand *mathrand2.ChaCha8 = newCryrandSeededChaCha8()
 
 func newCryrandSeededChaCha8() *mathrand2.ChaCha8 {
 	var seed [32]byte
-	_, err := cryrand.Read(seed[:])
-	panicOn(err)
+	cryrand.Read(seed[:])
 	return mathrand2.NewChaCha8(seed)
 }
 

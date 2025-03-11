@@ -1,7 +1,7 @@
 package uart
 
 import (
-	"fmt"
+	//"fmt"
 	"sync"
 	//"sync/atomic"
 )
@@ -93,16 +93,7 @@ func (a *bnode) subn() (count int) {
 	if a.isLeaf {
 		return 1
 	}
-	// gte_test.go:112 gives us
-	// a node thats not fully assembled, don't panic.
-	if a.inner == nil {
-		panic("a.inner is nil?")
-		return 0
-	}
 	count = a.inner.SubN
-	if count == 0 {
-		panic(fmt.Sprintf("where 0 subN ? a=%p/'%#v'", a, a))
-	}
 	return
 }
 
@@ -202,7 +193,7 @@ func (k Kind) String() string {
 	case Node256:
 		return "node256"
 	}
-	panic(fmt.Sprintf("unknown kind '%v'", int(k)))
+	//panic(fmt.Sprintf("unknown kind '%v'", int(k)))
 	return ""
 }
 

@@ -143,7 +143,7 @@ func (n *node48) addChild(k byte, child *bnode) {
 			return
 		}
 	}
-	panic("no empty slots")
+	//panic("no empty slots") // make inlinable.
 }
 
 // update pren cache of cumulative SubN
@@ -175,9 +175,9 @@ func (n *node48) grow() Inode {
 
 func (n *node48) replace(k int, child *bnode, del bool) (old *bnode) {
 	idx := n.keys[k]
-	if idx == 0 {
-		panic("replace can't be called for idx=0")
-	}
+	//if idx == 0 {
+	//	panic("replace can't be called for idx=0") // make inlinable.
+	//}
 	old = n.children[idx-1]
 	n.children[idx-1] = child
 	if child == nil {
