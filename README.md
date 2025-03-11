@@ -66,7 +66,13 @@ and range iteration, as well as the
 ability to "treat the tree as a slice" using
 integer indexes (based on the counted B-tree
 idea -- see the tree.At(i int) method), make this ART tree implementation
-particularly easy to use in practice.
+particularly easy to use in practice. Also,
+importantly, it makes it safe and efficient to
+delete from, or insert into, the tree during
+iteration. The iterator will simply resume
+at the next available key beyond the previously
+returned key. Reverse iteration and prefix-only
+scanning are both supported.
 
 The integer indexing makes this ART implementation
 also an Order-Statistic tree, much like 
