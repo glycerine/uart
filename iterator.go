@@ -199,7 +199,7 @@ func (i *iterator) Next() (ok bool) {
 		// to the tree, reset the stack and
 		// indexes. Proceed from the
 		// last provided key+1 (-1 for reverse).
-		vv("tree modified, reseting iterator state")
+		//vv("tree modified, reseting iterator state")
 
 		smod := GT
 		if i.reverse {
@@ -220,9 +220,8 @@ func (i *iterator) Next() (ok bool) {
 		// reset the stack from scratch
 		i.cursor = leaf.Key
 		i.stack = nil
-		if exit, next := i.init(); exit {
-			return next
-		}
+		// let re-init code below start the stack again.
+
 	} else {
 		// no change in treeVersion
 		if i.reverse {
