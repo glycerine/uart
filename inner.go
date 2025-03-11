@@ -222,7 +222,6 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 	deleted, deletedNode = next.del(key, nextDepth+1, next, func(bn *bnode) {
 		n.Node.replace(idx, bn, true)
 	})
-	// once we stop del from trashing pren, put this condition back for speed.
 	if deleted {
 		n.SubN--
 		n.Node.redoPren() // essential! for LeafIndex/id to be correct.

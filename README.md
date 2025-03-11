@@ -28,7 +28,8 @@ for Tableau[7].
 
 An ART tree is a sorted, key-value, in-memory
 dictionary. It maps arbitrary []byte keys to
-an `any` value. The ART tree provides both path compression
+an `any` value. The ART tree is a trie, and 
+provides both path compression
 (vertical compression) and variable
 sized inner nodes (horizontal compression)
 for space-efficient fanout.
@@ -36,10 +37,10 @@ for space-efficient fanout.
 Path compression is particularly attractive in
 situations where many keys have shared or redundant
 prefixes. This is the common case for
-many ordered-key-value-map use cases, such
+many ordered key/value store use cases, such
 as database indexes and file-system hierarchies.
 The Google File System paper, for example,
-emphasizes the efficiencies obtained
+mentions the efficiencies obtained
 by exploiting prefix compression in their
 distributed file system[2]. FoundationDB's
 new Redwood backend provides it as a feature[3],
@@ -65,8 +66,21 @@ Ease of use: efficient greater-than/less-than key lookup
 and range iteration, as well as the
 ability to "treat the tree as a slice" using
 integer indexes (based on the counted B-tree
-idea[5] -- see the tree.At(i int) method), make this ART tree implementation
+idea -- see the tree.At(i int) method), make this ART tree implementation
 particularly easy to use in practice.
+
+The integer indexing makes this ART implementation
+also an Order-Statistic tree, much like 
+the Counted B-tree[5], so it is ideal for
+quickly computing quantiles, medians, and
+other statistics of interest. Jumping
+forward by 500 keys, for example, is an 
+efficient O(log N) time operation for
+N keys in the tree. Trie operations are
+sometimes described as being O(k) time
+where k is the string length of the
+key, but in practice these are the same
+because k approximates log(N).
 
 This ART tree supports only a single value for each
 key -- it is not a "multi-map" in the C++ sense.
@@ -74,9 +88,9 @@ This makes it simple to use and implement.
 Note that the user can store any value, so 
 being a unique-key-map is not really a limitation.
 The user can simply point to a struct, slice or map
-of same-key values in the Leaf.Value field.
+of holding the same-key values in the Leaf.Value field.
 
-Concurrency: this ART implementation is
+Concurrency: by default this ART implementation is
 goroutine safe, as it uses a sync.RWMutex
 for synchronization. Thus it allows only a
 single writer at a time, and any number
@@ -118,12 +132,8 @@ https://duckdb.org/2022/07/27/art-storage.html
 
 Docs: https://pkg.go.dev/github.com/glycerine/art-adaptive-radix-tree
 
-
-Serialization to disk facilities are provided via greenpack (https://github.com/glycerine/greenpack).
-
-The implementation is based on following paper:
-
-- [The Adaptive Radix Tree: ARTful Indexing for Main-Memory Databases](https://db.in.tum.de/~leis/papers/ART.pdf)
+In the mother project, serialization to disk 
+facilities are provided via greenpack (https://github.com/glycerine/greenpack). These are omitted here to provide a zero-dependency package.
 
 -----
 Author: Jason E. Aten, Ph.D.
@@ -140,6 +150,8 @@ FindLTE) based on the ordering of keys in the tree.
 A comprehensive test suite is inclued to verify all operations.
 
 ## Benchmarks
+
+For code, see the serialization-included version.
 
 The benchmarks are located in [tree_concurrent_test.go](./tree_concurrent_test.go) and [tree_bench_test.go](./tree_bench_test.go).
 

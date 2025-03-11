@@ -770,7 +770,7 @@ func TestTree_InsertWordSets(t *testing.T) {
 			t.Errorf("[run:%d] should found %s,but got %s", i, w, v)
 		}
 	}
-	//TODO:
+
 	for i, w := range words {
 		deleted, v := tree.Remove(w)
 		if !deleted {

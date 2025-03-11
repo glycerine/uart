@@ -140,7 +140,7 @@ func (a *bnode) at(i int) (r *Leaf, ok bool) {
 	// i too big, out of bounds; but should
 	// never been reached because i >= n.SubN
 	// already checked above.
-	panic("unreachable") // TODO remove
+	//panic("unreachable") // comment to allow inlining.
 	return nil, false
 }
 
@@ -155,10 +155,6 @@ func (a *bnode) String() string {
 }
 
 func (a *bnode) get(key Key, depth int, selfb *bnode, calldepth int) (value *bnode, found bool, dir direc, id int) {
-	//sanity check:
-	if a != selfb {
-		panic("sanity check failed! TODO remove this once working")
-	}
 	if a.isLeaf {
 		return a.leaf.get(key, depth, a)
 	}
@@ -324,8 +320,8 @@ func (b *bnode) recursiveFirst() (lf *bnode, ok bool) {
 		}
 		_, b = b.first()
 		if b == nil {
-			panic("should never happen! TODO remove.")
-			//return nil, false
+			//panic("should never happen!") // comment to allow inlining
+			return nil, false
 		}
 	}
 }
@@ -357,8 +353,8 @@ func (b *bnode) recursiveLast() (lf *bnode, ok bool) {
 		// recurse until we hit the leaf.
 		_, b = b.last()
 		if b == nil {
-			panic("should be impossible! TODO remove!")
-			//return nil, false
+			//panic("should be impossible! ") // comment to allow inlining.
+			return nil, false
 		}
 	}
 }
