@@ -212,6 +212,7 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	replacement, updated = t.root.insert(lf, 0, t.root, t, nil)
 	if replacement != nil {
 		t.root = replacement
+		t.root.redoPren() // Test_PrenInsert green?
 	}
 	if !updated {
 		t.size++

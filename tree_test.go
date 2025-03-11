@@ -1691,7 +1691,7 @@ func verifyPren(root *bnode) (leafcount int) {
 					leafcount += subn
 
 					if ch.pren != pren {
-						panic(fmt.Sprintf("pren is off: ch.pren=%v; our computed pren=%v; ch = '%v'", ch.pren, pren, ch))
+						panic(fmt.Sprintf("%p n4 pren is off: child.pren = %v; manual pren=%v", ch, ch.pren, pren))
 					}
 					pren += subn
 				}
@@ -1700,8 +1700,10 @@ func verifyPren(root *bnode) (leafcount int) {
 			for i, ch := range n.children {
 				if i < n.lth {
 					leafcount += verifyPren(n.children[i])
+
 					if ch.pren != pren {
-						panic("pren is off")
+						panic(fmt.Sprintf("%p n16 pren is off: child.pren = %v; manual pren=%v", ch, ch.pren, pren))
+
 					}
 					pren += subn
 				}
@@ -1715,7 +1717,7 @@ func verifyPren(root *bnode) (leafcount int) {
 				child := n.children[k-1]
 				leafcount += verifyPren(child)
 				if child.pren != pren {
-					panic("pren is off")
+					panic(fmt.Sprintf("%p n48 pren is off: child.pren = %v; manual pren=%v", child, child.pren, pren))
 				}
 				pren += subn
 			}
@@ -1724,7 +1726,7 @@ func verifyPren(root *bnode) (leafcount int) {
 				if child != nil {
 					leafcount += verifyPren(child)
 					if child.pren != pren {
-						panic("pren is off")
+						panic(fmt.Sprintf("%p n256 pren is off: child.pren = %v; manual pren=%v", child, child.pren, pren))
 					}
 					pren += subn
 				}
