@@ -248,6 +248,7 @@ func (i *iterator) Next() (ok bool) {
 	}
 	ok = i.iterate()
 
+	// todo: turn off these assertions.
 	if ok {
 		// confirm our indexes are in correspondence.
 		_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
@@ -398,12 +399,30 @@ func (i *iterator) inRange(key []byte) (inside bool) {
 
 func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {
 	return func(yield func(key Key, value any) bool) {
-		//if t.Size() == 0 {
-		//	return
-		//}
 		it := t.Iter(beg, endx)
 		for it.Next() {
-			if !yield(it.Key(), it.Value()) {
+			if !yield(it.Key(), it.Leaf()) {
+				return
+			}
+		}
+	}
+}
+
+// Descend iterates from highest to lowest key
+// in lexicographic order. Perhaps counter-intuitively,
+// the smaller (endx) key is always the first argument,
+// just as in Ascend. "Smallest-first" is an easy
+// way to remember this, as it applies to both
+// directions. Descend is a simple wrapper around
+// the RevIter method. In reverse iteration,
+// the ranger covered is (endx, start], so the
+// endx key itself will not be seen. Use
+// Descend(nil, nil) to cover all keys in the tree.
+func Descend(t *Tree, endx, start Key) iter.Seq2[Key, any] {
+	return func(yield func(key Key, value any) bool) {
+		it := t.RevIter(endx, start)
+		for it.Next() {
+			if !yield(it.Key(), it.Leaf()) {
 				return
 			}
 		}

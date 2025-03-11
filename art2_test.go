@@ -2,6 +2,7 @@ package uart
 
 import (
 	"bufio"
+	"bytes"
 	"encoding/binary"
 	"fmt"
 	"math/rand"
@@ -210,15 +211,14 @@ func TestInsertWithSameByteSliceAddress(t *testing.T) {
 	}
 }
 
-func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
+func Test_delete_insert_on_LongCommonPrefixes(t *testing.T) {
 	tree := NewArtTree()
 	paths := loadTestFile("assets/linux.txt")
 	seenk := 0
 
 	expect := len(paths)
-	if true { //underRaceDetector {
-		expect = 8
-		//expect = 100
+	if true { //underRaceDetector { // -race is very slow
+		expect = 1000
 		paths = paths[:expect]
 	}
 
@@ -322,9 +322,6 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		seen[string(w)] = -1
 	}
 
-	// Arg! under -race, we see deadlocks when using the
-	// Ascend/iter protocol. What if we just iterate directly...
-
 	if false {
 		// use the iter.Seq2 protocol to iterate
 		for key, val := range Ascend(tree, nil, nil) {
@@ -412,25 +409,6 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 		panic("why short?")
 	}
 	return
-
-	n = int(tree.Size()) - 1
-	j = 0
-	for node := range Ascend(tree, nil, nil) {
-
-		if gone, _ := tree.Remove(node); !gone {
-			t.Fatalf("expected to be able to Remove")
-		}
-		want := n - int(uint64(j))
-		if int(tree.Size()) != want {
-			t.Fatalf("expected size %v, saw %v", want, tree.Size())
-		}
-		j++
-	}
-
-	//vv("finished deleting all, now size = %v", tree.Size())
-	if tree.Size() != 0 {
-		panic("why any left?")
-	}
 }
 
 //
@@ -720,4 +698,45 @@ func verifyLeafIndexAt(tree *Tree) {
 			panic(fmt.Sprintf("lf2 != lf. lf2 = '%v';\n\n lf = '%v'", lf2, lf))
 		}
 	}
+}
+
+func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
+
+	tree := NewArtTree()
+	paths := loadTestFile("assets/linux.txt")
+
+	var sorted [][]byte
+	for i, w := range paths {
+		_ = i
+		if tree.Insert(w, w) {
+			t.Fatalf("i=%v, could not add '%v', "+
+				"already in tree", i, string(w))
+		}
+		sorted = append(sorted, w)
+	}
+	sort.Sort(sliceByteSlice(sorted))
+
+	j := 0
+	for key, leaf := range Ascend(tree, nil, nil) {
+		_ = leaf
+		keyb := []byte(key)
+		if !bytes.Equal(keyb, sorted[j]) {
+			t.Fatalf("Ascend got key '%v'; expected '%v'",
+				string(key), string(sorted[j]))
+		}
+		j++
+	}
+
+	j = 0
+	last := len(paths) - 1
+	for key, leaf := range Descend(tree, nil, nil) {
+		_ = leaf
+		keyb := []byte(key)
+		if !bytes.Equal(keyb, sorted[last-j]) {
+			t.Fatalf("Descend got key '%v'; expected '%v'",
+				string(key), string(sorted[j]))
+		}
+		j++
+	}
+
 }

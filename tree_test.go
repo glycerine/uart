@@ -921,7 +921,7 @@ func Test_707_ArtTree_SearchMod_big_GT_only(t *testing.T) {
 }
 
 func Test_808_ArtTree_SearchMod_big_GTE(t *testing.T) {
-	return
+
 	// GTE should work on big trees
 
 	tree := NewArtTree()
@@ -992,8 +992,6 @@ func Test_808_ArtTree_SearchMod_big_GTE(t *testing.T) {
 func Test_808_ArtTree_SearchMod_big_LT_only(t *testing.T) {
 	// LT should work on big trees
 
-	return // LT not done yet!
-
 	tree := NewArtTree()
 	paths := loadTestFile("assets/linux.txt")
 	// paths are not sorted.
@@ -1038,7 +1036,7 @@ func Test_808_ArtTree_SearchMod_big_LT_only(t *testing.T) {
 }
 
 func Test909_ArtTree_SearchMod_numbered_GTE(t *testing.T) {
-	//return
+
 	// GTE should work on big trees, but make them
 	// numbered for ease of inspection.
 
