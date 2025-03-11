@@ -144,19 +144,6 @@ func NewArtTree() *Tree {
 	return &Tree{}
 }
 
-// DeepSize enumerates all leaf nodes
-// in order to compute the size. This is really only
-// for testing. Prefer the cache based Size(),
-// below, whenever possible.
-func (t *Tree) DeepSize() (sz int) {
-
-	for lf := range Ascend(t, nil, nil) {
-		_ = lf
-		sz++
-	}
-	return
-}
-
 // Size returns the number of keys
 // (leaf nodes) stored in the tree.
 func (t *Tree) Size() (sz int) {
@@ -169,28 +156,19 @@ func (t *Tree) Size() (sz int) {
 	return
 }
 
+// String does no locking.
 func (t *Tree) String() string {
 	sz := t.Size()
 	if t.root == nil {
-		return "empty tree"
+		return "empty art.Tree"
 	}
 	return fmt.Sprintf("tree of size %v: ", sz) +
 		t.root.FlatString(0, -1, t.root)
 }
 
-func (t *Tree) FlatString() string {
-	sz := t.Size()
-	if t.root == nil {
-		return "empty tree"
-	}
-
-	return fmt.Sprintf("tree of size %v: \n", sz) +
-		t.root.FlatString(0, -1, t.root)
-}
-
 // InsertX now copies the key to avoid bugs.
 // The value is held by pointer in the interface.
-// The x slice is not copied either.
+// The x slice is not copied.
 func (t *Tree) InsertX(key Key, value any, x []byte) (updated bool) {
 
 	key2 := Key(append([]byte{}, key...))
@@ -199,7 +177,7 @@ func (t *Tree) InsertX(key Key, value any, x []byte) (updated bool) {
 }
 
 // Insert makes a copy of key to avoid sharing bugs.
-// The value is held by pointer in the interface.
+// The value is only stored and not copied.
 func (t *Tree) Insert(key Key, value any) (updated bool) {
 
 	// make a copy of key that we own, so
@@ -214,9 +192,10 @@ func (t *Tree) Insert(key Key, value any) (updated bool) {
 	return t.InsertLeaf(lf)
 }
 
-// The *Leaf lf *must* own the lf.Key it holds.
-// It cannot be shared. You must guarantee this,
-// copying the slice if necessary.
+// InsertLeaf: the *Leaf lf *must* own the lf.Key it holds.
+// It cannot be shared. Callers must guarantee this,
+// copying the slice if necessary before
+// submitting the Leaf.
 func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	if t == nil {
 		panic("t *Tree cannot be nil in InsertLeaf")
@@ -229,7 +208,7 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	var replacement *bnode
 
 	if t.root == nil {
-		// first node in tree
+		// first leaf in the tree
 		t.size++
 		t.root = bnodeLeaf(lf)
 		t.treeVersion++
@@ -240,7 +219,6 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	replacement, updated = t.root.insert(lf, 0, t.root, t, nil)
 	if replacement != nil {
 		t.root = replacement
-		t.root.redoPren() // needed?
 	}
 	if !updated {
 		t.size++
@@ -447,6 +425,9 @@ func (smod SearchModifier) String() string {
 }
 
 // Remove deletes the key from the Tree.
+// If the key is not present deleted will return false.
+// If the key was present, value will supply
+// its associated value.
 func (t *Tree) Remove(key Key) (deleted bool, value any) {
 
 	if !t.SkipLocking {
@@ -490,8 +471,12 @@ func (t *Tree) IsEmpty() (empty bool) {
 //
 // At() uses the counted B-tree approach
 // described by Simon Tatham of PuTTY fame[1].
-// [1] Reference:
-// https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html
+// This is also known as an Order-Statistic tree
+// in the literature[2].
+//
+// [1] https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html
+//
+// [2] https://en.wikipedia.org/wiki/Order_statistic_tree
 func (t *Tree) At(i int) (lf *Leaf, ok bool) {
 	if t.SkipLocking {
 		lf, ok = t.root.at(i)
@@ -512,7 +497,6 @@ func (t *Tree) Atv(i int) (val any, ok bool) {
 		lf, ok = t.root.at(i)
 		if ok {
 			val = lf.Value
-			return
 		}
 		return
 	}
@@ -525,6 +509,14 @@ func (t *Tree) Atv(i int) (val any, ok bool) {
 	return
 }
 
+// LeafIndex returns the integer index
+// of the leaf in the tree using exact
+// key matching. The index represents
+// the position in the lexicographic
+// sorted order of keys, and so can be
+// used to compute quantile statistics
+// efficiently. The time complexity
+// is O(log N).
 func (t *Tree) LeafIndex(leaf *Leaf) (idx int, ok bool) {
 	t.RWmut.RLock()
 	_, idx, ok = t.find_unlocked(Exact, leaf.Key)
