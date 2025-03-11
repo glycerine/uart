@@ -336,7 +336,7 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 	fmt.Printf("begin iterating\n")
 
 	var beg, endx []byte
-	it := tree.Iterator(beg, endx)
+	it := tree.Iter(beg, endx)
 	for it.Next() {
 		key := it.Key()
 		val := it.Value()

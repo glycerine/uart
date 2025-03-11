@@ -118,7 +118,7 @@ func TestIterator(t *testing.T) {
 				for _, key := range tc.keys {
 					tree.Insert([]byte(key), key)
 				}
-				iter := tree.Iterator([]byte(tc.start), []byte(tc.end))
+				iter := tree.Iter([]byte(tc.start), []byte(tc.end))
 				if tc.reverse {
 					iter = iter.Reverse()
 				}
@@ -159,7 +159,7 @@ func TestIterConcurrentExpansion(t *testing.T) {
 	for _, key := range keys {
 		tree.Insert(key, key)
 	}
-	iter := tree.Iterator(nil, nil)
+	iter := tree.Iter(nil, nil)
 	if !iter.Next() {
 		t.Fatal("expected Next() to return true")
 	}
@@ -199,7 +199,7 @@ func TestIterDeleteBehindFwd(t *testing.T) {
 	deleted := make(map[int]int)
 	kept := make(map[int]int)
 
-	iter := tree.Iterator(nil, nil)
+	iter := tree.Iter(nil, nil)
 	thresh := 5000
 	for iter.Next() {
 		sz := tree.Size()
@@ -296,7 +296,7 @@ func TestIterDeleteBehindReverse(t *testing.T) {
 	deleted := make(map[int]int)
 	kept := make(map[int]int)
 
-	iter := tree.ReverseIterator(nil, nil)
+	iter := tree.RevIter(nil, nil)
 
 	thresh := 20_000
 	callcount := 0
@@ -487,10 +487,10 @@ func TestIterator(t *testing.T) {
 			var iter *iterator
 			if tc.reverse {
 				//vv("reverse is true")
-				iter = tree.ReverseIterator([]byte(tc.end), []byte(tc.start))
+				iter = tree.RevIter([]byte(tc.end), []byte(tc.start))
 				//vv("iter.reverse is %v", iter.reverse)
 			} else {
-				iter = tree.Iterator([]byte(tc.start), []byte(tc.end))
+				iter = tree.Iter([]byte(tc.start), []byte(tc.end))
 			}
 			want := []string{}
 			for iter.Next() {
@@ -526,7 +526,7 @@ func TestIterRange(t *testing.T) {
 	//vv("last = '%v'", string(last))
 
 	expect := []int{0, 1}
-	iter := tree.Iterator(first, last)
+	iter := tree.Iter(first, last)
 	n := 0
 	for iter.Next() {
 		key := iter.Key()
@@ -540,7 +540,7 @@ func TestIterRange(t *testing.T) {
 	}
 
 	expect = []int{1, 0}
-	riter := tree.ReverseIterator(last, first)
+	riter := tree.RevIter(last, first)
 	n = 0
 	for riter.Next() {
 		key := riter.Key()
@@ -554,8 +554,8 @@ func TestIterRange(t *testing.T) {
 		}
 		n++
 	}
-	// same but get the riter from tree.ReverseIterator() instead.
-	riter = tree.ReverseIterator(first, last)
+	// same but get the riter from tree.RevIter() instead.
+	riter = tree.RevIter(first, last)
 	n = 0
 	for riter.Next() {
 		key := riter.Key()

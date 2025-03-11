@@ -430,22 +430,20 @@ func (t *Tree) IsEmpty() (empty bool) {
 	return
 }
 
-// Iterator starts a traversal over the range [start, end).
+// Iter starts a traversal over the range [start, end).
 // Use a nil start to begin with the first key.
 // Use a nil end to proceed through the last key.
 //
 // For example, suppose the keys {0, 1, 2} are
-// in the tree, and tree.Iterator(0, 2) is called.
+// in the tree, and tree.Iter(0, 2) is called.
 // Forward iteration will return 0, then 1.
 //
 // The returned iterator is not concurrent/multiple goroutine safe.
-// Iteration does no synchronization. If concurrent
-// writes are possible, the user must
-// ensure the equivalent of a read-lock is in place
-// during iteration, using the t.RWmut if necessary.
-// Calling `tree.RWmut.Rlock()` followed by
-// `defer tree.RWmut.RUnlock()` is typical.
-func (t *Tree) Iterator(start, end []byte) *iterator {
+// Iteration does no synchronization. This
+// allows for single goroutine code that deletes from
+// (or insert into) the tree during the iteration,
+// which is not an uncommon need.
+func (t *Tree) Iter(start, end []byte) *iterator {
 
 	if t.root == nil || t.size < 1 {
 		return &iterator{
@@ -483,7 +481,7 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 	}
 }
 
-// ReverseIterator starts a traversal over
+// RevIter starts a traversal over
 // the range (end, start] and returns keys in descending order
 // beginning with the first key that is <= start and > end.
 // The start key must be >= the end key. Either
@@ -492,22 +490,21 @@ func (t *Tree) Iterator(start, end []byte) *iterator {
 // Note that (x, x] will return the empty set.
 //
 // For example, suppose the keys {0, 1, 2} are
-// in the tree, and tree.ReverseIterator(0, 2) is called.
+// in the tree, and tree.RevIter(0, 2) is called.
 // Reverse iteration will return 2, then 1.
 // The same holds true if start (2 here) is replaced by
 // by any integer > 2.
 //
-// tree.ReverseIterator(nil, 2) will yield 2, then 1, then 0;
-// as will tree.ReverseIterator(nil, nil).
+// tree.RevIter(nil, 2) will yield 2, then 1, then 0;
+// as will tree.RevIter(nil, nil).
 //
 // The returned iterator is not concurrent/multiple goroutine safe.
-// Iteration does no synchronization. If concurrent
-// writes are possible, the user must
-// ensure the equivalent of a read-lock is in place
-// during iteration, using the Tree.RWmut if necessary.
-// Calling `tree.RWmut.Rlock()` followed by
-// `defer tree.RWmut.RUnlock()` is typical.
-func (t *Tree) ReverseIterator(end, start []byte) *iterator {
+// Iteration does no synchronization. This
+// allows for single goroutine code that deletes from
+// (or insert into) the tree during the iteration,
+// which is not an uncommon need.
+func (t *Tree) RevIter(end, start []byte) *iterator {
+
 	if t.root == nil || t.size < 1 {
 		return &iterator{
 			initDone: true,
@@ -526,11 +523,12 @@ func (t *Tree) ReverseIterator(end, start []byte) *iterator {
 	}
 
 	gtLeaf, endIdx, ok := t.FindGT(end)
+	_ = gtLeaf
 	if !ok {
-		vv("in revIt: FindGT(end='%v') got ok=false, endIdx = %v; gtLeaf='%v'", string(end), endIdx, gtLeaf)
+		//vv("in revIt: FindGT(end='%v') got ok=false, endIdx = %v; gtLeaf='%v'", string(end), endIdx, gtLeaf)
 		// this is okay if end is nil, of course
 
-		vv("FindGT end found nothing! end='%v'", string(end))
+		//vv("FindGT end found nothing! end='%v'", string(end))
 		return &iterator{
 			initDone: true,
 			closed:   true,

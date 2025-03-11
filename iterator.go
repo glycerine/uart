@@ -30,7 +30,7 @@ type iterator struct {
 	curIdx  int // corresponding to current key
 	endxIdx int // corresponding to 1 past the last key
 
-	started bool
+	//started bool
 
 	// current:
 	key   []byte
@@ -65,9 +65,9 @@ func (i *iterator) Key() Key {
 }
 
 func (i *iterator) inRange(key []byte) (inside bool) {
-	defer func() {
-		vv("inRange returns inside=%v; reverse is %v; key='%v'; cursor='%v; terminate='%v'", inside, i.reverse, string(key), string(i.cursor), string(i.terminate))
-	}()
+	//defer func() {
+	//vv("inRange returns inside=%v; reverse is %v; key='%v'; cursor='%v; terminate='%v'", inside, i.reverse, string(key), string(i.cursor), string(i.terminate))
+	//}()
 	if i.reverse {
 		return (bytes.Compare(key, i.cursor) <= 0 || len(i.cursor) == 0) && (len(i.terminate) == 0 || bytes.Compare(key, i.terminate) > 0)
 	}
@@ -102,9 +102,9 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 }
 
 func (i *iterator) next(n *Inner, curkey *byte) (keyb byte, b *bnode) {
-	defer func() {
-		vv("it.next returning keyb='%v', b='%v'", string(keyb), b.String())
-	}()
+	//defer func() {
+	//	vv("it.next returning keyb='%v', b='%v'", string(keyb), b.String())
+	//}()
 	if !i.reverse {
 		return n.Node.next(curkey)
 	}
@@ -149,7 +149,7 @@ func (i *iterator) tryAdvance() (bool, bool) {
 			return false, false
 		}
 		// advance curkey
-		vv("setting tail.curkey = '%v'", string(curkey))
+		//vv("setting tail.curkey = '%v'", string(curkey))
 		tail.curkey = &curkey
 
 		if child.isLeaf {
@@ -176,7 +176,7 @@ func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {
 		//if t.Size() == 0 {
 		//	return
 		//}
-		it := t.Iterator(beg, endx)
+		it := t.Iter(beg, endx)
 		for it.Next() {
 			if !yield(it.Key(), it.Value()) {
 				return

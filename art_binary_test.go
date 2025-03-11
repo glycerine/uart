@@ -41,7 +41,7 @@ func TestBinaryKeyHandling(t *testing.T) {
 	// Prefix test
 	var found []string
 	var keys []string
-	it := tree.Iterator(nil, nil)
+	it := tree.Iter(nil, nil)
 	for it.Next() {
 		found = append(found, it.Value().(string))
 		keys = append(keys, string(it.Key()))
