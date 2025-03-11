@@ -916,10 +916,6 @@ func TestArtTree_SearchMod_LT_requires_backtracking(t *testing.T) {
 	}
 }
 
-func Test_707_ArtTree_SearchMod_big_GT_only(t *testing.T) {
-	return // GT not done yet! only have GTE at the moment.
-}
-
 func Test_808_ArtTree_SearchMod_big_GTE(t *testing.T) {
 
 	// GTE should work on big trees

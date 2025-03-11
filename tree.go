@@ -171,6 +171,9 @@ func (t *Tree) InsertX(key Key, value any, x []byte) (updated bool) {
 
 // Insert makes a copy of key to avoid sharing bugs.
 // The value is only stored and not copied.
+// The return value updated is true if the
+// size of the tree did not change because
+// an existing key was given the new value.
 func (t *Tree) Insert(key Key, value any) (updated bool) {
 
 	// make a copy of key that we own, so

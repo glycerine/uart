@@ -84,7 +84,9 @@ func TestInsertManyWordsAndRemoveThemAll(t *testing.T) {
 			break
 		} else {
 			by := &TestBytes{Slc: []byte(line)}
-			tree.Insert([]byte(line), by) // []byte(line))
+			if updated := tree.Insert([]byte(line), by); updated {
+				panic(fmt.Sprintf("redundant '%v'", string(line)))
+			}
 			sline := string(line)
 			words[sline] = true
 			word_order = append(word_order, sline)
@@ -97,7 +99,7 @@ func TestInsertManyWordsAndRemoveThemAll(t *testing.T) {
 			//}
 			//fmt.Printf("ok: added key '%v'\n", string(line))
 		}
-		if true { // underRaceDetector && i > 500 {
+		if i > 500 { // underRaceDetector
 			// Under the race detector and the pessimistic
 			// (simulated) locking to keep the race detector happy,
 			// we are too slow for 260k words.
@@ -719,10 +721,6 @@ func Test_PrenInsert(t *testing.T) {
 	}
 
 	verifySubN(tree.root)
-
-	// strangely, this does not fix it.
-	//fullTreeRedoPren(tree.root)
-
 	verifyPren(tree.root)
 }
 
@@ -731,7 +729,7 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 	tree := NewArtTree()
 	paths := loadTestFile("assets/linux.txt")
 
-	limit := 10
+	limit := 0
 	if limit > 0 {
 		paths = paths[:limit]
 	}
