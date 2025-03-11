@@ -77,8 +77,14 @@ efficient O(log N) time operation for
 N keys in the tree. Trie operations are
 sometimes described as being O(k) time
 where k is the string length of the
-key, but in practice these are the same
-because typically k approximates log(N).
+key, but I'ved opted for the more familiar
+O(log N) description under the assumption, that,
+in practice k will approximate log(N).
+Path compression means there is an inner
+node in the radix trie only where two keys differ, and this
+closely resembles an (unbalanced) binary search tree.
+ART trees never have to rebalance. See 
+the journal paper for a full description[1].
 
 This ART tree supports only a single value for each
 key -- it is not a "multi-map" in the C++ sense.
