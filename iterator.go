@@ -72,7 +72,7 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 	}
 
 	// get the integer range [begIdx, endIdx]
-	_, begIdx, ok := t.FindGTE(start)
+	_, begIdx, ok := t.find_unlocked(GTE, start)
 	if !ok {
 		// no such key to start from, iteration already over.
 		return &iterator{
@@ -81,7 +81,7 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 		}
 	}
 
-	_, endIdx, ok := t.FindLT(end)
+	_, endIdx, ok := t.find_unlocked(LT, end)
 	if !ok {
 		return &iterator{
 			initDone: true,
@@ -150,16 +150,16 @@ func (t *Tree) RevIter(end, start []byte) (iter *iterator) {
 	}
 
 	// get the integer range [endIdx, begIdx]
-	_, begIdx, ok := t.FindLTE(start)
+	_, begIdx, ok := t.find_unlocked(LTE, start)
 	if !ok {
-		vv("FindLTE start found nothing!")
+		//vv("FindLTE start found nothing!")
 		return &iterator{
 			initDone: true,
 			closed:   true,
 		}
 	}
 
-	gtLeaf, endIdx, ok := t.FindGT(end)
+	gtLeaf, endIdx, ok := t.find_unlocked(GT, end)
 	_ = gtLeaf
 	if !ok {
 		//vv("in revIt: FindGT(end='%v') got ok=false, endIdx = %v; gtLeaf='%v'", string(end), endIdx, gtLeaf)
@@ -210,9 +210,12 @@ func (i *iterator) Next() (ok bool) {
 		if i.reverse {
 			smod = LT
 		}
-		leaf, idx, ok := i.tree.Find(smod, i.cursor)
+		leaf, idx, ok := i.tree.find_unlocked(smod, i.cursor)
 		if !ok {
-			vv("ugh. could not find successor to i.cursor '%v'. terminating iteration", string(i.cursor))
+			//vv("ugh. could not find successor to i.cursor '%v'. terminating iteration", string(i.cursor))
+
+			// user modification may have deleted all further keys,
+			// so terminate the iteration.
 			i.closed = true
 			return false
 		}
@@ -247,7 +250,7 @@ func (i *iterator) Next() (ok bool) {
 
 	if ok {
 		// confirm our indexes are in correspondence.
-		leafIdx, leafIdxOK := i.tree.LeafIndex(i.leaf)
+		_, leafIdx, leafIdxOK := i.tree.find_unlocked(Exact, i.leaf.Key)
 		if !leafIdxOK {
 			panic("iterate was ok but LeafIndex was not")
 		}

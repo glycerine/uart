@@ -43,9 +43,9 @@ import (
 // key -- it is not a "multi-map" in the C++ sense.
 //
 // Concurrency: this ART implementation is
-// goroutine safe, as it uses a sync.RWMutex
-// synchronization. Thus it allows only a
-// single writer at a time, and any number
+// goroutine safe, as it uses a the Tree.RWmut
+// sync.RWMutex for synchronization. Thus it
+// allows only a single writer at a time, and any number
 // of readers. Readers will block until
 // the writer is done, and thus they see
 // a fully consistent view of the tree.
@@ -85,14 +85,18 @@ type Tree struct {
 	// Writers increment this treeVersion number
 	// to allow iterators to continue
 	// efficiently past tree modifications
-	// (deletions and/or insertinos) that happen
+	// (deletions and/or insertions) that happen
 	// behind them. If the iterator sees a
 	// different treeVersion, it will use a
 	// slightly more expensive way of getting
 	// the next leaf, one that is resilient in
-	// the face of tree structure changes.
+	// the face of insertions and deletions.
+	// If no changes are detected, the
+	// fast path is used.
 	treeVersion int64
 
+	// Note: applies to the version with serialization only.
+	//
 	// Leafz is for serialization. You must
 	// set leafByLeaf=false if you want to
 	// automatically serialize a Tree when it is
@@ -110,24 +114,26 @@ type Tree struct {
 	// for standalone save/load facilities.
 	//
 	// Only leaf nodes are serialized to disk.
-	// This saves 20x space.
 	Leafz []*Leaf `zid:"0"`
 
 	// SkipLocking means do no internal
 	// synchronization, because a higher
 	// component is doing so.
 	//
-	// Warning when using SkipLocking:
+	// Warning: when using SkipLocking
 	// the user's code _must_ synchronize (prevent
-	// overlap) of readers and writers who access the Tree.
-	// Under this setting, the Tree will not do locking.
+	// overlap) of readers and writers from
+	// different goroutines who access the Tree
+	// simultaneously. Under this setting,
+	// the Tree will not do locking.
 	// (it does by default, with SkipLocking false).
-	// Without synchronization, there will be data races,
-	// lost data, and panic segfaults from torn reads.
+	// Without synchronization, multiple goroutines
+	// will create data races, lost data, and panic
+	// segfaults from torn reads.
 	//
 	// The easiest way to do this is with a sync.RWMutex.
 	// One such, the RWmut on this Tree, will be
-	// employed for you if SkipLocking is allowed to
+	// employed if SkipLocking is allowed to
 	// default to false.
 	SkipLocking bool `msg:"-"`
 }
@@ -332,11 +338,30 @@ func (t *Tree) LastLeaf() (lf *Leaf, idx int, found bool) {
 // If key is nil, then GTE and GT return
 // the first leaf in the tree, while LTE
 // and LT return the last leaf in the tree.
+//
+// Clients must take care not to modify the
+// returned Leaf.Key, as it is not copied to
+// keep memory use low. Doing so will result
+// in undefined behavior.
+//
+// The FindGTE, FindGT, FindLTE, and FindLT
+// methods provide a more convenient interface
+// to obtain the stored Leaf.Value if the
+// full generality of Leaf access is not required.
+//
+// By default, Find obtains a read-lock on the
+// Tree.RWmut. This can be omitted by setting the
+// Tree.SkipLocking option to true.
 func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool) {
 	if !t.SkipLocking {
 		t.RWmut.RLock()
 		defer t.RWmut.RUnlock()
 	}
+	return t.find_unlocked(smod, key)
+}
+
+func (t *Tree) find_unlocked(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool) {
+
 	//vv("Find, smod='%v; key='%v'; t.size='%v'", smod, string(key), t.size)
 	if t.root == nil {
 		return
@@ -502,7 +527,7 @@ func (t *Tree) Atv(i int) (val any, ok bool) {
 
 func (t *Tree) LeafIndex(leaf *Leaf) (idx int, ok bool) {
 	t.RWmut.RLock()
-	_, idx, ok = t.FindExact(leaf.Key)
+	_, idx, ok = t.find_unlocked(Exact, leaf.Key)
 	t.RWmut.RUnlock()
 	return
 }
