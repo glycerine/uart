@@ -13,7 +13,6 @@ import (
 	"time"
 )
 
-var stopnow int // debug todo remove
 var _ = sort.Sort
 
 // used by tests; kind of a default value type.
@@ -1401,9 +1400,6 @@ func Test507_ArtTree_SearchMod_random_numbered_LTE(t *testing.T) {
 
 		// verify LTE queries for keys larger than the
 		// largest in the tree return the last key.
-		if j == 9 {
-			//stopnow = true
-		}
 		if sz > 0 {
 
 			for kk := range 2 {
@@ -1438,18 +1434,25 @@ func Test508_ArtTree_SearchMod_random_numbered_LT_(t *testing.T) {
 	for j := 1; j < 5000; j++ {
 		tree := NewArtTree()
 
+		largestIdx := -1
 		// Generate sorted keys
 		sorted := make([][]byte, 0, j)
+		inTree := make([][]byte, 0, j)
 		for i := 0; i < j; i++ {
 			if i%2 == 0 {
 				k := fmt.Sprintf("%06d", i)
 				sorted = append(sorted, []byte(k))
 				tree.Insert(Key(k), ByteSliceValue(k))
+				largestIdx++
+				inTree = append(inTree, []byte(k))
 			} else {
 				k := fmt.Sprintf("%06d", i)
 				sorted = append(sorted, []byte(k))
 			}
 		}
+
+		larger1 := fmt.Sprintf("%06d", j)
+		larger2 := fmt.Sprintf("%06d", j+1)
 
 		sz := tree.Size()
 		showlist := func(want int, got string) {
@@ -1508,6 +1511,35 @@ func Test508_ArtTree_SearchMod_random_numbered_LT_(t *testing.T) {
 		}
 		if lf == nil {
 			t.Fatal("expected non-nil leaf for nil LT search")
+		}
+
+		// verify LT queries for keys larger than the
+		// largest in the tree return the last key.
+		if sz > 0 {
+
+			for kk := range 2 {
+				query := []byte(larger1)
+				if kk > 0 {
+					query = []byte(larger2)
+				}
+
+				lf, idx, found := tree.Find(LT, query)
+				if found && lf != nil && idx == largestIdx {
+					// good.
+				} else {
+					vv("tree = %v", tree)
+					vv("lf='%v'; idx=%v; found=%v; largestIdx=%v", lf, idx, found, largestIdx)
+					showlist(-1, string(lf.Key))
+					panic(fmt.Sprintf("could not find key LT '%v' at j=%v", string(query), j))
+				}
+
+				wanted := string(inTree[len(inTree)-1])
+				lfkey := string(lf.Key)
+				if lfkey != wanted {
+					vv("tree = %v", tree)
+					panic(fmt.Sprintf("on j=%v; (LTE key '%v') wanted = '%v' but lfkey ='%v'; ", j, string(query), wanted, lfkey))
+				}
+			}
 		}
 	}
 }
