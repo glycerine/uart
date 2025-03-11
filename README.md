@@ -194,6 +194,9 @@ tree reads 10_000_000 keys: elapsed 350.897572ms (35ns/op)
 Using the native iterator instead of iter.Seq is a tiny bit faster:
 uart Iter() reads 10_000_000 keys: elapsed 342.95423ms (34ns/op)
 
+Using the integer based indexing is slower, but faster than writes:
+tree.At(i) reads  10_000_000 keys: elapsed 2.380924685s (238ns/op)
+
 --- PASS: Test620_unlocked_read_comparison (8.27s)
 
 
