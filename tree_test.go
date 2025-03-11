@@ -2015,7 +2015,7 @@ func Test600_fuzz_compare_random_insert_delete_to_map(t *testing.T) {
 
 	// M = total number of leaves in the starting tree.
 	// K = number of random operations (get, insert, del) to do.
-	M := 5000
+	M := 100
 	K := 10_000_000
 
 	tree := NewArtTree()
@@ -2071,10 +2071,16 @@ func Test600_fuzz_compare_random_insert_delete_to_map(t *testing.T) {
 			// insert
 			gomap[string(key)] = true
 			tree.Insert(key, key)
+			if tree.Size() != len(gomap) {
+				panic(fmt.Sprintf("after insert: tree.Size() = %v, versus len(gomap) = %v", tree.Size(), len(gomap)))
+			}
 		case 2:
 			// delete
 			tree.Remove(key)
 			delete(gomap, string(key))
+			if tree.Size() != len(gomap) {
+				panic(fmt.Sprintf("after delete: tree.Size() = %v, versus len(gomap) = %v", tree.Size(), len(gomap)))
+			}
 		}
 
 	}
