@@ -1189,7 +1189,7 @@ func Test505_ArtTree_SearchMod_random_numbered_GTE(t *testing.T) {
 				if lf == nil {
 					panic(fmt.Sprintf("bad GTE smaller-than-smallest response! want key='%v', found=%v (wanted true); idx=%v (wanted 0)", string(sorted[0]), found, idx))
 				} else {
-					vv("sz = %v", tree.Size())
+					//vv("sz = %v", tree.Size())
 					panic(fmt.Sprintf("bad GTE smaller-than-smallest response! want key='%v', got='%v'; found=%v; idx=%v", string(sorted[0]), string(lf.Key), found, idx))
 				}
 			}
@@ -1421,8 +1421,8 @@ func Test507_ArtTree_SearchMod_random_numbered_LTE(t *testing.T) {
 				if found && lf != nil && idx == largestIdx {
 					// good.
 				} else {
-					vv("tree = %v", tree)
-					vv("lf='%v'; idx=%v; found=%v; largestIdx=%v", lf, idx, found, largestIdx)
+					//vv("tree = %v", tree)
+					//vv("lf='%v'; idx=%v; found=%v; largestIdx=%v", lf, idx, found, largestIdx)
 					showlist(-1, string(lf.Key))
 					panic(fmt.Sprintf("could not find key LTE '%v' at j=%v", string(query), j))
 				}
@@ -1430,7 +1430,7 @@ func Test507_ArtTree_SearchMod_random_numbered_LTE(t *testing.T) {
 				wanted := string(inTree[len(inTree)-1])
 				lfkey := string(lf.Key)
 				if lfkey != wanted {
-					vv("tree = %v", tree)
+					//vv("tree = %v", tree)
 					panic(fmt.Sprintf("on j=%v; (LTE key '%v') wanted = '%v' but lfkey ='%v'; ", j, string(query), wanted, lfkey))
 				}
 			}
@@ -1536,8 +1536,8 @@ func Test508_ArtTree_SearchMod_random_numbered_LT_(t *testing.T) {
 				if found && lf != nil && idx == largestIdx {
 					// good.
 				} else {
-					vv("tree = %v", tree)
-					vv("lf='%v'; idx=%v; found=%v; largestIdx=%v", lf, idx, found, largestIdx)
+					//vv("tree = %v", tree)
+					//vv("lf='%v'; idx=%v; found=%v; largestIdx=%v", lf, idx, found, largestIdx)
 					showlist(-1, string(lf.Key))
 					panic(fmt.Sprintf("could not find key LT '%v' at j=%v", string(query), j))
 				}
@@ -1545,7 +1545,7 @@ func Test508_ArtTree_SearchMod_random_numbered_LT_(t *testing.T) {
 				wanted := string(inTree[len(inTree)-1])
 				lfkey := string(lf.Key)
 				if lfkey != wanted {
-					vv("tree = %v", tree)
+					//vv("tree = %v", tree)
 					panic(fmt.Sprintf("on j=%v; (LTE key '%v') wanted = '%v' but lfkey ='%v'; ", j, string(query), wanted, lfkey))
 				}
 			}
