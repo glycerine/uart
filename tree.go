@@ -19,7 +19,7 @@ import (
 // many ordered-key-value-map use cases, such
 // as database indexes and file-system hierarchies.
 // The Google File System paper, for example,
-// emphasizes the efficiencies obtained
+// mentions the efficiencies obtained
 // by exploiting prefix compression in their
 // distributed file system[2]. FoundationDB's
 // new Redwood backend provides it as a feature[3],
