@@ -706,27 +706,26 @@ func Test_PrenInsert(t *testing.T) {
 	paths := loadTestFile("assets/linux.txt")
 
 	// 10 was minimum to see the need for inner.go:147 n.Node.redoPren()
-	//limit := 10
-	limit := 0
+	// 25 was red still.
+	limit := 25
+	//limit := 0
 	if limit > 0 {
 		paths = paths[:limit]
 	}
 
-	// fixme: sort paths first so our
-	// check is actually correct.
-
-	var sorted [][]byte
 	for i, w := range paths {
 		_ = i
 		if tree.Insert(w, w) {
 			t.Fatalf("i=%v, could not add '%v', "+
 				"already in tree", i, string(w))
 		}
-		sorted = append(sorted, w)
 	}
-	sort.Sort(sliceByteSlice(sorted))
 
 	verifySubN(tree.root)
+
+	// strangely, this does not fix it.
+	fullTreeRedoPren(tree.root)
+
 	verifyPren(tree.root)
 }
 

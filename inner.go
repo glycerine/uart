@@ -45,6 +45,8 @@ func (n *Inner) compressedMismatch(key Key, depth int) (idx int) {
 // If restart == true on then retry the insert.
 func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *Inner) (replacement *bnode, updated bool) {
 
+	//defer n.Node.redoPren() // Test_PrenInsert green? nope
+
 	// biggest mis is len(n.Compressed) for
 	// full matching with lf.Key
 	mis := n.compressedMismatch(lf.Key, depth)
@@ -96,6 +98,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		selfb.isLeaf = false
 		selfb.leaf = nil
 		selfb.inner = n
+
 		return selfb, false
 	}
 	// INVAR: mis == len(n.Compressed)

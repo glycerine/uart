@@ -1671,18 +1671,18 @@ func verifySubN(root *bnode) (leafcount int) {
 	return leafcount
 }
 
-func verifyPren(root *bnode) (leafcount int) {
+func verifyPren(b *bnode) (leafcount int) {
 
-	if root == nil {
+	if b == nil {
 		return 0
 	}
-	if root.isLeaf {
+	if b.isLeaf {
 		return 1
 	} else {
 		var pren int
 		var subn int
 
-		inode := root.inner.Node
+		inode := b.inner.Node
 		switch n := inode.(type) {
 		case *node4:
 			for i, ch := range n.children {
@@ -1699,10 +1699,11 @@ func verifyPren(root *bnode) (leafcount int) {
 		case *node16:
 			for i, ch := range n.children {
 				if i < n.lth {
-					leafcount += verifyPren(n.children[i])
+					subn = verifyPren(n.children[i])
+					leafcount += subn
 
 					if ch.pren != pren {
-						panic(fmt.Sprintf("%p n16 pren is off: child.pren = %v; manual pren=%v", ch, ch.pren, pren))
+						panic(fmt.Sprintf("%p n16 pren is off: child.pren = %v; manual pren=%v;\n ch = '%v'", ch, ch.pren, pren, ch))
 
 					}
 					pren += subn
@@ -1715,7 +1716,8 @@ func verifyPren(root *bnode) (leafcount int) {
 					continue
 				}
 				child := n.children[k-1]
-				leafcount += verifyPren(child)
+				subn = verifyPren(child)
+				leafcount += subn
 				if child.pren != pren {
 					panic(fmt.Sprintf("%p n48 pren is off: child.pren = %v; manual pren=%v", child, child.pren, pren))
 				}
@@ -1724,7 +1726,8 @@ func verifyPren(root *bnode) (leafcount int) {
 		case *node256:
 			for _, child := range n.children {
 				if child != nil {
-					leafcount += verifyPren(child)
+					subn = verifyPren(child)
+					leafcount += subn
 					if child.pren != pren {
 						panic(fmt.Sprintf("%p n256 pren is off: child.pren = %v; manual pren=%v", child, child.pren, pren))
 					}
@@ -1733,8 +1736,8 @@ func verifyPren(root *bnode) (leafcount int) {
 			}
 		}
 
-		if root.inner.SubN != leafcount {
-			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, root.inner.SubN))
+		if b.inner.SubN != leafcount {
+			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, b.inner.SubN))
 		}
 	}
 	return leafcount
@@ -1756,7 +1759,7 @@ func fullTreeRedoPren(root *bnode) (leafcount int) {
 			for i, ch := range n.children {
 				_ = ch
 				if i < n.lth {
-					subn = verifyPren(n.children[i])
+					subn = fullTreeRedoPren(n.children[i])
 					leafcount += subn
 				}
 			}
@@ -1764,7 +1767,7 @@ func fullTreeRedoPren(root *bnode) (leafcount int) {
 			for i, ch := range n.children {
 				_ = ch
 				if i < n.lth {
-					leafcount += verifyPren(n.children[i])
+					leafcount += fullTreeRedoPren(n.children[i])
 				}
 			}
 		case *node48:
@@ -1774,12 +1777,12 @@ func fullTreeRedoPren(root *bnode) (leafcount int) {
 					continue
 				}
 				child := n.children[k-1]
-				leafcount += verifyPren(child)
+				leafcount += fullTreeRedoPren(child)
 			}
 		case *node256:
 			for _, child := range n.children {
 				if child != nil {
-					leafcount += verifyPren(child)
+					leafcount += fullTreeRedoPren(child)
 				}
 			}
 		}
