@@ -86,7 +86,7 @@ This makes it simple to use and implement.
 Note that the user can store any value, so 
 being a unique-key-map is not really a limitation.
 The user can simply point to a struct, slice or map
-of holding the same-key values in the Leaf.Value field.
+holding the same-key values in the Leaf.Value field.
 
 Concurrency: by default this ART implementation is
 goroutine safe, as it uses a sync.RWMutex
@@ -150,8 +150,6 @@ A comprehensive test suite is inclued to verify all operations.
 ## Benchmarks
 
 For code, see [tree_bench_test.go](./tree_bench_test.go).
-
-The benchmarks are located in [tree_concurrent_test.go](./tree_concurrent_test.go) and [tree_bench_test.go](./tree_bench_test.go).
 
 `frac_x` means `0.x` read fraction. frac_0 means write-only, frac_10 means read-only.
 
