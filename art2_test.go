@@ -705,10 +705,7 @@ func Test_PrenInsert(t *testing.T) {
 	tree := NewArtTree()
 	paths := loadTestFile("assets/linux.txt")
 
-	// 10 was minimum to see the need for inner.go:147 n.Node.redoPren()
-	// 25 was red still.
-	limit := 25
-	//limit := 0
+	limit := 0
 	if limit > 0 {
 		paths = paths[:limit]
 	}
@@ -724,7 +721,7 @@ func Test_PrenInsert(t *testing.T) {
 	verifySubN(tree.root)
 
 	// strangely, this does not fix it.
-	fullTreeRedoPren(tree.root)
+	//fullTreeRedoPren(tree.root)
 
 	verifyPren(tree.root)
 }
