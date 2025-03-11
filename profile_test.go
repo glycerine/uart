@@ -18,7 +18,7 @@ import (
 
 // profile to see were allocations are, write path.
 func TestWriteForProfiling(t *testing.T) {
-	return
+	//return
 	startOnlineWebProfiling()
 
 	value := newValue(123)

@@ -107,7 +107,7 @@ type Tree struct {
 	// the Tree will not do locking itself
 	// (it does by default, with SkipLocking false).
 	// Without synchronization, multiple goroutines
-	// will create data races, lost data, and panic
+	// will create data races, lost data, and
 	// segfaults from torn reads.
 	//
 	// The easiest way to do this is with a sync.RWMutex.
@@ -193,9 +193,7 @@ func (t *Tree) Insert(key Key, value any) (updated bool) {
 // copying the slice if necessary before
 // submitting the Leaf.
 func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
-	if t == nil {
-		panic("t *Tree cannot be nil in InsertLeaf")
-	}
+
 	if !t.SkipLocking {
 		t.RWmut.Lock()
 		defer t.RWmut.Unlock()
