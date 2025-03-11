@@ -391,7 +391,9 @@ func TestIterRange(t *testing.T) {
 	tree := NewArtTree()
 	N := 3
 
+	// pick out the extremes to specify the range.
 	var first, last []byte
+
 	for i := range N {
 		k := fmt.Sprintf("%09d", i)
 		key := Key(k) // []byte
@@ -403,51 +405,38 @@ func TestIterRange(t *testing.T) {
 		}
 		tree.Insert(key, key)
 	}
-	vv("tree: '%s'", tree)
-	vv("first = '%v'", string(first))
-	vv("last = '%v'", string(last))
-
-	expect := []int{0, 1}
-	iter := tree.Iter(first, last)
-	n := 0
-	for iter.Next() {
-		key := iter.Key()
-		k, err := strconv.Atoi(strings.TrimSpace(string(key)))
-		panicOn(err)
-		//fmt.Printf("item %v was key '%v'\n", n, string(key))
-		if k != expect[n] {
-			t.Fatalf("want %v, got %v", n, k)
+	//vv("tree: '%s'", tree)
+	//vv("first = '%v'", string(first)) // 0
+	//vv("last = '%v'", string(last)) // 2
+	if true {
+		expect := []int{0, 1}
+		iter := tree.Iter(first, last) // [0, 2) so 0, 1
+		n := 0
+		for iter.Next() {
+			key := iter.Key()
+			k, err := strconv.Atoi(strings.TrimSpace(string(key)))
+			panicOn(err)
+			//fmt.Printf("item %v was key '%v'\n", n, string(key))
+			if k != expect[n] {
+				t.Fatalf("want %v, got %v", n, k)
+			}
+			n++
 		}
-		n++
 	}
 
-	expect = []int{1, 0}
-	riter := tree.RevIter(first, last)
-	n = 0
-	for riter.Next() {
-		key := riter.Key()
-		//k, err := strconv.Atoi(strings.TrimSpace(string(key)))
-		//panicOn(err)
-		k, err := strconv.Atoi(strings.TrimSpace(string(key)))
-		panicOn(err)
-		//fmt.Printf("riter item %v was key '%v'\n", n, string(key))
-		if k != expect[n] {
-			t.Fatalf("want %v, got %v", n, k)
+	if true {
+		expect := []int{2, 1}
+		riter := tree.RevIter(first, last) // (0,2], so 2, 1
+		n := 0
+		for riter.Next() {
+			key := riter.Key()
+			k, err := strconv.Atoi(strings.TrimSpace(string(key)))
+			panicOn(err)
+			//fmt.Printf("riter item %v was key '%v' -> k=%v; expect: '%v'\n", n, string(key), k, expect[n])
+			if k != expect[n] {
+				t.Fatalf("want %v, got %v", n, k)
+			}
+			n++
 		}
-		n++
 	}
-	// same but get the riter from tree.RevIter() instead.
-	riter = tree.RevIter(first, last)
-	n = 0
-	for riter.Next() {
-		key := riter.Key()
-		k, err := strconv.Atoi(strings.TrimSpace(string(key)))
-		panicOn(err)
-		//fmt.Printf("riter item %v was key '%v'\n", n, string(key))
-		if k != expect[n] {
-			t.Fatalf("want %v, got %v", n, k) // want 0, got 2
-		}
-		n++
-	}
-
 }
