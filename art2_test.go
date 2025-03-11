@@ -700,12 +700,14 @@ func verifyLeafIndexAt(tree *Tree) {
 	}
 }
 
-func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
+func Test_PrenInsert(t *testing.T) {
 
 	tree := NewArtTree()
 	paths := loadTestFile("assets/linux.txt")
 
-	limit := 10
+	// 10 was minimum to see the need for inner.go:147 n.Node.redoPren()
+	//limit := 10
+	limit := 0
 	if limit > 0 {
 		paths = paths[:limit]
 	}
@@ -724,7 +726,38 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 	}
 	sort.Sort(sliceByteSlice(sorted))
 
-	vv("tree = %v", tree.stringNoKeys(-1))
+	verifySubN(tree.root)
+	verifyPren(tree.root)
+}
+
+func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
+
+	tree := NewArtTree()
+	paths := loadTestFile("assets/linux.txt")
+
+	limit := 10
+	if limit > 0 {
+		paths = paths[:limit]
+	}
+
+	var sorted [][]byte
+	for i, w := range paths {
+		_ = i
+		sorted = append(sorted, w)
+	}
+	sort.Sort(sliceByteSlice(sorted))
+
+	for i, w := range sorted {
+		_ = i
+		if tree.Insert(w, w) {
+			t.Fatalf("i=%v, could not add '%v', "+
+				"already in tree", i, string(w))
+		}
+	}
+
+	verifySubN(tree.root)
+	verifyPren(tree.root)
+	//vv("tree = %v", tree.stringNoKeys(-1))
 
 	j := 0
 	for key, leaf := range Ascend(tree, nil, nil) {
