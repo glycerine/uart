@@ -2,14 +2,45 @@ package art
 
 import (
 	"bytes"
+	"fmt"
 	"iter"
 )
+
+// iterator will scan the tree in lexicographic order.
+type iterator struct {
+	tree *Tree
+
+	treeVersion int64
+
+	stack *checkpoint
+
+	initDone bool
+	closed   bool
+
+	start     []byte
+	cursor    []byte
+	terminate []byte
+
+	reverse bool
+
+	begIdx  int // corresponding to initial key
+	curIdx  int // corresponding to current key after the first Next()
+	endxIdx int // corresponding to 1 past the last key
+
+	// current:
+	key   []byte
+	value any
+	leaf  *Leaf
+}
 
 // Iter starts a traversal over the range [start, end)
 // in ascending order.
 //
 // iter.Next() must be called to start the iteration before
 // iter.Key(), iter.Value(), or iter.Leaf() will be meaningful.
+//
+// When iter.Next() returns false, the iteration
+// has completed.
 //
 // We begin with the first key that is >= start and < end.
 //
@@ -19,7 +50,8 @@ import (
 // in that direction.
 //
 // For example, note that [x, x) will return the
-// empty set, unless x is nil.
+// empty set, unless x is nil. If x _is_ nil, this
+// will return the entire tree in ascending order.
 //
 // For another example, suppose the keys {0, 1, 2} are
 // in the tree, and tree.Iter(0, 2) is called.
@@ -60,9 +92,10 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 	return &iterator{
 		tree:        t,
 		treeVersion: t.treeVersion,
+		start:       start,
 		cursor:      start,
 		terminate:   end,
-		begIdx:      begIdx - 1,
+		begIdx:      begIdx,
 		curIdx:      begIdx - 1,
 		endxIdx:     endIdx + 1,
 	}
@@ -74,6 +107,9 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 // iter.Next() must be called to start the iteration before
 // iter.Key(), iter.Value(), or iter.Leaf() will be meaningful.
 //
+// When iter.Next() returns false, the iteration
+// has completed.
+//
 // We begin with the first key that is <= start and > end.
 //
 // The end key must be < the start key, or no values
@@ -82,7 +118,8 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 // in that direction.
 //
 // For example, note that (x, x] will return the
-// empty set, unless x is nil.
+// empty set, unless x is nil. If x _is_ nil, this
+// will return the entire tree in descending order.
 //
 // For another example, suppose the keys {0, 1, 2} are
 // in the tree, and tree.RevIter(0, 2) is called.
@@ -135,9 +172,10 @@ func (t *Tree) RevIter(end, start []byte) (iter *iterator) {
 		tree:        t,
 		treeVersion: t.treeVersion,
 		reverse:     true,
+		start:       start,
 		cursor:      start,
 		terminate:   end,
-		begIdx:      begIdx + 1,
+		begIdx:      begIdx,
 		curIdx:      begIdx + 1,
 		endxIdx:     endIdx - 1,
 	}
@@ -150,45 +188,43 @@ type checkpoint struct {
 	prev *checkpoint
 }
 
-// iterator will scan the tree in lexicographic order.
-type iterator struct {
-	tree *Tree
-
-	treeVersion int64
-
-	stack *checkpoint
-
-	initDone bool
-	closed   bool
-
-	cursor, terminate []byte
-	reverse           bool
-
-	begIdx  int // corresponding to initial cursor key - 1
-	curIdx  int // corresponding to current key
-	endxIdx int // corresponding to 1 past the last key
-
-	//started bool
-
-	// current:
-	key   []byte
-	value any
-	leaf  *Leaf
-}
-
 // Next will iterate over all leaf nodes in
 // the specified range in the chosen direction.
 func (i *iterator) Next() (ok bool) {
 	if i.closed {
 		return false
 	}
+	if i.treeVersion != i.tree.treeVersion {
+		// there has been a modification
+		// to the tree, reset the stack and
+		// indexes. Proceed from the
+		// last provided key+1 (-1 for reverse).
+	}
+	if i.reverse {
+		i.curIdx--
+	} else {
+		i.curIdx++
+	}
+
 	if i.stack == nil {
 		// initialize iterator
 		if exit, next := i.init(); exit {
 			return next
 		}
 	}
-	return i.iterate()
+	ok = i.iterate()
+
+	if ok {
+		// confirm our indexes are in correspondence.
+		leafIdx, leafIdxOK := i.tree.LeafIndex(i.leaf)
+		if !leafIdxOK {
+			panic("iterate was ok but LeafIndex was not")
+		}
+		if leafIdx != i.curIdx {
+			panic(fmt.Sprintf("leafIdx = %v but i.curIdx = %v", leafIdx, i.curIdx))
+		}
+	}
+	return
 }
 
 // exit returned true means only 0 or 1 nodes in tree,
