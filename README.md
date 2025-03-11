@@ -126,10 +126,7 @@ https://duckdb.org/2022/07/27/art-storage.html
 
 [7] https://hyper-db.de/  https://tableau.github.io/hyper-db/journey
 
-Docs: https://pkg.go.dev/github.com/glycerine/art-adaptive-radix-tree
-
-In the mother project, serialization to disk 
-facilities are provided via greenpack (https://github.com/glycerine/greenpack). These are omitted here to provide a zero-dependency package.
+Docs: https://pkg.go.dev/github.com/glycerine/uart
 
 -----
 Author: Jason E. Aten, Ph.D.
