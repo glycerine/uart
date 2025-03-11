@@ -57,6 +57,8 @@ for each unique key. However, as the benchmarks
 below indicate (1440 nsec per lookup for red-black tree,
 versus 53 nsec for ART), lookups can be orders of
 magnitude faster (27x in that benchmark, for the read-only case).
+Note: red-black tree benchmarks are only in the serialization-included
+version, to avoid any 3rd party dependencies.
 
 Ease of use: efficient greater-than/less-than key lookup
 and range iteration, as well as the
@@ -141,8 +143,8 @@ https://github.com/WenyXu/sync-adaptive-radix-tree .
 
 In particular, the racey and unfinished optimistic 
 locking was removed, many bugs were fixed, and code was
-added to support queries (FindGE, FindGTE, FindLE,
-FindLTE) based on the ordering of keys in the tree. 
+added to support ordered-key queries (FindGE, FindGTE, FindLE,
+FindLTE) and integer index access.
 A comprehensive test suite is inclued to verify all operations.
 
 ## Benchmarks
