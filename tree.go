@@ -364,7 +364,7 @@ func (t *Tree) Find(smod SearchModifier, key Key) (lf *Leaf, idx int, found bool
 		// leaf code with this uncommon situation.
 		//vv("smod = %v; dir=%v; found=%v; b=%v", smod, dir, found, b)
 		switch smod {
-		// note the dir is opposite of might be expected.
+		// note the dir is opposite of might be expected. correctly.
 		case GTE:
 			if dir <= 0 && b != nil {
 				found = true
