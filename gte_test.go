@@ -190,7 +190,7 @@ func TestNode_gt_(t *testing.T) {
 	}
 	test_gt := func(n Inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
-			n.addChild(k, &bnode{}) // can't add nil for n256
+			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256. fake leaf so subn() doesn't crash.
 		}
 		var b byte
 		var ch *bnode
@@ -297,7 +297,7 @@ func TestNode_lt_(t *testing.T) {
 	}
 	test_lt := func(n Inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
-			n.addChild(k, &bnode{}) // can't add nil for n256
+			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256
 		}
 		var b byte
 		var ch *bnode
@@ -410,7 +410,7 @@ func TestNode_lte_(t *testing.T) {
 	}
 	test_lte := func(n Inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
-			n.addChild(k, &bnode{}) // can't add nil for n256
+			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256
 		}
 		var b byte
 		var ch *bnode

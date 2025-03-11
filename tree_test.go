@@ -1595,8 +1595,13 @@ func Test510_SubN_maintained_for_At_indexing_(t *testing.T) {
 			key = sorted[i]
 			tree.Remove(key)
 
+			//vv("at sz = %v; i=%v;j=%v", tree.Size(), i, j)
+			// tree_test.go:1598 2025-03-11 02:23:25.347 -0500 CDT at sz = 2; i=0;j=3  detects panic: leafcount=2, but n.SubN = 3; node=' 0xc000012370 node4, key '(zero)' childkeys: ['0', '8'] (treedepth 0) compressed='0' path='(paths commented out atm)' (subN: 3; pren: na)
+
 			// after each delete, verify correct SubN counts.
-			verifySubN(tree.root)
+			if tree.root != nil {
+				verifySubN(tree.root)
+			}
 		}
 	}
 }
