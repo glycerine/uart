@@ -2007,3 +2007,76 @@ func TestArtTree777_FindLT_key_after_keys_in_tree(t *testing.T) {
 	}
 
 }
+
+func Test600_fuzz_compare_random_insert_delete_to_map(t *testing.T) {
+
+	// do random insertions, reads, and deletions and
+	// confirm with a standard Go map that we match
+	// the results.
+
+	// M = total number of leaves in the starting tree.
+	// K = number of random operations (get, insert, del) to do.
+	M := 5000
+	K := 10_000_000
+
+	tree := NewArtTree()
+
+	var seed32 [32]byte
+	chacha8 := mathrand2.NewChaCha8(seed32)
+
+	var N uint64 = 100000 // domain for leaf keys.
+
+	var sorted [][]byte
+	used := make(map[int]bool)
+	gomap := make(map[string]bool)
+	j := 0
+	_ = j
+	for len(used) < M {
+		r := int(chacha8.Uint64() % N)
+		if used[r] {
+			continue
+		}
+		used[r] = true
+
+		key := fmt.Sprintf("%06d", r)
+		gomap[key] = true
+		key1 := []byte(key)
+		sorted = append(sorted, key1)
+
+		key2 := append([]byte{}, key1...)
+
+		if tree.Insert(key2, r) {
+			t.Fatalf("r=%v, could not add '%v', already in tree", r, string(key2))
+		}
+		j++
+	}
+	sort.Sort(sliceByteSlice(sorted))
+
+	var key []byte
+
+	for k := range K {
+
+		i := int(chacha8.Uint64() % uint64(M))
+		key = sorted[i]
+
+		op := int(chacha8.Uint64() % 3)
+		switch op {
+		case 0:
+			// read
+			_, _, found := tree.FindExact(key)
+			found2 := gomap[string(key)]
+			if found != found2 {
+				panic(fmt.Sprintf("k=%v; found=%v; found2=%v", k, found, found2))
+			}
+		case 1:
+			// insert
+			gomap[string(key)] = true
+			tree.Insert(key, key)
+		case 2:
+			// delete
+			tree.Remove(key)
+			delete(gomap, string(key))
+		}
+
+	}
+}
