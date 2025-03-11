@@ -104,6 +104,10 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 // RevIter starts a traversal over
 // the range (end, start] in descending order.
 //
+// Note that the first argument to RevIter()
+// is the smaller if the two differ. This is true for Iter()
+// as well.
+//
 // iter.Next() must be called to start the iteration before
 // iter.Key(), iter.Value(), or iter.Leaf() will be meaningful.
 //

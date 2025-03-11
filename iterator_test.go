@@ -69,7 +69,6 @@ func TestIterConcurrentExpansion(t *testing.T) {
 	}
 }
 
-/*
 func TestIterDeleteBehindFwd(t *testing.T) {
 
 	tree := NewArtTree()
@@ -262,7 +261,7 @@ func TestIterDeleteBehindReverse(t *testing.T) {
 		}
 	}
 }
-*/
+
 // [start, end) semantics version; not (start, end].
 func TestIterator(t *testing.T) {
 
@@ -387,7 +386,6 @@ func TestIterator(t *testing.T) {
 	}
 }
 
-/*
 func TestIterRange(t *testing.T) {
 
 	tree := NewArtTree()
@@ -405,9 +403,9 @@ func TestIterRange(t *testing.T) {
 		}
 		tree.Insert(key, key)
 	}
-	//vv("tree: '%s'", tree)
-	//vv("first = '%v'", string(first))
-	//vv("last = '%v'", string(last))
+	vv("tree: '%s'", tree)
+	vv("first = '%v'", string(first))
+	vv("last = '%v'", string(last))
 
 	expect := []int{0, 1}
 	iter := tree.Iter(first, last)
@@ -424,7 +422,7 @@ func TestIterRange(t *testing.T) {
 	}
 
 	expect = []int{1, 0}
-	riter := tree.RevIter(last, first)
+	riter := tree.RevIter(first, last)
 	n = 0
 	for riter.Next() {
 		key := riter.Key()
@@ -447,10 +445,9 @@ func TestIterRange(t *testing.T) {
 		panicOn(err)
 		//fmt.Printf("riter item %v was key '%v'\n", n, string(key))
 		if k != expect[n] {
-			t.Fatalf("want %v, got %v", n, k)
+			t.Fatalf("want %v, got %v", n, k) // want 0, got 2
 		}
 		n++
 	}
 
 }
-*/
