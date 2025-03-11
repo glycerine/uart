@@ -949,7 +949,7 @@ func Test_808_ArtTree_SearchMod_big_GTE(t *testing.T) {
 	}
 
 	sz := tree.Size()
-	if true {
+	if false {
 		for i := 250; i < 320; i++ {
 			if i%2 == 0 {
 				fmt.Printf("sorted[%02d] %v      *in tree*\n", i, string(sorted[i]))
