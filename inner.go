@@ -120,6 +120,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	if next.isLeaf {
 
 		replacement, updated = next.insert(lf, nextDepth+1, next, tree, n)
+
 		n.Node.replace(idx, replacement, false)
 		n.SubN++
 		if !replacement.isLeaf {
@@ -129,12 +130,20 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 			//replacement.inner.path = next.inner.path
 		}
 
+		// this fixes a stale issue we detected. art2_test.go:357
+		n.Node.redoPren()
+
 		return selfb, updated
 	}
 	// INVAR: next is not a leaf.
 
 	_, updated = next.insert(lf, nextDepth+1, next, tree, n)
 	n.SubN++
+
+	// needed?
+	//n.Node.redoPren()
+	//next.redoPren()
+
 	return selfb, updated
 }
 
@@ -250,7 +259,7 @@ const prevButLargestWillDo = -2
 
 func (n *Inner) get(key Key, depth int, selfb *bnode) (value *bnode, found bool, dir direc, id int) {
 
-	//pp("top of get(), we are '%v'", n.FlatString(depth, 0))
+	pp("top of get(), we are '%v'", n.FlatString(depth, 0))
 
 	//_, fullmatch, gt := n.checkCompressed(key, depth)
 
@@ -286,6 +295,7 @@ func (n *Inner) get(key Key, depth int, selfb *bnode) (value *bnode, found bool,
 	//pp("about to call next.get on next = '%v' with inquiry '%v'", next.FlatString(nextDepth+1, 0), string(key[:nextDepth]))
 
 	value, found, dir, id = next.get(key, nextDepth+1, next)
+	vv("id = %v; next.pren=%v; together %v; n = %v", id, next.pren, id+next.pren, n)
 	id += next.pren
 	return
 }
