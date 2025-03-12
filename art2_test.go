@@ -817,6 +817,10 @@ func Test_pren_sub_on_update_in_place(t *testing.T) {
 		t.Fatalf("expected %v paths in tree, got size: %v", expect, tree.Size())
 	}
 
+	verifySubN(tree.root)
+	verifyLeafIndexAt(tree)
+	fmt.Printf("past initial tree check.\n")
+
 	// verify that update in place does not change pren/subn.
 	// note this will be slow as it goes though the whole
 	// tree on each i to check every node.
