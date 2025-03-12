@@ -81,7 +81,7 @@ type Tree struct {
 	root *bnode
 	size int64
 
-	// At() calls are much slower that
+	// At() calls are much slower than
 	// iteration by default, because they
 	// start at the root and go down the tree
 	// each time. If the user is making successive
@@ -92,6 +92,7 @@ type Tree struct {
 	// where the last At() left off, and pick up
 	// from there if the next call is for i+1 and
 	// there have been no tree modifications.
+	// Use Atfar() instead of At() to skip caching.
 	atCache *iterator
 
 	// The treeVersion Update protocol:
