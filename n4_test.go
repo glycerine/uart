@@ -49,7 +49,7 @@ func Test_n4_clone_grow_shrink(t *testing.T) {
 	}
 	//vv("added lf3, now '%v'", n4.String())
 
-	check := func(n Inode) {
+	check := func(n inode) {
 		var nextkey *byte
 		var a *bnode
 		var key byte

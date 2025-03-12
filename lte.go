@@ -57,7 +57,7 @@ var _ = fmt.Sprintf
 // an exact match to the key. The differences
 // are compact and found right after the
 // first getLTE() recursion.
-func (n *Inner) getLTE(
+func (n *inner) getLTE(
 	key Key,
 	depth int, // how far along the key we are
 	smod SearchModifier,
@@ -72,7 +72,7 @@ func (n *Inner) getLTE(
 	//pp("%p top of getLTE(), path='%v'; we are '%v' %v;  largestWillDo=%v", n, string(n.path), n.FlatString(depth, 0), n.rangestr(), largestWillDo)
 
 	//defer func() {
-	//	pp("%p returning from calldepth=%v getLTE value='%v', found='%v'; dir='%v'; id='%v'; my Inner %v;  largestWillDo=%v", n, calldepth, value, found, dir, id, n.rangestr(), largestWillDo)
+	//	pp("%p returning from calldepth=%v getLTE value='%v', found='%v'; dir='%v'; id='%v'; my inner %v;  largestWillDo=%v", n, calldepth, value, found, dir, id, n.rangestr(), largestWillDo)
 	//}()
 
 	// PHASE ZERO: largestWillDo during backtracking.

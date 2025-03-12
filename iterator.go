@@ -6,7 +6,55 @@ import (
 	"iter"
 )
 
-// iterator will scan the tree in lexicographic order.
+// define an interface only so that
+// the documentation for Next() appears in godoc.
+
+// An Iterator will scan the tree in
+// lexicographic order. See the Iter() and
+// RevIter() methods on Tree.
+type Iterator interface {
+
+	// Next() must be called to start the iteration before
+	// Key(), Value(), or Leaf() will be meaningful.
+	//
+	// Next will iterate over all leaf nodes in
+	// the specified range in the chosen direction.
+	//
+	// When the iteration is done, Next returns false.
+	//
+	// If the tree is modified between calls to Next,
+	// a version change will be recognized, and
+	// Next will transparently resume iteration
+	// from the successor to the last returned key.
+	Next() (ok bool)
+
+	// Leaf returns the current leaf in
+	// the iterator after the first successful
+	// Next() call.
+	Leaf() *Leaf
+
+	// Value returns the current value of
+	// the iterator after the first successful
+	// Next() call. This is the same as Leaf().Value
+	Value() any
+
+	// Index returns the current integer index of
+	// the iterator after the first successful
+	// Next() call.
+	Index() int
+
+	// Key returns the current key of
+	// the iterator after the first successful
+	// Next() call.
+	//
+	// Warning: the user must not modify
+	// this returned key -- in particular if concurrent changes to
+	// the tree are made. We depend
+	// on its value to reset and continue
+	// the iteration after any tree changes.
+	Key() Key
+}
+
 type iterator struct {
 	tree *Tree
 
@@ -189,7 +237,7 @@ func (t *Tree) RevIter(end, start []byte) (iter *iterator) {
 }
 
 type checkpoint struct {
-	node   *Inner
+	node   *inner
 	curkey *byte
 
 	prev *checkpoint
@@ -326,7 +374,7 @@ func (i *iterator) tryAdvance() (bool, bool) {
 		curkey, child := i.next(tail.node, tail.curkey)
 		if child == nil {
 
-			// Inner node is exhausted, move one level up the stack
+			// inner node is exhausted, move one level up the stack
 			i.stack = tail.prev
 			return false, false
 		}
@@ -356,7 +404,7 @@ func (i *iterator) tryAdvance() (bool, bool) {
 	}
 }
 
-func (i *iterator) next(n *Inner, curkey *byte) (keyb byte, b *bnode) {
+func (i *iterator) next(n *inner, curkey *byte) (keyb byte, b *bnode) {
 	//defer func() {
 	//	vv("it.next returning keyb='%v', b='%v'", string(keyb), b.String())
 	//}()
@@ -455,7 +503,7 @@ func dfs(root *bnode) iter.Seq2[*bnode, bool] {
 				//case *Leaf:
 				return yield(root, true)
 			} else {
-				//case *Inner:
+				//case *inner:
 				inode := root.inner.Node // interface
 				switch n := inode.(type) {
 				case *node4:

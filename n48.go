@@ -64,7 +64,7 @@ func (n *node48) childkeysString() (s string) {
 	return s + "]"
 }
 
-func (n *node48) Kind() Kind {
+func (n *node48) kind() kind {
 	return Node48
 }
 
@@ -166,7 +166,7 @@ func (n *node48) redoPren() {
 	}
 }
 
-func (n *node48) grow() Inode {
+func (n *node48) grow() inode {
 	nn := &node256{
 		lth: n.lth,
 	}
@@ -205,7 +205,7 @@ func (n *node48) min() bool {
 	return n.lth <= 17
 }
 
-func (n *node48) shrink() Inode {
+func (n *node48) shrink() inode {
 	nn := &node16{
 		lth: n.lth,
 	}

@@ -8,7 +8,7 @@ type node4 struct {
 	children [4]*bnode
 }
 
-func (n *node4) Kind() Kind {
+func (n *node4) kind() kind {
 	return Node4
 }
 
@@ -181,7 +181,7 @@ func (n *node4) full() bool {
 	return n.lth == 4
 }
 
-func (n *node4) grow() Inode {
+func (n *node4) grow() inode {
 	nn := &node16{}
 	nn.lth = n.lth
 	copy(nn.keys[:], n.keys[:])
@@ -194,7 +194,7 @@ func (n *node4) min() bool {
 	return n.lth <= 2
 }
 
-func (n *node4) shrink() Inode {
+func (n *node4) shrink() inode {
 	panic("can't shrink node4")
 }
 

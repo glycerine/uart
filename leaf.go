@@ -13,12 +13,19 @@ type TestBytes struct {
 	Slc []byte `zid:"0"`
 }
 
-// A simple wrapper header on all msgpack
+// ByteSlice is an alias for []byte. It
+// can be ignored in the uart Unserserialized
+// ART project, as it is only used for
+// serialization purposes elsewhere.
+//
+// ByteSlice is a simple wrapper header on all msgpack
 // messages; has the length and the bytes.
 // Allows us length delimited messages;
 // with length knowledge up front.
 type ByteSlice []byte
 
+// Key is the []byte which the tree
+// sorts in lexicographic order.
 type Key []byte
 
 type Leaf struct {
@@ -55,11 +62,11 @@ func NewLeaf(key Key, v any, x []byte) *Leaf {
 	}
 }
 
-func (lf *Leaf) Kind() Kind {
+func (lf *Leaf) kind() kind {
 	return Leafy
 }
 
-func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *Inner) (value *bnode, updated bool) {
+func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *inner) (value *bnode, updated bool) {
 
 	if lf == other {
 		// due to restarts (now elided though),
@@ -79,7 +86,7 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *In
 	longestPrefix := comparePrefix(lf.Key, other.Key, depth)
 	//vv("longestPrefix = %v; lf.Key='%v', other.key='%v', depth=%v", longestPrefix, string(lf.Key), string(other.Key), depth)
 	n4 := &node4{}
-	nn := &Inner{
+	nn := &inner{
 		Node: n4,
 
 		// keep commented out path stuff for debugging!
@@ -128,8 +135,8 @@ func (lf *Leaf) get(key Key, i int, selfb *bnode) (value *bnode, found bool, dir
 	return selfb, cmp == 0, direc(cmp), 0
 }
 
-func (lf *Leaf) addPrefixBefore(node *Inner, key byte) {
-	// Leaf does not store prefixes, only Inner.
+func (lf *Leaf) addPrefixBefore(node *inner, key byte) {
+	// Leaf does not store prefixes, only inner.
 }
 
 func (lf *Leaf) isLeaf() bool {

@@ -406,7 +406,7 @@ func NewKeyValueGenerator() *keyValueGenerator {
 type CheckPoint struct {
 	name       string
 	totalNodes int
-	expected   Kind
+	expected   kind
 }
 
 func TestArtTree_Grow(t *testing.T) {
@@ -424,7 +424,7 @@ func TestArtTree_Grow(t *testing.T) {
 		if got := tree.size; got != int64(point.totalNodes) {
 			t.Errorf("exected size %d but got %d", point.totalNodes, got)
 		}
-		if got := tree.root.Kind(); got != point.expected {
+		if got := tree.root.kind(); got != point.expected {
 			t.Errorf("exected kind %s got %s", point.expected, got)
 		}
 		g.resetCur()
@@ -475,15 +475,15 @@ func TestArtTree_Shrink(t *testing.T) {
 		}
 		switch tree.size {
 		case 48:
-			if got := tree.root.Kind(); got != Node48 {
+			if got := tree.root.kind(); got != Node48 {
 				t.Errorf("expected kind %s got %s", Node48, got)
 			}
 		case 16:
-			if got := tree.root.Kind(); got != Node16 {
+			if got := tree.root.kind(); got != Node16 {
 				t.Errorf("expected kind %s got %s", Node16, got)
 			}
 		case 4:
-			if got := tree.root.Kind(); got != Node4 {
+			if got := tree.root.kind(); got != Node4 {
 				t.Errorf("expected kind %s got %s", Node4, got)
 			}
 		case 0:
@@ -549,15 +549,15 @@ func TestArtTree_LargeKeyShrink(t *testing.T) {
 		}
 		switch tree.size {
 		case 48:
-			if got := tree.root.Kind(); got != Node48 {
+			if got := tree.root.kind(); got != Node48 {
 				t.Errorf("expected kind %s got %s", Node48, got)
 			}
 		case 16:
-			if got := tree.root.Kind(); got != Node16 {
+			if got := tree.root.kind(); got != Node16 {
 				t.Errorf("expected kind %s got %s", Node16, got)
 			}
 		case 4:
-			if got := tree.root.Kind(); got != Node4 {
+			if got := tree.root.kind(); got != Node4 {
 				t.Errorf("expected kind %s got %s", Node4, got)
 			}
 		case 0:

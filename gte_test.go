@@ -81,7 +81,7 @@ func TestNode_gte_(t *testing.T) {
 			want:   ans{b: 0},
 		},
 	}
-	test_gte := func(n Inode, keys []byte, needle *quest) ans {
+	test_gte := func(n inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
 			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256. added a fake Leaf for subn() never 0 checking in node.go:99
 		}
@@ -97,7 +97,7 @@ func TestNode_gte_(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var n Inode
+			var n inode
 			for i := range 4 {
 				switch i {
 				case 0:
@@ -188,7 +188,7 @@ func TestNode_gt_(t *testing.T) {
 			want:   ans{b: 0},
 		},
 	}
-	test_gt := func(n Inode, keys []byte, needle *quest) ans {
+	test_gt := func(n inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
 			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256. fake leaf so subn() doesn't crash.
 		}
@@ -204,7 +204,7 @@ func TestNode_gt_(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var n Inode
+			var n inode
 			for i := range 4 {
 				switch i {
 				case 0:
@@ -295,7 +295,7 @@ func TestNode_lt_(t *testing.T) {
 			want:   ans{b: 8},
 		},
 	}
-	test_lt := func(n Inode, keys []byte, needle *quest) ans {
+	test_lt := func(n inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
 			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256
 		}
@@ -311,7 +311,7 @@ func TestNode_lt_(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var n Inode
+			var n inode
 			for i := range 4 {
 				switch i {
 				case 0:
@@ -408,7 +408,7 @@ func TestNode_lte_(t *testing.T) {
 			want:   ans{b: 8},
 		},
 	}
-	test_lte := func(n Inode, keys []byte, needle *quest) ans {
+	test_lte := func(n inode, keys []byte, needle *quest) ans {
 		for _, k := range keys {
 			n.addChild(k, &bnode{isLeaf: true, leaf: &Leaf{}}) // can't add nil for n256
 		}
@@ -424,7 +424,7 @@ func TestNode_lte_(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			var n Inode
+			var n inode
 			for i := range 4 {
 				switch i {
 				case 0:

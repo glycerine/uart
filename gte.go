@@ -57,7 +57,7 @@ var _ = fmt.Sprintf
 // an exact match to the key. The differences
 // are compact and found right after the
 // first getGTE() recursion.
-func (n *Inner) getGTE(
+func (n *inner) getGTE(
 	key Key,
 	depth int, // how far along the key we are
 	smod SearchModifier,
@@ -72,7 +72,7 @@ func (n *Inner) getGTE(
 	//pp("%p top of getGTE(key='%v'), path='%v'; we are '%v' %v;  smallestWillDo=%v; calldepth='%v'; smod='%v'", n, string(key), string(n.path), n.FlatString(depth, 0), n.rangestr(), smallestWillDo, calldepth, smod)
 
 	//defer func() {
-	//pp("%p returning from calldepth=%v getGTE(key='%v') value='%v', found='%v'; dir='%v'; id='%v'; my Inner %v;  smallestWillDo=%v; id=%v; smod='%v'", n, calldepth, string(key), value, found, dir, id, n.rangestr(), smallestWillDo, id, smod)
+	//pp("%p returning from calldepth=%v getGTE(key='%v') value='%v', found='%v'; dir='%v'; id='%v'; my inner %v;  smallestWillDo=%v; id=%v; smod='%v'", n, calldepth, string(key), value, found, dir, id, n.rangestr(), smallestWillDo, id, smod)
 	//}()
 
 	// PHASE ZERO: smallestWillDo during backtracking.

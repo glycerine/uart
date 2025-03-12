@@ -9,7 +9,7 @@ import (
 var _ = sync.RWMutex{}
 
 // turn off n4/n16/... fine grained locking,
-// depending only on the Inner and Leaf RWMutex.
+// depending only on the inner and Leaf RWMutex.
 type artlock = nolock
 
 // adds ~ 120 nsec to each operation (800 nsec -> 920 nsec)
@@ -24,10 +24,10 @@ func (n *nolock) RLock()   {}
 func (n *nolock) RUnlock() {}
 
 // type Key []byte
-type Kind uint8
+type kind uint8
 
 const (
-	Leafy Kind = iota
+	Leafy kind = iota
 	Node4
 	Node16
 	Node48
@@ -40,7 +40,7 @@ func bnodeLeaf(lf *Leaf) *bnode {
 		isLeaf: true,
 	}
 }
-func bnodeInner(n *Inner) *bnode {
+func bnodeInner(n *inner) *bnode {
 	return &bnode{
 		inner: n,
 	}
@@ -53,7 +53,7 @@ func bnodeInner(n *Inner) *bnode {
 // ...much easier to deal with.
 type bnode struct {
 	leaf   *Leaf
-	inner  *Inner
+	inner  *inner
 	isLeaf bool
 
 	// pren is a cache of the sum of
@@ -66,11 +66,11 @@ type bnode struct {
 	pren int
 }
 
-func (a *bnode) Kind() Kind {
+func (a *bnode) kind() kind {
 	if a.isLeaf {
 		return Leafy
 	}
-	return a.inner.Kind()
+	return a.inner.kind()
 }
 
 func (a *bnode) last() (byte, *bnode) {
@@ -159,7 +159,7 @@ func (a *bnode) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 	return a.inner.del(key, depth, selfb, parentUpdate)
 }
 
-func (a *bnode) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, par *Inner) (*bnode, bool) {
+func (a *bnode) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, par *inner) (*bnode, bool) {
 	if a.isLeaf {
 		return a.leaf.insert(lf, depth, selfb, tree, par)
 	}
@@ -180,7 +180,7 @@ func (a *bnode) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
 	return a.inner.stringNoKeys(depth, recurse, a)
 }
 
-func (k Kind) String() string {
+func (k kind) String() string {
 	switch k {
 	case Leafy:
 		return "leaf"
@@ -206,10 +206,10 @@ func (key Key) At(pos int) byte {
 	return key[pos]
 }
 
-// Inner node with varying fanout though
+// inner node with varying fanout though
 // the Node field. An Inode can have
 // node4/node16/node48/node256 inside.
-type Inner struct {
+type inner struct {
 
 	// compressed implements path compression.
 	compressed []byte
@@ -227,7 +227,7 @@ type Inner struct {
 
 	// Note: keep this commented out path field for debugging!
 	// For sane debugging, comment this in
-	// back in to store the full path on each Inner node.
+	// back in to store the full path on each inner node.
 	//path []byte
 
 	// counted B-tree style: how many
@@ -235,32 +235,32 @@ type Inner struct {
 	SubN int `zid:"2"`
 
 	// Node holds one of node4, node16, node48, or node256.
-	// Inode is an interface that all of them implement.
-	Node Inode `zid:"0"`
+	// inode is an interface that all of them implement.
+	Node inode `zid:"0"`
 
 	// Keybyte gives the byte that leads
 	// to us in the parent index.
 	Keybyte byte `zid:"1"`
 }
 
-func (n *Inner) gte(k *byte) (byte, *bnode) {
+func (n *inner) gte(k *byte) (byte, *bnode) {
 	return n.Node.gte(k)
 }
-func (n *Inner) gt(k *byte) (byte, *bnode) {
+func (n *inner) gt(k *byte) (byte, *bnode) {
 	return n.Node.gt(k)
 }
-func (n *Inner) lte(k *byte) (byte, *bnode) {
+func (n *inner) lte(k *byte) (byte, *bnode) {
 	return n.Node.lte(k)
 }
-func (n *Inner) lt(k *byte) (byte, *bnode) {
+func (n *inner) lt(k *byte) (byte, *bnode) {
 	return n.Node.lt(k)
 }
 
-func (n *Inner) last() (byte, *bnode) {
+func (n *inner) last() (byte, *bnode) {
 	return n.Node.last()
 }
 
-func (n *Inner) first() (byte, *bnode) {
+func (n *inner) first() (byte, *bnode) {
 	return n.Node.first()
 }
 
@@ -273,7 +273,7 @@ func (a *bnode) redoPren() {
 }
 
 // implemented by node4, node16, node48, node256
-type Inode interface {
+type inode interface {
 	// re-compute the cumulative previous child subN cache
 	redoPren()
 	// last gives the greatest key (right-most) child
@@ -287,7 +287,7 @@ type Inode interface {
 	//setDepth(d int)
 	nchild() int
 	childkeysString() string
-	Kind() Kind
+	kind() kind
 	// next returns child after the requested byte
 	// if byte is nil - returns leftmost (first) child
 	next(*byte) (byte, *bnode)
@@ -299,7 +299,7 @@ type Inode interface {
 	addChild(byte, *bnode)
 	// these call addChid after constructing the anode
 	//addLeafChild(k byte, child *Leaf)
-	//addInnerChild(k byte, child *Inner)
+	//addInnerChild(k byte, child *inner)
 
 	// replace updates node at specified index
 	// if node is nil - delete the node and adjust metadata.
@@ -310,13 +310,13 @@ type Inode interface {
 	full() bool
 	// grow the node to next size
 	// node256 can't grow and will return nil
-	grow() Inode
+	grow() inode
 
 	// min is true if node reached min size
 	min() bool
 	// shrink is the opposite to grow
 	// if node is of the smallest type (node4) nil will be returned
-	shrink() Inode
+	shrink() inode
 
 	String() string
 }
@@ -337,7 +337,7 @@ func (b *bnode) recursiveFirst() (lf *bnode, ok bool) {
 }
 
 // get the smallest key/first (left-most) leaf in our subtree.
-func (n *Inner) recursiveFirst() (lf *bnode, ok bool) {
+func (n *inner) recursiveFirst() (lf *bnode, ok bool) {
 	_, b := n.Node.first()
 	if b.isLeaf {
 		return b, true
@@ -346,7 +346,7 @@ func (n *Inner) recursiveFirst() (lf *bnode, ok bool) {
 }
 
 // get the larget key/last (right-most) leaf in our subtree
-func (n *Inner) recursiveLast() (lf *bnode, ok bool) {
+func (n *inner) recursiveLast() (lf *bnode, ok bool) {
 	_, b := n.Node.last()
 	if b.isLeaf {
 		return b, true
@@ -411,7 +411,7 @@ func (b *bnode) subTreeRedoPren() (leafcount int) {
 	if b.inner.prenOK {
 		return b.inner.SubN
 	}
-	// INVAR: b is an Inner, and has a stale pren somewhere.
+	// INVAR: b is an inner, and has a stale pren somewhere.
 
 	var pren int
 	var subn int

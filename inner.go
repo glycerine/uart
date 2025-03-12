@@ -22,12 +22,12 @@ func comparePrefix(k1, k2 []byte, depth int) int {
 	return idx - depth
 }
 
-func (n *Inner) Kind() Kind {
-	return n.Node.Kind()
+func (n *inner) kind() kind {
+	return n.Node.kind()
 }
 
 // max returned is len(n.Compressed)
-func (n *Inner) compressedMismatch(key Key, depth int) (idx int) {
+func (n *inner) compressedMismatch(key Key, depth int) (idx int) {
 
 	maxCmp := min(len(n.compressed), len(key)-depth)
 	for idx = 0; idx < maxCmp; idx++ {
@@ -40,7 +40,7 @@ func (n *Inner) compressedMismatch(key Key, depth int) (idx int) {
 
 // selfb must be the bnode holding us, such that
 // selfb.inner == n, always.
-func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *Inner) (replacement *bnode, updated bool) {
+func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *inner) (replacement *bnode, updated bool) {
 
 	// biggest mis is len(n.Compressed) for
 	// full matching with lf.Key
@@ -54,7 +54,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		newChildKey := n.compressed[mis]
 		parentCompressed := append([]byte{}, n.compressed[:mis]...)
 
-		newChild := &Inner{
+		newChild := &inner{
 			Node:       n.Node,
 			compressed: n.compressed[mis+1:],
 			// keep path stuff for debugging!
@@ -150,7 +150,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	return selfb, updated
 }
 
-func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode)) (deleted bool, deletedNode *bnode) {
+func (n *inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode)) (deleted bool, deletedNode *bnode) {
 
 	if _, fullmatch, _ := n.checkCompressed(key, depth); !fullmatch {
 		// key is not found, check for concurrent writes and exit
@@ -237,7 +237,7 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 // key byte is > the compressed path byte.
 // On fullmatch true, greaterThan should be
 // ignored, as it is not meaningful.
-func (n *Inner) checkCompressed(key Key, depth int) (idx int, fullmatch bool, greaterThan bool) {
+func (n *inner) checkCompressed(key Key, depth int) (idx int, fullmatch bool, greaterThan bool) {
 
 	maxCmp := min(len(n.compressed), len(key)-depth)
 	for idx = 0; idx < maxCmp; idx++ {
@@ -265,7 +265,7 @@ const needPrevLeaf direc = -1
 const nextButSmallestWillDo = 2
 const prevButLargestWillDo = -2
 
-func (n *Inner) get(key Key, depth int, selfb *bnode, calldepth int, tree *Tree) (value *bnode, found bool, dir direc, id int) {
+func (n *inner) get(key Key, depth int, selfb *bnode, calldepth int, tree *Tree) (value *bnode, found bool, dir direc, id int) {
 
 	//pp("top of get() calldepth=%v, we are '%v'", calldepth, n.FlatString(depth, 0, selfb))
 	//defer func() {
@@ -321,7 +321,7 @@ func memcpy[T any](dst []T, src []T, len int) {
 }
 
 // durring delete of node, n needs to have nodes' prefix pre-pended.
-func (n *Inner) addPrefixBefore(node *Inner, key byte) {
+func (n *inner) addPrefixBefore(node *inner, key byte) {
 
 	// new prefix: { node prefix } { key } { n(this) prefix }
 	nCompressed := n.compressed
@@ -336,11 +336,11 @@ func (n *Inner) addPrefixBefore(node *Inner, key byte) {
 	n.compressed = newpre
 }
 
-func (n *Inner) String() string {
+func (n *inner) String() string {
 	return n.FlatString(0, 0, nil) // -1 to recurse.
 }
 
-func (n *Inner) isLeaf() bool {
+func (n *inner) isLeaf() bool {
 	return false
 }
 
@@ -363,7 +363,7 @@ func newCryrandSeededChaCha8() *mathrand2.ChaCha8 {
 	return mathrand2.NewChaCha8(seed)
 }
 
-func (n *Inner) FlatString(depth int, recurse int, selfb *bnode) (s string) {
+func (n *inner) FlatString(depth int, recurse int, selfb *bnode) (s string) {
 
 	keystr := string(n.Keybyte)
 
@@ -380,7 +380,7 @@ func (n *Inner) FlatString(depth int, recurse int, selfb *bnode) (s string) {
 	s += fmt.Sprintf(`%v %p %v, key '%v' childkeys: %v (treedepth %v) compressed='%v' path='%v' (subN: %v; pren: %v)%v`,
 		rep,
 		n,
-		n.Kind().String(),
+		n.kind().String(),
 		keystr,
 		n.Node.childkeysString(),
 		depth,
@@ -428,7 +428,7 @@ func viznlString(by []byte) string {
 	return string(out)
 }
 
-func (n *Inner) rangestr() string {
+func (n *inner) rangestr() string {
 	return fmt.Sprintf(" with range [%v :to: %v]",
 		n.rfirst().str(), n.rlast().str())
 }
@@ -439,7 +439,7 @@ func (b *bnode) rangestr() string {
 	return b.inner.rangestr()
 }
 
-func (n *Inner) rfirst() *Leaf {
+func (n *inner) rfirst() *Leaf {
 	_, b := n.first()
 	for {
 		if b.isLeaf {
@@ -448,7 +448,7 @@ func (n *Inner) rfirst() *Leaf {
 		_, b = b.first()
 	}
 }
-func (n *Inner) rlast() *Leaf {
+func (n *inner) rlast() *Leaf {
 	_, b := n.last()
 	for {
 		if b.isLeaf {
@@ -458,7 +458,7 @@ func (n *Inner) rlast() *Leaf {
 	}
 }
 
-func (n *Inner) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
+func (n *inner) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
 
 	keystr := string(n.Keybyte)
 
@@ -475,7 +475,7 @@ func (n *Inner) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
 	s += fmt.Sprintf(`%v %p %v, key '%v' childkeys: %v (treedepth %v) compressed='%v' path='%v' (subN: %v; pren: %v)%v`,
 		rep,
 		n,
-		n.Kind().String(),
+		n.kind().String(),
 		keystr,
 		n.Node.childkeysString(),
 		depth,
