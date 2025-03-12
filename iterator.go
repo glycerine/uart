@@ -48,10 +48,11 @@ type Iterator interface {
 	// Next() call.
 	//
 	// Warning: the user must not modify
-	// this returned key -- in particular if concurrent changes to
-	// the tree are made. We depend
-	// on its value to reset and continue
-	// the iteration after any tree changes.
+	// this returned key! The tree depends on
+	// its value for correctness. Make a copy
+	// before modifying the copy. To change
+	// a key in the tree, call tree.Remove(old)
+	// and then tree.Insert(new) with the new key.
 	Key() Key
 }
 
