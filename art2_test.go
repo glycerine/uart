@@ -835,8 +835,10 @@ func Test_pren_sub_on_update_in_place(t *testing.T) {
 		if tree.Size() != expect {
 			t.Fatalf("dups should not expand tree: expected %v paths in tree, got size: %v", expect, tree.Size())
 		}
+		//vv("i=%v", i) // i=1 first time it is off!
 		verifySubN(tree.root)
 		verifyLeafIndexAt(tree)
+		//vv("okay on i = %v", i)
 	}
 
 }

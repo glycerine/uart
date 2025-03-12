@@ -125,7 +125,9 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		replacement, updated = next.insert(lf, nextDepth+1, next, tree, n)
 
 		n.Node.replace(idx, replacement, false)
-		n.SubN++
+		if !updated {
+			n.SubN++
+		}
 		if !replacement.isLeaf {
 			replacement.inner.Keybyte = nextkey
 
@@ -142,7 +144,9 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	// INVAR: next is not a leaf.
 
 	_, updated = next.insert(lf, nextDepth+1, next, tree, n)
-	n.SubN++
+	if !updated {
+		n.SubN++
+	}
 
 	n.Node.redoPren() // Test_PrenInsert green.
 
