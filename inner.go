@@ -97,8 +97,6 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		selfb.leaf = nil
 		selfb.inner = n
 
-		n.Node.redoPren()
-
 		return selfb, false
 	}
 	// INVAR: mis == len(n.Compressed)
@@ -117,7 +115,6 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		addkey := lf.Key.At(nextDepth)
 		lf.Keybyte = addkey
 		n.Node.addChild(addkey, bnodeLeaf(lf))
-		//n.Node.redoPren() // addChild already does it?
 		n.SubN++
 
 		return selfb, false

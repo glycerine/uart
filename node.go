@@ -214,13 +214,6 @@ type Inner struct {
 	// compressed implements path compression.
 	compressed []byte
 
-	// try lazy updating of pren to
-	// allow bulk writes to not trash the L1 cache
-	// on doing updatePren() every time.
-	// The get queries will need to check this,
-	// and it will need to propagate up from inserts.
-	stalepren bool
-
 	// Note: keep this commented out path field for debugging!
 	// For sane debugging, comment this in
 	// back in to store the full path on each Inner node.

@@ -71,7 +71,7 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *In
 	if other.equal(lf.Key) {
 		value = bnodeLeaf(other)
 		updated = true
-		// try to avoid forcing a full pre-compute of pren.
+		// avoid forcing a full re-compute of pren.
 		value.pren = selfb.pren
 		return
 	}
