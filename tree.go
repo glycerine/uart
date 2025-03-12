@@ -81,6 +81,19 @@ type Tree struct {
 	root *bnode
 	size int64
 
+	// At() calls are much slower that
+	// iteration by default, because they
+	// start at the root and go down the tree
+	// each time. If the user is making successive
+	// At() calls in order (for convenience) we will
+	// try to make these sequential At() calls
+	// faster by storing where in the tree
+	// the last call left off. That is, we cache
+	// where the last At() left off, and pick up
+	// from there if the next call is for i+1 and
+	// there have been no tree modifications.
+	atCache *iterator
+
 	// The treeVersion Update protocol:
 	// Writers increment this treeVersion number
 	// to allow iterators to continue
@@ -469,17 +482,63 @@ func (t *Tree) IsEmpty() (empty bool) {
 // This is also known as an Order-Statistic tree
 // in the literature[2].
 //
+// Optimization: for the common case of sequential iteration
+// starting from 0, At() will transparently
+// use an iterator to cache the tree
+// traversal point so that the next At() call can
+// pick up where the previous tree search left
+// off. Since we don't have to repeat the
+// mostly-the-same traversal down the tree again, the
+// speed-up in benchmark (see Test620) for this
+// common case is a dramatic 6x,
+// from 240 nsec to 40 nsec per call, in exchange for
+// doing a small amount of allocation
+// to maintain a stack during the calls.
+// We will try to add a small pool of iterator
+// checkpoint frames in the future to minimize it,
+// but complete zero-alloc is almost impossible
+// if we want this optimization. My call is
+// that this a trade-off well worth making.
+//
 // [1] https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html
 //
 // [2] https://en.wikipedia.org/wiki/Order_statistic_tree
 func (t *Tree) At(i int) (lf *Leaf, ok bool) {
 	if t.SkipLocking {
-		lf, ok = t.root.at(i)
-		return
+		return t.at_unlocked(i)
 	}
 	t.RWmut.RLock()
-	lf, ok = t.root.at(i)
+	lf, ok = t.at_unlocked(i)
 	t.RWmut.RUnlock()
+	return
+}
+
+func (t *Tree) at_unlocked(i int) (lf *Leaf, ok bool) {
+
+	if t.atCache != nil {
+		if t.atCache.treeVersion == t.treeVersion {
+			if i == t.atCache.curIdx+1 {
+				ok = t.atCache.Next()
+				if ok {
+					lf = t.atCache.leaf
+					return
+				}
+			}
+		}
+		t.atCache = nil
+	}
+	// INVAR: t.atCache == nil
+
+	lf, ok = t.root.at(i)
+
+	// start small with caching. only try to cache
+	// At() iteration starting from 0
+	// and going forward.
+	if ok && i == 0 && t.size > 1 {
+		t.atCache = t.Iter(lf.Key, nil)
+		t.atCache.Next()
+	}
+
 	return
 }
 
@@ -489,14 +548,14 @@ func (t *Tree) At(i int) (lf *Leaf, ok bool) {
 func (t *Tree) Atv(i int) (val any, ok bool) {
 	var lf *Leaf
 	if t.SkipLocking {
-		lf, ok = t.root.at(i)
+		lf, ok = t.at_unlocked(i)
 		if ok {
 			val = lf.Value
 		}
 		return
 	}
 	t.RWmut.RLock()
-	lf, ok = t.root.at(i)
+	lf, ok = t.at_unlocked(i)
 	if ok {
 		val = lf.Value
 	}

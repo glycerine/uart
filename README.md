@@ -195,6 +195,8 @@ Using the native iterator instead of iter.Seq is a tiny bit faster:
 uart Iter() reads 10_000_000 keys: elapsed 342.95423ms (34ns/op)
 
 Using the integer based indexing is slower, but faster than writes:
+(Note this is before we added the atCache to use an iterator
+in the common case of sequential At() calls starting from 0.)
 tree.At(i) reads  10_000_000 keys: elapsed 2.380924685s (238ns/op)
 
 --- PASS: Test620_unlocked_read_comparison (8.27s)

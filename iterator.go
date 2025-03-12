@@ -23,9 +23,9 @@ type iterator struct {
 
 	reverse bool
 
-	begIdx  int // corresponding to initial key
-	curIdx  int // corresponding to current key after the first Next()
-	endxIdx int // corresponding to 1 past the last key
+	begIdx int // corresponding to initial key
+	curIdx int // corresponding to current key after the first Next()
+	//endxIdx int // corresponding to 1 past the last key
 
 	// current:
 	key   []byte
@@ -82,6 +82,7 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 	}
 
 	_, endIdx, ok := t.find_unlocked(LT, end)
+	_ = endIdx // might need in future. not used atm.
 	if !ok {
 		return &iterator{
 			initDone: true,
@@ -97,7 +98,7 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 		terminate:   end,
 		begIdx:      begIdx,
 		curIdx:      begIdx - 1,
-		endxIdx:     endIdx + 1,
+		//endxIdx:     endIdx + 1,
 	}
 }
 
@@ -161,6 +162,7 @@ func (t *Tree) RevIter(end, start []byte) (iter *iterator) {
 
 	gtLeaf, endIdx, ok := t.find_unlocked(GT, end)
 	_ = gtLeaf
+	_ = endIdx // might need in future, not used atm.
 	if !ok {
 		//vv("in revIt: FindGT(end='%v') got ok=false, endIdx = %v; gtLeaf='%v'", string(end), endIdx, gtLeaf)
 		// this is okay if end is nil, of course
@@ -182,7 +184,7 @@ func (t *Tree) RevIter(end, start []byte) (iter *iterator) {
 		terminate:   end,
 		begIdx:      begIdx,
 		curIdx:      begIdx + 1,
-		endxIdx:     endIdx - 1,
+		//endxIdx:     endIdx - 1,
 	}
 }
 
@@ -335,13 +337,16 @@ func (i *iterator) tryAdvance() (bool, bool) {
 		if child.isLeaf {
 			l := child.leaf
 			if i.inRange(l.Key) {
+				//vv("inRange true")
 				i.key = l.Key
 				i.value = l.Value
 				i.cursor = l.Key
 				i.leaf = l
 				return true, false
 			}
+			//vv("inRange false")
 			return false, false
+
 		}
 		i.stack = &checkpoint{
 			node: child.inner,

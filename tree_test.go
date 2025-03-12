@@ -2105,10 +2105,10 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	tree := NewArtTree()
 	tree.SkipLocking = true
 
-	gomap := make(map[string]bool)
+	gomap := make(map[string]int)
 	t0 := time.Now()
-	for _, key := range keys {
-		gomap[key] = true
+	for k, key := range keys {
+		gomap[key] = k
 	}
 	e0 := time.Since(t0)
 	rate0 := e0 / time.Duration(K)
@@ -2117,14 +2117,17 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	t0 = time.Now()
 	for k, v := range gomap {
 		_, _ = k, v
+		//if keys[v] != k {
+		//	panic(fmt.Sprintf("gomap gave %v instead of %v", k, keys[v]))
+		//}
 	}
 	e0 = time.Since(t0)
 	rate0 = e0 / time.Duration(K)
 	fmt.Printf("map reads %v keys: elapsed %v (%v/op)\n", K, e0, rate0)
 
 	t1 := time.Now()
-	for _, kb := range keyb {
-		tree.Insert(kb, true)
+	for k, kb := range keyb {
+		tree.Insert(kb, k)
 	}
 	e1 := time.Since(t1)
 	rate1 := e1 / time.Duration(K)
@@ -2148,11 +2151,20 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	e1 = time.Since(t1)
 	rate1 = e1 / time.Duration(K)
 	fmt.Printf("uart Iter() reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+
 	// and the integer indexing:
 
 	t1 = time.Now()
+	var lf *Leaf
+	var ok bool
+	var v int
 	for i := range K {
-		tree.At(i)
+		lf, ok = tree.At(i)
+		v = lf.Value.(int)
+		if !ok || v != i {
+			panic(fmt.Sprintf("At(i=%v) gave %v instead of %v", i, v, i))
+		}
+
 	}
 	e1 = time.Since(t1)
 	rate1 = e1 / time.Duration(K)
