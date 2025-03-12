@@ -238,7 +238,6 @@ func (n *Inner) getLTE(
 	// about to use pren, so make sure its not stale.
 	if !tree.skipPren && !n.prenOK {
 		selfb.subTreeRedoPren()
-		n.prenOK = true
 	}
 
 	id += prev.pren

@@ -313,7 +313,6 @@ func (n *Inner) get(key Key, depth int, selfb *bnode, calldepth int, tree *Tree)
 
 	if !tree.skipPren && !n.prenOK {
 		selfb.subTreeRedoPren()
-		n.prenOK = true
 	}
 
 	id += next.pren

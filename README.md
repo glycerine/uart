@@ -203,7 +203,7 @@ tree.Atfar(i) reads 10_000_000 keys: elapsed 2.431009745s (243ns/op)
 --- PASS: Test620_unlocked_read_comparison (12.14s)
 
 
-started at Tue 2025 Mar 11 11:14:51
+started at Tue 2025 Mar 12 18:46:28
 
 go test -v -run=blah -bench=. -benchmem
 goos: darwin
@@ -218,27 +218,27 @@ cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
 
 BenchmarkArtReadWrite
 BenchmarkArtReadWrite/frac_0
-BenchmarkArtReadWrite/frac_0-8                 	 1000000	      1346 ns/op	     126 B/op	       4 allocs/op
+BenchmarkArtReadWrite/frac_0-8                 	 2639517	       530.6 ns/op	     118 B/op	       4 allocs/op
 BenchmarkArtReadWrite/frac_1
-BenchmarkArtReadWrite/frac_1-8                 	 1236877	       965.2 ns/op	     110 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_1-8                 	 1934983	       748.4 ns/op	     106 B/op	       3 allocs/op
 BenchmarkArtReadWrite/frac_2
-BenchmarkArtReadWrite/frac_2-8                 	 1555860	       796.8 ns/op	      96 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_2-8                 	 2144061	       687.2 ns/op	      94 B/op	       3 allocs/op
 BenchmarkArtReadWrite/frac_3
-BenchmarkArtReadWrite/frac_3-8                 	 2019214	       661.0 ns/op	      83 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_3-8                 	 2418021	       627.3 ns/op	      83 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_4
-BenchmarkArtReadWrite/frac_4-8                 	 2350892	       608.1 ns/op	      71 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_4-8                 	 2569453	       601.9 ns/op	      71 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_5
-BenchmarkArtReadWrite/frac_5-8                 	 2813648	       564.6 ns/op	      59 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_5-8                 	 2924372	       565.7 ns/op	      59 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_6
-BenchmarkArtReadWrite/frac_6-8                 	 3293904	       495.4 ns/op	      47 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_6-8                 	 3415107	       493.2 ns/op	      47 B/op	       1 allocs/op
 BenchmarkArtReadWrite/frac_7
-BenchmarkArtReadWrite/frac_7-8                 	 4126581	       449.8 ns/op	      35 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_7-8                 	 3958209	       432.9 ns/op	      35 B/op	       1 allocs/op
 BenchmarkArtReadWrite/frac_8
-BenchmarkArtReadWrite/frac_8-8                 	 4640168	       414.8 ns/op	      24 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_8-8                 	 4604090	       372.3 ns/op	      23 B/op	       0 allocs/op
 BenchmarkArtReadWrite/frac_9
-BenchmarkArtReadWrite/frac_9-8                 	 5503473	       372.2 ns/op	      12 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_9-8                 	 4809241	       295.1 ns/op	      11 B/op	       0 allocs/op
 BenchmarkArtReadWrite/frac_10
-BenchmarkArtReadWrite/frac_10-8                	22140936	        52.31 ns/op	       0 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_10-8                	23420194	        49.64 ns/op	       0 B/op	       0 allocs/op
 
 
 // Our ART tree, with RWMutex, but now
@@ -328,5 +328,5 @@ BenchmarkReadWriteSyncMap/frac_10-8                     	100000000	        11.96
 PASS
 ok  	github.com/glycerine/uart	137.808s
 
-finished at Tue 2025 Mar 11 11:17:09
+finished at Wed 2025 Mar 12 18:47:16
 ```

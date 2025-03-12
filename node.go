@@ -265,6 +265,7 @@ func (n *Inner) first() (byte, *bnode) {
 }
 
 func (a *bnode) redoPren() {
+	return // lazy now
 	if a.isLeaf {
 		return
 	}
