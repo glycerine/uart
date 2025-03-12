@@ -10,7 +10,7 @@ import (
 // the documentation for Next() appears in godoc.
 
 // An Iterator will scan the tree in
-// lexicographic order. See the Iter() and
+// lexicographic (shortlex) order. See the Iter() and
 // RevIter() methods on Tree.
 type Iterator interface {
 
@@ -454,7 +454,7 @@ func (i *iterator) inRange(key []byte) (inside bool) {
 }
 
 // Ascend wraps a tree.Iter() iteration in
-// ascending lexicographic order. See the
+// ascending lexicographic (shortlex) order. See the
 // Tree.Iter description for details.
 func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {
 	return func(yield func(key Key, value any) bool) {
@@ -468,7 +468,7 @@ func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {
 }
 
 // Descend iterates from highest to lowest key
-// in lexicographic order. Perhaps counter-intuitively,
+// in lexicographic (shortlex) order. Perhaps counter-intuitively,
 // the smaller (endx) key is always the first argument.
 // "Smallest-first" is an easy
 // way to remember this, as it applies to both

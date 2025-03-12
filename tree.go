@@ -605,7 +605,7 @@ func (t *Tree) Atv(i int) (val any, ok bool) {
 // LeafIndex returns the integer index
 // of the leaf in the tree using exact
 // key matching. The index represents
-// the position in the lexicographic
+// the position in the lexicographic (shortlex)
 // sorted order of keys, and so can be
 // used to compute quantile and other statistics
 // efficiently. The time complexity

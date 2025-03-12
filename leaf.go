@@ -25,8 +25,11 @@ type TestBytes struct {
 type ByteSlice []byte
 
 // Key is the []byte which the tree
-// sorts in lexicographic order. It
-// is an arbitrary string of bytes, and
+// sorts in lexicographic (shortlex) order,
+// which means that shorter keys sort
+// before longer keys with the same prefix.
+//
+// Key is an arbitrary string of bytes, and
 // in particular can contain the 0 byte
 // anywhere in the slice.
 type Key []byte

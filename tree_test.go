@@ -97,6 +97,11 @@ func TestArtTree_InsertLongKey(t *testing.T) {
 	if got, want := value.(ByteSliceValue), ByteSliceValue("created_at_value1"); !bytes.Equal(got, want) {
 		t.Errorf("got value %v, want %v", got, want)
 	}
+
+	//it := tree.Iter(nil, nil)
+	//for i := 0; it.Next(); i++ {
+	//	fmt.Printf("i=%v key: '%v'\n", i, string(it.Key()))
+	//}
 }
 
 func TestArtTree_Insert2(t *testing.T) {
