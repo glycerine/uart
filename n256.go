@@ -58,7 +58,7 @@ func (n *node256) childkeysString() (s string) {
 }
 
 func (n *node256) kind() kind {
-	return Node256
+	return _Node256
 }
 
 func (n *node256) child(k byte) (int, *bnode) {

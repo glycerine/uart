@@ -25,7 +25,10 @@ type TestBytes struct {
 type ByteSlice []byte
 
 // Key is the []byte which the tree
-// sorts in lexicographic order.
+// sorts in lexicographic order. It
+// is an arbitrary string of bytes, and
+// in particular can contain the 0 byte
+// anywhere in the slice.
 type Key []byte
 
 type Leaf struct {
@@ -63,7 +66,7 @@ func NewLeaf(key Key, v any, x []byte) *Leaf {
 }
 
 func (lf *Leaf) kind() kind {
-	return Leafy
+	return _Leafy
 }
 
 func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *inner) (value *bnode, updated bool) {

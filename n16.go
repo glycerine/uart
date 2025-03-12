@@ -39,7 +39,7 @@ func (n *node16) childkeysString() (s string) {
 }
 
 func (n *node16) kind() kind {
-	return Node16
+	return _Node16
 }
 
 func (n *node16) index(k byte) int {

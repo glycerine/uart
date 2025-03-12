@@ -9,7 +9,7 @@ type node4 struct {
 }
 
 func (n *node4) kind() kind {
-	return Node4
+	return _Node4
 }
 
 func (n *node4) nchild() int {

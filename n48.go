@@ -65,7 +65,7 @@ func (n *node48) childkeysString() (s string) {
 }
 
 func (n *node48) kind() kind {
-	return Node48
+	return _Node48
 }
 
 func (n *node48) child(k byte) (int, *bnode) {

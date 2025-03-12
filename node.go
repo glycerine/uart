@@ -27,11 +27,11 @@ func (n *nolock) RUnlock() {}
 type kind uint8
 
 const (
-	Leafy kind = iota
-	Node4
-	Node16
-	Node48
-	Node256
+	_Leafy kind = iota
+	_Node4
+	_Node16
+	_Node48
+	_Node256
 )
 
 func bnodeLeaf(lf *Leaf) *bnode {
@@ -68,7 +68,7 @@ type bnode struct {
 
 func (a *bnode) kind() kind {
 	if a.isLeaf {
-		return Leafy
+		return _Leafy
 	}
 	return a.inner.kind()
 }
@@ -182,15 +182,15 @@ func (a *bnode) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
 
 func (k kind) String() string {
 	switch k {
-	case Leafy:
+	case _Leafy:
 		return "leaf"
-	case Node4:
+	case _Node4:
 		return "node4"
-	case Node16:
+	case _Node16:
 		return "node16"
-	case Node48:
+	case _Node48:
 		return "node48"
-	case Node256:
+	case _Node256:
 		return "node256"
 	}
 	//panic(fmt.Sprintf("unknown kind '%v'", int(k)))

@@ -411,9 +411,9 @@ type CheckPoint struct {
 
 func TestArtTree_Grow(t *testing.T) {
 	checkPoints := []CheckPoint{
-		{totalNodes: 5, expected: Node16, name: "node4 growing test"},
-		{totalNodes: 17, expected: Node48, name: "node16 growing test"},
-		{totalNodes: 49, expected: Node256, name: "node256 growing test"},
+		{totalNodes: 5, expected: _Node16, name: "node4 growing test"},
+		{totalNodes: 17, expected: _Node48, name: "node16 growing test"},
+		{totalNodes: 49, expected: _Node256, name: "node256 growing test"},
 	}
 	for _, point := range checkPoints {
 		tree := NewArtTree()
@@ -475,16 +475,16 @@ func TestArtTree_Shrink(t *testing.T) {
 		}
 		switch tree.size {
 		case 48:
-			if got := tree.root.kind(); got != Node48 {
-				t.Errorf("expected kind %s got %s", Node48, got)
+			if got := tree.root.kind(); got != _Node48 {
+				t.Errorf("expected kind %s got %s", _Node48, got)
 			}
 		case 16:
-			if got := tree.root.kind(); got != Node16 {
-				t.Errorf("expected kind %s got %s", Node16, got)
+			if got := tree.root.kind(); got != _Node16 {
+				t.Errorf("expected kind %s got %s", _Node16, got)
 			}
 		case 4:
-			if got := tree.root.kind(); got != Node4 {
-				t.Errorf("expected kind %s got %s", Node4, got)
+			if got := tree.root.kind(); got != _Node4 {
+				t.Errorf("expected kind %s got %s", _Node4, got)
 			}
 		case 0:
 			if tree.root != nil {
@@ -549,16 +549,16 @@ func TestArtTree_LargeKeyShrink(t *testing.T) {
 		}
 		switch tree.size {
 		case 48:
-			if got := tree.root.kind(); got != Node48 {
-				t.Errorf("expected kind %s got %s", Node48, got)
+			if got := tree.root.kind(); got != _Node48 {
+				t.Errorf("expected kind %s got %s", _Node48, got)
 			}
 		case 16:
-			if got := tree.root.kind(); got != Node16 {
-				t.Errorf("expected kind %s got %s", Node16, got)
+			if got := tree.root.kind(); got != _Node16 {
+				t.Errorf("expected kind %s got %s", _Node16, got)
 			}
 		case 4:
-			if got := tree.root.kind(); got != Node4 {
-				t.Errorf("expected kind %s got %s", Node4, got)
+			if got := tree.root.kind(); got != _Node4 {
+				t.Errorf("expected kind %s got %s", _Node4, got)
 			}
 		case 0:
 			if tree.root != nil {
