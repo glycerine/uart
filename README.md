@@ -124,6 +124,9 @@ Iterators are available. Be aware
 they do no locking of their own, much
 like the built-in Go map.
 
+Full package docs: https://pkg.go.dev/github.com/glycerine/uart
+
+
 [1] "The Adaptive Radix Tree: ARTful
 Indexing for Main-Memory Databases"
 by Viktor Leis, Alfons Kemper, Thomas Neumann.
@@ -147,8 +150,6 @@ https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html
 https://duckdb.org/2022/07/27/art-storage.html
 
 [7] https://hyper-db.de/  https://tableau.github.io/hyper-db/journey
-
-Docs: https://pkg.go.dev/github.com/glycerine/uart
 
 -----
 Author: Jason E. Aten, Ph.D.
