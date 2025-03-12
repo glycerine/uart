@@ -97,6 +97,8 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		selfb.leaf = nil
 		selfb.inner = n
 
+		n.Node.redoPren()
+
 		return selfb, false
 	}
 	// INVAR: mis == len(n.Compressed)
@@ -115,6 +117,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		addkey := lf.Key.At(nextDepth)
 		lf.Keybyte = addkey
 		n.Node.addChild(addkey, bnodeLeaf(lf))
+		//n.Node.redoPren() // addChild already does it?
 		n.SubN++
 
 		return selfb, false
@@ -127,6 +130,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		n.Node.replace(idx, replacement, false)
 		if !updated {
 			n.SubN++
+			n.Node.redoPren()
 		}
 		if !replacement.isLeaf {
 			replacement.inner.Keybyte = nextkey
@@ -135,10 +139,6 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 			//replacement.inner.path = next.inner.path
 		}
 
-		// this fixes a stale issue we detected. art2_test.go:357;
-		// makes Test_Seq2_Iter_on_LongCommonPrefixes green.
-		n.Node.redoPren()
-
 		return selfb, updated
 	}
 	// INVAR: next is not a leaf.
@@ -146,9 +146,8 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	_, updated = next.insert(lf, nextDepth+1, next, tree, n)
 	if !updated {
 		n.SubN++
+		n.Node.redoPren() // Test_PrenInsert green.
 	}
-
-	n.Node.redoPren() // Test_PrenInsert green.
 
 	return selfb, updated
 }
@@ -169,7 +168,7 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 		return false, nil
 	}
 
-	if next.isLeaf && next.leaf.cmp(key) {
+	if next.isLeaf && next.leaf.equal(key) {
 		n.SubN--
 
 		// deleting a leaf in next

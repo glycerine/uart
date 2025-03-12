@@ -68,8 +68,12 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *In
 		return selfb, false
 	}
 
-	if other.cmp(lf.Key) {
-		return bnodeLeaf(other), true
+	if other.equal(lf.Key) {
+		value = bnodeLeaf(other)
+		updated = true
+		// try to avoid forcing a full pre-compute of pren.
+		value.pren = selfb.pren
+		return
 	}
 
 	longestPrefix := comparePrefix(lf.Key, other.Key, depth)
@@ -103,7 +107,7 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *In
 
 func (lf *Leaf) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode)) (deleted bool, deletedNode *bnode) {
 
-	if !lf.cmpUnlocked(key) {
+	if !lf.equalUnlocked(key) {
 		return false, nil
 	}
 
@@ -137,13 +141,13 @@ func (lf *Leaf) String() string {
 	return lf.FlatString(0, 0)
 }
 
-// use by get
-func (lf *Leaf) cmp(other []byte) (equal bool) {
+// used by get
+func (lf *Leaf) equal(other []byte) (equal bool) {
 	return bytes.Compare(lf.Key, other) == 0
 }
 
 // use by del, already holding Lock
-func (lf *Leaf) cmpUnlocked(other []byte) (equal bool) {
+func (lf *Leaf) equalUnlocked(other []byte) (equal bool) {
 	equal = bytes.Compare(lf.Key, other) == 0
 	return
 }
