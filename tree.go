@@ -95,9 +95,6 @@ type Tree struct {
 	// Use Atfar() instead of At() to skip caching.
 	atCache *iterator
 
-	// allow benchmarking with/without pren
-	skipPren bool
-
 	// The treeVersion Update protocol:
 	// Writers increment this treeVersion number
 	// to allow iterators to continue

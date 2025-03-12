@@ -308,7 +308,7 @@ func (n *Inner) get(key Key, depth int, selfb *bnode, calldepth int, tree *Tree)
 	value, found, dir, id = next.get(key, nextDepth+1, next, calldepth+1, tree)
 	//pp("id = %v; next.pren=%v; together %v; n = %v; calldepth=%v; next='%v'", id, next.pren, id+next.pren, n, calldepth, next) // why isn't next.pren 4 ? seeing 2.
 
-	if !tree.skipPren && !n.prenOK {
+	if !n.prenOK {
 		selfb.subTreeRedoPren()
 	}
 
