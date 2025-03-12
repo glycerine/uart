@@ -38,11 +38,8 @@ func (n *Inner) compressedMismatch(key Key, depth int) (idx int) {
 	return maxCmp
 }
 
-// parentAnodeN should be the parent's child pointer
-// (an *anode) that holds n inside it: such that
-// INVAR holds: parentAnodeN.load().inner == n
-//
-// If restart == true on then retry the insert.
+// selfb must be the bnode holding us, such that
+// selfb.inner == n, always.
 func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *Inner) (replacement *bnode, updated bool) {
 
 	// biggest mis is len(n.Compressed) for
@@ -130,7 +127,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		if !updated {
 			n.SubN++
 			n.prenOK = false
-			n.Node.redoPren()
+			n.Node.redoPren() // no a no-op, but leave in case we revisit.
 		}
 		if !replacement.isLeaf {
 			replacement.inner.Keybyte = nextkey
@@ -147,7 +144,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	if !updated {
 		n.SubN++
 		n.prenOK = false
-		n.Node.redoPren() // Test_PrenInsert green.
+		n.Node.redoPren() // Test_PrenInsert green. update: no-op with lazy
 	}
 
 	return selfb, updated
