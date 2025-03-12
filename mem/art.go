@@ -1,5 +1,10 @@
 package main
 
+/*
+
+// commented only to avoid any dependencies,
+//  even a self dependency, in go.mod
+
 import (
 	"strconv"
 	//"bytes"
@@ -66,6 +71,8 @@ func main() {
 		prev = ha
 	}
 
+	cstat := tree.CompressedStats()
+	fmt.Printf("compressed stats: '%#v'\n", cstat)
 }
 
 func formatUnder(n int) string {
@@ -88,3 +95,4 @@ func formatUnder(n int) string {
 
 	return string(result)
 }
+*/

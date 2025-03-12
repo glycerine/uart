@@ -200,6 +200,23 @@ mstat.HeapAlloc = '55_081_880' (copies = 3; diff = 12_784_968 bytes)
 Conclusions: the Go map and the red-black tree use about the
 same amount of memory. The ART tree uses about 2x the memory of those.
 
+Path/prefix compression really seems like a wash on this data set.
+The second copy actually consumed more memory (3.5% more) than the
+inital set plus the baseline of memory for the runtime. 
+The third copy consumed about 14% less than 
+either of the first two. Prefix compression is heavily 
+data dependent, of course. The longest available 
+shared prefix in that data set was only
+48 bytes, and occurred only twice. The most frequent
+compressed out prefix was only 1 byte long, and
+had 103094 instances. I added the `tree.CompressedStats()`
+method to allow you to analyze your own data sets.
+Here is the output for the linux.txt paths:
+
+~~~
+compressed stats: 'map[int]int{0:42130, 1:103094, 2:7770, 3:9886, 4:11357, 5:10560, 6:10469, 7:10634, 8:6340, 9:4769, 10:3635, 11:3080, 12:2293, 13:1839, 14:1444, 15:1277, 16:990, 17:782, 18:628, 19:474, 20:346, 21:283, 22:255, 23:168, 24:143, 25:89, 26:92, 27:58, 28:38, 29:27, 30:26, 31:18, 32:8, 33:19, 34:9, 35:4, 36:6, 37:3, 38:3, 39:1, 40:2, 41:2, 44:1, 46:2, 48:2}'
+~~~
+
 ## Benchmarks
 
 For code, see [tree_bench_test.go](./tree_bench_test.go).

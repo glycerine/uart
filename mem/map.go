@@ -2,19 +2,10 @@ package main
 
 import (
 	"bufio"
-	"os"
-	"strconv"
-	//"bytes"
 	"fmt"
+	"os"
 	"runtime"
-	//mathrand2 "math/rand/v2"
-	// ugh. not actually sorted. just preserves
-	// the _insertion_ order of the keys.
-	//"github.com/elliotchance/orderedmap/v3"
-	// also not ordered. but very fast. And cool for having
-	// O(1) snapshots. keep for speed comparison/inspiration.
-	//art "github.com/glycerine/art-adaptive-radix-tree"
-	//rb "github.com/glycerine/rbtree"
+	"strconv"
 )
 
 func loadTestFile(path string) [][]byte {

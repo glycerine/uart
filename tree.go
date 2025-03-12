@@ -616,3 +616,19 @@ func (t *Tree) LeafIndex(leaf *Leaf) (idx int, ok bool) {
 	t.RWmut.RUnlock()
 	return
 }
+
+// CompressedStats returns the count
+// of inner nodes with a given compressed
+// prefix length.
+func (t *Tree) CompressedStats() (cs map[int]int) {
+	cs = make(map[int]int)
+	if t == nil || t.root == nil {
+		return
+	}
+	for b := range dfs(t.root) {
+		if !b.isLeaf {
+			cs[len(b.inner.compressed)]++
+		}
+	}
+	return
+}
