@@ -2170,6 +2170,45 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	rate1 = e1 / time.Duration(K)
 	fmt.Printf("tree.Atfar(i) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
 
-	fmt.Printf("bytes used by gomap: %v\n", deepSize(gomap)) // 410_000_016
-	fmt.Printf("bytes used by tree: %v\n", deepSize(tree))
+	dsTree := deepSize(tree)
+	dsMap := deepSize(gomap)
+
+	fmt.Printf("bytes used by gomap: %v\n", dsMap)
+	fmt.Printf("bytes used by tree: %v   ratio=%0.1f\n",
+		dsTree, float64(dsTree)/float64(dsMap))
+
+}
+
+func Test630_memory_use(t *testing.T) {
+
+	tree := NewArtTree()
+	paths := loadTestFile("assets/linux.txt")
+	// note that paths are not sorted.
+
+	var empty struct{}
+	gomap := make(map[string]struct{})
+	for i, w := range paths {
+		_ = i
+		if tree.Insert(w, nil) {
+			t.Fatalf("i=%v, could not add '%v', already in tree", i, string(w))
+		}
+		gomap[string(w)] = empty
+	}
+	sz := tree.Size()
+	fmt.Printf("sz of assets/linux.txt path list = %v; tree sz = %v\n", len(paths), sz)
+
+	dsTree := deepSize(tree)
+	dsMap := deepSize(gomap)
+
+	fmt.Printf("bytes used by gomap: %v\n", dsMap)
+	fmt.Printf("bytes used by tree: %v   ratio=%0.1f\n",
+		dsTree, float64(dsTree)/float64(dsMap))
+
+	/*
+		=== RUN   Test630_memory_use
+		sz of assets/linux.txt path list = 93790; tree sz = 93790
+		bytes used by gomap: 8521033
+		bytes used by tree: 98063040   ratio=11.5
+		--- PASS: Test630_memory_use (0.27s)
+	*/
 }
