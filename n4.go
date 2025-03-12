@@ -141,6 +141,8 @@ func (n *node4) addChild(k byte, child *bnode) {
 
 // update pren cache of cumulative SubN
 func (n *node4) redoPren() {
+	return // lazy now, use prenOK to determine when.
+
 	tot := 0
 	for i, ch := range n.children {
 		if i >= n.lth {

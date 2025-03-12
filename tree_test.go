@@ -1669,6 +1669,8 @@ func verifySubN(root *bnode) (leafcount int) {
 
 func verifyPren(b *bnode) (leafcount int) {
 
+	return // pren is lazy not eager now
+
 	if b == nil {
 		return 0
 	}

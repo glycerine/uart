@@ -471,5 +471,9 @@ func (b *bnode) subTreeRedoPren() (leafcount int) {
 		panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, b.inner.SubN))
 	}
 
+	// mark ourselves ok good now,
+	// to avoid a ton of recursion.
+	b.inner.prenOK = true
+
 	return leafcount
 }
