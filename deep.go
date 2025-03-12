@@ -33,11 +33,11 @@ func deepSize(v interface{}) (size uintptr) {
 
 	switch x := v.(type) {
 	case *Tree:
-		vv("deepSize Tree")
+		//vv("deepSize Tree")
 		size += deepSize(x.root)
 		return
 	case *inner:
-		vv("deepSize inner")
+		//vv("deepSize inner")
 		size += deepSize(x.compressed)
 		size += deepSize(x.Node)
 		return
@@ -46,7 +46,7 @@ func deepSize(v interface{}) (size uintptr) {
 		size += deepSize(x.Value)
 		return
 	case *bnode:
-		vv("deepSize bnode")
+		//vv("deepSize bnode")
 		if x.isLeaf {
 			size += deepSize(x.leaf)
 		} else {
