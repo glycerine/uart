@@ -53,6 +53,31 @@ func deepSize(v interface{}) (size uintptr) {
 			size += deepSize(x.inner)
 		}
 		return
+	case *node4:
+		for _, ch := range x.children {
+			if ch != nil {
+				size += deepSize(ch)
+			}
+		}
+	case *node16:
+		for _, ch := range x.children {
+			if ch != nil {
+				size += deepSize(ch)
+			}
+		}
+	case *node48:
+		for _, ch := range x.children {
+			if ch != nil {
+				size += deepSize(ch)
+			}
+		}
+	case *node256:
+		for _, ch := range x.children {
+			if ch != nil {
+				size += deepSize(ch)
+			}
+		}
+		return
 	}
 
 	// Use reflect to examine the structure
