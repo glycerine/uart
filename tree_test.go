@@ -2170,4 +2170,6 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	rate1 = e1 / time.Duration(K)
 	fmt.Printf("tree.Atfar(i) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
 
+	fmt.Printf("bytes used by gomap: %v\n", deepSize(gomap)) // 410_000_016
+	fmt.Printf("bytes used by tree: %v\n", deepSize(tree))
 }
