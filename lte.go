@@ -235,6 +235,12 @@ func (n *Inner) getLTE(
 		byteCmp(querykey, prevKeyb, keyCmpPath),
 	)
 
+	// about to use pren, so make sure its not stale.
+	if !tree.skipPren && !n.prenOK {
+		selfb.subTreeRedoPren()
+		n.prenOK = true
+	}
+
 	id += prev.pren
 	if found {
 		// exact LTE match

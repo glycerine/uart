@@ -1739,55 +1739,6 @@ func verifyPren(b *bnode) (leafcount int) {
 	return leafcount
 }
 
-func fullTreeRedoPren(root *bnode) (leafcount int) {
-
-	if root == nil {
-		return 0
-	}
-	if root.isLeaf {
-		return 1
-	} else {
-		var subn int
-
-		inode := root.inner.Node
-		switch n := inode.(type) {
-		case *node4:
-			for i, ch := range n.children {
-				_ = ch
-				if i < n.lth {
-					subn = fullTreeRedoPren(n.children[i])
-					leafcount += subn
-				}
-			}
-		case *node16:
-			for i, ch := range n.children {
-				_ = ch
-				if i < n.lth {
-					leafcount += fullTreeRedoPren(n.children[i])
-				}
-			}
-		case *node48:
-			for _, k := range n.keys {
-
-				if k == 0 {
-					continue
-				}
-				child := n.children[k-1]
-				leafcount += fullTreeRedoPren(child)
-			}
-		case *node256:
-			for _, child := range n.children {
-				if child != nil {
-					leafcount += fullTreeRedoPren(child)
-				}
-			}
-		}
-
-		root.inner.Node.redoPren()
-	}
-	return leafcount
-}
-
 // At(i) returns the ith-element in the sorted tree.
 func Test511_At_index_the_tree_like_an_array(t *testing.T) {
 

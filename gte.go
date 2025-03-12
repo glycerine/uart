@@ -231,6 +231,12 @@ func (n *Inner) getGTE(
 		byteCmp(querykey, nextKeyb, keyCmpPath),
 	)
 
+	// about to use pren, so make sure its not stale.
+	if !tree.skipPren && !n.prenOK {
+		selfb.subTreeRedoPren()
+		n.prenOK = true
+	}
+
 	id += next.pren
 	if found {
 		// exact GTE match

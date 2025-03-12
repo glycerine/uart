@@ -1,7 +1,7 @@
 package uart
 
 import (
-	//"fmt"
+	"fmt"
 	"sync"
 	//"sync/atomic"
 )
@@ -145,11 +145,11 @@ func (a *bnode) String() string {
 	return a.inner.String()
 }
 
-func (a *bnode) get(key Key, depth int, selfb *bnode, calldepth int) (value *bnode, found bool, dir direc, id int) {
+func (a *bnode) get(key Key, depth int, selfb *bnode, calldepth int, tree *Tree) (value *bnode, found bool, dir direc, id int) {
 	if a.isLeaf {
 		return a.leaf.get(key, depth, a)
 	}
-	return a.inner.get(key, depth, a, calldepth)
+	return a.inner.get(key, depth, a, calldepth, tree)
 }
 
 func (a *bnode) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode)) (deleted bool, deletedNode *bnode) {
@@ -216,10 +216,14 @@ type Inner struct {
 
 	// try lazy updating of pren to
 	// allow bulk writes to not trash the L1 cache
-	// on doing updatePren() every time.
-	// The get queries will need to check this,
-	// and it will need to propagate up from inserts.
-	stalepren bool
+	// on doing redoPren() every time.
+	// The get/gte/lte queries will need to check this,
+	// and it will need to propagate up from inserts
+	// so that parents know their pren is stale too;
+	// really just the same as when SubN is updated.
+	// renamed to prenOK instead of stalepren so that
+	// the default is false.
+	prenOK bool
 
 	// Note: keep this commented out path field for debugging!
 	// For sane debugging, comment this in
@@ -390,4 +394,82 @@ func (a *bnode) getLTE(key Key, depth int, smod SearchModifier, selfb *bnode, tr
 		return a.leaf.get(key, depth, a)
 	}
 	return a.inner.getLTE(key, depth, smod, a, tree, calldepth, largestWillDo, keyCmpPath)
+}
+
+// lazily do the minimum amount of
+// summing to redo pren on any inner
+// node with prenOK = false marking.
+func (b *bnode) subTreeRedoPren() (leafcount int) {
+
+	if b == nil {
+		return 0
+	}
+	if b.isLeaf {
+		return 1
+	}
+	if b.inner.prenOK {
+		return b.inner.SubN
+	}
+	// INVAR: b is an Inner, and has a stale pren somewhere.
+
+	var pren int
+	var subn int
+
+	inode := b.inner.Node
+	switch n := inode.(type) {
+	case *node4:
+		for i, ch := range n.children {
+			if i < n.lth {
+				subn = ch.subTreeRedoPren()
+				leafcount += subn
+
+				// update ch.pren
+				ch.pren = pren
+				pren += subn
+			}
+		}
+	case *node16:
+		for i, ch := range n.children {
+			if i < n.lth {
+				subn = ch.subTreeRedoPren()
+				leafcount += subn
+
+				// update ch.pren
+				ch.pren = pren
+				pren += subn
+			}
+		}
+	case *node48:
+		for _, k := range n.keys {
+
+			if k == 0 {
+				continue
+			}
+			ch := n.children[k-1]
+			subn = ch.subTreeRedoPren()
+			leafcount += subn
+
+			// update ch.pren
+			ch.pren = pren
+			pren += subn
+		}
+	case *node256:
+		for _, ch := range n.children {
+			if ch != nil {
+				subn = ch.subTreeRedoPren()
+				leafcount += subn
+
+				// update ch.pren
+				ch.pren = pren
+				pren += subn
+			}
+		}
+	}
+
+	// todo remove this, once sanity check ensured.
+	if b.inner.SubN != leafcount {
+		panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, b.inner.SubN))
+	}
+
+	return leafcount
 }

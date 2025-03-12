@@ -95,6 +95,9 @@ type Tree struct {
 	// Use Atfar() instead of At() to skip caching.
 	atCache *iterator
 
+	// allow benchmarking with/without pren
+	skipPren bool
+
 	// The treeVersion Update protocol:
 	// Writers increment this treeVersion number
 	// to allow iterators to continue
@@ -365,7 +368,7 @@ func (t *Tree) find_unlocked(smod SearchModifier, key Key) (lf *Leaf, idx int, f
 	case LTE, LT:
 		b, found, dir, idx = t.root.getLTE(key, 0, smod, t.root, t, 0, false, 0)
 	default:
-		b, found, dir, idx = t.root.get(key, 0, t.root, 0)
+		b, found, dir, idx = t.root.get(key, 0, t.root, 0, t)
 	}
 	if t.size == 1 {
 		// Test 505 in tree_test.go needs this.

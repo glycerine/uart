@@ -91,6 +91,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 
 		n.compressed = parentCompressed
 		n.SubN++
+		n.prenOK = false
 		//n.Keybyte stays the same I think. likewise n.path.
 
 		selfb.isLeaf = false
@@ -116,6 +117,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		lf.Keybyte = addkey
 		n.Node.addChild(addkey, bnodeLeaf(lf))
 		n.SubN++
+		n.prenOK = false
 
 		return selfb, false
 	}
@@ -127,6 +129,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 		n.Node.replace(idx, replacement, false)
 		if !updated {
 			n.SubN++
+			n.prenOK = false
 			n.Node.redoPren()
 		}
 		if !replacement.isLeaf {
@@ -143,6 +146,7 @@ func (n *Inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *In
 	_, updated = next.insert(lf, nextDepth+1, next, tree, n)
 	if !updated {
 		n.SubN++
+		n.prenOK = false
 		n.Node.redoPren() // Test_PrenInsert green.
 	}
 
@@ -167,6 +171,7 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 
 	if next.isLeaf && next.leaf.equal(key) {
 		n.SubN--
+		n.prenOK = false
 
 		// deleting a leaf in next
 		_, isNode4 := n.Node.(*node4)
@@ -221,6 +226,7 @@ func (n *Inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 	})
 	if deleted {
 		n.SubN--
+		n.prenOK = false
 		n.Node.redoPren() // essential! for LeafIndex/id to be correct.
 	}
 	return deleted, deletedNode
@@ -262,7 +268,7 @@ const needPrevLeaf direc = -1
 const nextButSmallestWillDo = 2
 const prevButLargestWillDo = -2
 
-func (n *Inner) get(key Key, depth int, selfb *bnode, calldepth int) (value *bnode, found bool, dir direc, id int) {
+func (n *Inner) get(key Key, depth int, selfb *bnode, calldepth int, tree *Tree) (value *bnode, found bool, dir direc, id int) {
 
 	//pp("top of get() calldepth=%v, we are '%v'", calldepth, n.FlatString(depth, 0, selfb))
 	//defer func() {
@@ -302,8 +308,13 @@ func (n *Inner) get(key Key, depth int, selfb *bnode, calldepth int) (value *bno
 
 	//pp("about to call next.get on next = '%v' with inquiry '%v'", next.FlatString(nextDepth+1, 0), string(key[:nextDepth]))
 
-	value, found, dir, id = next.get(key, nextDepth+1, next, calldepth+1)
+	value, found, dir, id = next.get(key, nextDepth+1, next, calldepth+1, tree)
 	//pp("id = %v; next.pren=%v; together %v; n = %v; calldepth=%v; next='%v'", id, next.pren, id+next.pren, n, calldepth, next) // why isn't next.pren 4 ? seeing 2.
+
+	if !tree.skipPren && !n.prenOK {
+		selfb.subTreeRedoPren()
+		n.prenOK = true
+	}
 
 	id += next.pren
 	return
