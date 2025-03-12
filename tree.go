@@ -620,7 +620,7 @@ func (t *Tree) LeafIndex(leaf *Leaf) (idx int, ok bool) {
 // CompressedStats returns the count
 // of inner nodes with a given compressed
 // prefix length.
-func (t *Tree) CompressedStats() (cs map[int]int) {
+func (t *Tree) CompressedStats() (cs map[int]int, bytesSaved int) {
 	cs = make(map[int]int)
 	if t == nil || t.root == nil {
 		return
@@ -629,6 +629,9 @@ func (t *Tree) CompressedStats() (cs map[int]int) {
 		if !b.isLeaf {
 			cs[len(b.inner.compressed)]++
 		}
+	}
+	for k, v := range cs {
+		bytesSaved += (k * v)
 	}
 	return
 }

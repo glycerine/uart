@@ -71,8 +71,8 @@ func main() {
 		prev = ha
 	}
 
-	cstat := tree.CompressedStats()
-	fmt.Printf("compressed stats: '%#v'\n", cstat)
+	cstat, bytesSaved := tree.CompressedStats()
+	fmt.Printf("bytesSaved = %v; compressed stats: '%#v'\n", bytesSaved, cstat)
 }
 
 func formatUnder(n int) string {

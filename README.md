@@ -217,6 +217,19 @@ Here is the output for the linux.txt paths:
 compressed stats: 'map[int]int{0:42130, 1:103094, 2:7770, 3:9886, 4:11357, 5:10560, 6:10469, 7:10634, 8:6340, 9:4769, 10:3635, 11:3080, 12:2293, 13:1839, 14:1444, 15:1277, 16:990, 17:782, 18:628, 19:474, 20:346, 21:283, 22:255, 23:168, 24:143, 25:89, 26:92, 27:58, 28:38, 29:27, 30:26, 31:18, 32:8, 33:19, 34:9, 35:4, 36:6, 37:3, 38:3, 39:1, 40:2, 41:2, 44:1, 46:2, 48:2}'
 ~~~
 
+The total bytes saved through prefix compression 
+here was 725_221 bytes, less than 1% of the 
+overall ART tree use. The summary here is that
+I don't think the prefix compression feature
+of ART should be a deciding factor, and the
+2x memory use should be weighed against the
+convenience and performance gained. 
+
+The ART maps are about 2x as fast as the red-black tree
+used in my measurements, so in a sense this is a straight
+time-for-space trade-off: twice as fast for twice
+the memory use.
+
 ## Benchmarks
 
 For code, see [tree_bench_test.go](./tree_bench_test.go).
