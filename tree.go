@@ -482,23 +482,29 @@ func (t *Tree) IsEmpty() (empty bool) {
 // This is also known as an Order-Statistic tree
 // in the literature[2].
 //
-// Optimization: for the common case of sequential iteration
-// starting from 0, At() will transparently
+// Optimization: for the common case of sequential calls
+// going forward, At(i) will transparently
 // use an iterator to cache the tree
-// traversal point so that the next At() call can
+// traversal point so that the next At(i+1) call can
 // pick up where the previous tree search left
 // off. Since we don't have to repeat the
 // mostly-the-same traversal down the tree again, the
 // speed-up in benchmark (see Test620) for this
-// common case is a dramatic 6x,
-// from 240 nsec to 40 nsec per call, in exchange for
-// doing a small amount of allocation
+// common case is a dramatic 6x, from 240 nsec to 40 nsec
+// per call. The trade-off is that we must
+// do a small amount of allocation
 // to maintain a stack during the calls.
 // We will try to add a small pool of iterator
 // checkpoint frames in the future to minimize it,
 // but complete zero-alloc is almost impossible
 // if we want this optimization. My call is
 // that this a trade-off well worth making.
+//
+// If you will be doing alot of random (un-sequential/non-linear)
+// access to the tree, use Atfar() instead of At().
+// They are the same, except that Atfar will not
+// spend any time trying to cache the tree traversal
+// paths to your random access points.
 //
 // [1] https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html
 //
@@ -513,8 +519,41 @@ func (t *Tree) At(i int) (lf *Leaf, ok bool) {
 	return
 }
 
-func (t *Tree) at_unlocked(i int) (lf *Leaf, ok bool) {
+// Atfar is more suitable that At for random
+// (non-linear sequential) access to the tree.
+//
+// Atfar() is the same as At() except that
+// it does not attempt to do any caching of
+// the tree traversal point to speed up sequential
+// calls such as At(i), At(i+1), At(i+2), ... like At() does.
+//
+// Hence Atfar() saves the (relatively small) time
+// that At() spends filling the iterator checkpoint cache.
+//
+// If you will be doing alot of random (un-sequential)
+// access to the tree, use Atfar() instead of At().
+// The name tries to suggest that this access is "far" away
+// from any others.
+func (t *Tree) Atfar(i int) (lf *Leaf, ok bool) {
+	if t.SkipLocking {
+		if t == nil || t.root == nil {
+			return
+		}
+		return t.root.at(i)
+	}
+	t.RWmut.RLock()
+	if t == nil || t.root == nil {
+		return
+	}
+	lf, ok = t.root.at(i)
+	t.RWmut.RUnlock()
+	return
+}
 
+func (t *Tree) at_unlocked(i int) (lf *Leaf, ok bool) {
+	if t == nil || t.root == nil {
+		return
+	}
 	if t.atCache != nil {
 		if t.atCache.treeVersion == t.treeVersion {
 			if i == t.atCache.curIdx+1 {
