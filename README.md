@@ -165,6 +165,41 @@ added to support ordered-key queries (FindGE, FindGTE, FindLE,
 FindLTE) and integer index access.
 A comprehensive test suite is inclued to verify all operations.
 
+## Memory use
+
+I measured memory using the runtime.MemStats.HeapAlloc 
+counter on three simple programs that did nothing 
+else besides load the dictionary with one, two, or 
+three copies of the 93790 linux kernel source tree 
+paths in assets/linux.txt. The code for these simple 
+programs is in the mem/ subdirectory.
+
+So that we might get to see the benefits of path 
+compression -- to see what difference that can make -- 
+the second and third loads were exactly the same 
+paths, but with __j appended to each,
+where j is the additional copy number.
+
+~~~
+go run map.go     # the built-in Go map (go1.24 Swiss tables based)
+mstat.HeapAlloc = '21_518_728' (copies = 1; diff = 21_518_728 bytes)
+mstat.HeapAlloc = '37_891_552' (copies = 2; diff = 16_372_824 bytes)
+mstat.HeapAlloc = '55_186_712' (copies = 3; diff = 17_295_160 bytes)
+
+go run art.go     # our ART tree
+mstat.HeapAlloc = '34_789_632' (copies = 1; diff = 34_789_632 bytes)
+mstat.HeapAlloc = '70_789_824' (copies = 2; diff = 36_000_192 bytes)
+mstat.HeapAlloc = '101_813_560' (copies = 3; diff = 31_023_736 bytes)
+
+go run rbtree.go  # a red-black tree
+mstat.HeapAlloc = '22_911_096' (copies = 1; diff = 22_911_096 bytes)
+mstat.HeapAlloc = '42_296_912' (copies = 2; diff = 19_385_816 bytes)
+mstat.HeapAlloc = '55_081_880' (copies = 3; diff = 12_784_968 bytes)
+~~~
+
+Conclusions: the Go map and the red-black tree use about the
+same amount of memory. The ART tree uses about 2x the memory of those.
+
 ## Benchmarks
 
 For code, see [tree_bench_test.go](./tree_bench_test.go).
