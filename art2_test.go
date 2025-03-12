@@ -324,14 +324,16 @@ func Test_delete_insert_on_LongCommonPrefixes(t *testing.T) {
 		seen[string(w)] = -1
 	}
 
-	if false {
+	if true {
 		// use the iter.Seq2 protocol to iterate
+		j = 0
 		for key, val := range Ascend(tree, nil, nil) {
 			_ = key
-			w := string(val.([]byte))
+			_ = val
+			w := string(key) // val.(*Leaf).Key)
 			when := seen[w]
 			if when != -1 {
-				t.Fatalf("got %v, want %v for when seen path w ='%v'", when, -1, w)
+				t.Fatalf("got %v, want %v for when seen path w ='%v'; j = %v", when, -1, w, j)
 			}
 			seen[w] = j
 
@@ -344,6 +346,12 @@ func Test_delete_insert_on_LongCommonPrefixes(t *testing.T) {
 				t.Fatalf("expected size %v, saw %v", n, tree.Size())
 			}
 			j++
+		}
+		// restore seen for next use below
+		j = 0
+		seen = make(map[string]int)
+		for _, w := range paths {
+			seen[string(w)] = -1
 		}
 	}
 
@@ -359,6 +367,7 @@ func Test_delete_insert_on_LongCommonPrefixes(t *testing.T) {
 	// our SubN were off due to premature n.SubN-- in del()
 	//verifySubN(tree.root)
 
+	j = 0
 	var beg, endx []byte
 	it := tree.Iter(beg, endx)
 	k := 0
@@ -774,6 +783,56 @@ func Test_Seq2_Iter_on_LongCommonPrefixes(t *testing.T) {
 				string(key), string(sorted[j]))
 		}
 		j++
+	}
+
+}
+
+// test that updates in-place (no actual insert of new leaf)
+// keep the pren and subn correctly
+func Test_pren_sub_on_update_in_place(t *testing.T) {
+	tree := NewArtTree()
+	paths := loadTestFile("assets/linux.txt")
+	seenk := 0
+
+	expect := len(paths)
+	if true { //underRaceDetector { // -race is very slow
+		expect = 1000
+		paths = paths[:expect]
+	}
+
+	for i, w := range paths {
+		_ = i
+		if tree.Insert(w, w) {
+			t.Fatalf("i=%v, could not add '%v', already in tree", i, string(w))
+		}
+		if tree.Size() != (i + 1) {
+			t.Fatalf("expected %v paths in tree, got size: %v", i, tree.Size())
+		}
+		seenk++
+	}
+	if seenk != expect {
+		t.Fatalf("expected %v paths in tree, got size: %v", expect, seenk)
+	}
+	if tree.Size() != expect {
+		t.Fatalf("expected %v paths in tree, got size: %v", expect, tree.Size())
+	}
+
+	// verify that update in place does not change pren/subn.
+	// note this will be slow as it goes though the whole
+	// tree on each i to check every node.
+	for i, w := range paths {
+		if i == 0 {
+			continue
+		}
+		// write a new (previous) path to w
+		if updated := tree.Insert(w, paths[i-1]); !updated {
+			t.Fatalf("i=%v, could not detect dup of '%v', bad: added to tree instead.", i, string(w))
+		}
+		if tree.Size() != expect {
+			t.Fatalf("dups should not expand tree: expected %v paths in tree, got size: %v", expect, tree.Size())
+		}
+		verifySubN(tree.root)
+		verifyLeafIndexAt(tree)
 	}
 
 }
