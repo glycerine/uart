@@ -18,9 +18,9 @@ range queries, and integer based indexing.
 
 Why? In read-mostly situations, ART
 trees can have very good performance 
-(e.g. 53ns/op for ART with RWMutex vs 32ns/op for a standard Go
-map wrapped with a RWMutex) while _also_ providing
-sorted-ordered-key lookups and range queries,
+(e.g. unlocked reads are 35 ns/op for ART vs 10 ns/op for a standard Go
+map on a 10M key dictionary) while _also_ providing sorted order lookups
+(e.g. find the next key greater-than this one) and range queries,
 things that hash tables cannot do.
 
 Who else? Modern analytics-oriented databases 
