@@ -232,15 +232,15 @@ type inner struct {
 
 	// counted B-tree style: how many
 	// leaves are stored in our sub-tree.
-	SubN int `zid:"2"`
+	SubN int
 
 	// Node holds one of node4, node16, node48, or node256.
 	// inode is an interface that all of them implement.
-	Node inode `zid:"0"`
+	Node inode
 
-	// Keybyte gives the byte that leads
+	// keybyte gives the byte that leads
 	// to us in the parent index.
-	Keybyte byte `zid:"1"`
+	keybyte byte
 }
 
 func (n *inner) gte(k *byte) (byte, *bnode) {

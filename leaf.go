@@ -34,16 +34,37 @@ type ByteSlice []byte
 // anywhere in the slice.
 type Key []byte
 
+// Leaf holds a Key and a Value together,
+// and is stored in the Tree.
+//
+// Users must take care not to modify the
+// Key on any leaf still in the tree (for
+// example, the leaf returned from a Find() call),
+// since it is used internally in the sorted order
+// that the Tree maintains. The leaf
+// must "own" its Key bytes, and the
+// the user must copy them if they
+// want to make changes.
+//
+// The leaf returned from Remove can
+// be modified in any way desired, as it is no
+// longer in the tree.
+//
+// In contrast, users should feel free to update
+// the leaf.Value on any leaf. This can be
+// much more efficient than doing
+// an insert to update a Key's value
+// if the leaf is already in hand.
 type Leaf struct {
-	// Keybyte holds parent's name for us;
+	// keybyte holds parent's name for us;
 	// it is a kind of "back-pointer" value
 	// that is primary useful for debug logging
 	// and diagnostics.
-	// Keybyte will be somewhere in our Key,
+	// keybyte will be somewhere in our Key,
 	// but we don't know where because it
 	// depends on the other keys the parent
 	// has/path compression.
-	Keybyte byte `zid:"1"`
+	keybyte byte `zid:"1"`
 
 	Key   Key         `zid:"0"`
 	Value interface{} `msg:"-"`
@@ -56,7 +77,7 @@ func (n *Leaf) clone() (c *Leaf) {
 	c = &Leaf{
 		Key:     append([]byte{}, n.Key...),
 		Value:   n.Value, // shared interface (pointer to Value)
-		Keybyte: n.Keybyte,
+		keybyte: n.keybyte,
 	}
 	return c
 }

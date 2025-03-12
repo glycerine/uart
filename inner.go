@@ -62,12 +62,12 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 			SubN: n.SubN,
 		}
 		//vv("assigned path '%v' to %p", string(newChild.path), newChild)
-		newChild.Keybyte = newChildKey
+		newChild.keybyte = newChildKey
 
 		// n becomes the new parent of newChild and lf
 		n4 := &node4{}
 		leafKeybyte := lf.Key.At(depth + mis)
-		lf.Keybyte = leafKeybyte
+		lf.keybyte = leafKeybyte
 		n4.addChild(leafKeybyte, bnodeLeaf(lf))
 		n4.addChild(newChildKey, bnodeInner(newChild))
 
@@ -89,7 +89,7 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 		n.compressed = parentCompressed
 		n.SubN++
 		n.prenOK = false
-		//n.Keybyte stays the same I think. likewise n.path.
+		//n.keybyte stays the same I think. likewise n.path.
 
 		selfb.isLeaf = false
 		selfb.leaf = nil
@@ -111,7 +111,7 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 			n.Node = n.Node.grow()
 		}
 		addkey := lf.Key.At(nextDepth)
-		lf.Keybyte = addkey
+		lf.keybyte = addkey
 		n.Node.addChild(addkey, bnodeLeaf(lf))
 		n.SubN++
 		n.prenOK = false
@@ -130,7 +130,7 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 			n.Node.redoPren() // no a no-op, but leave in case we revisit.
 		}
 		if !replacement.isLeaf {
-			replacement.inner.Keybyte = nextkey
+			replacement.inner.keybyte = nextkey
 
 			// keep commented out path stuff for debugging!
 			//replacement.inner.path = next.inner.path
@@ -365,9 +365,9 @@ func newCryrandSeededChaCha8() *mathrand2.ChaCha8 {
 
 func (n *inner) FlatString(depth int, recurse int, selfb *bnode) (s string) {
 
-	keystr := string(n.Keybyte)
+	keystr := string(n.keybyte)
 
-	if n.Keybyte == 0 {
+	if n.keybyte == 0 {
 		keystr = "(zero)"
 	}
 	pren := "na"
@@ -460,9 +460,9 @@ func (n *inner) rlast() *Leaf {
 
 func (n *inner) stringNoKeys(depth int, recurse int, selfb *bnode) (s string) {
 
-	keystr := string(n.Keybyte)
+	keystr := string(n.keybyte)
 
-	if n.Keybyte == 0 {
+	if n.keybyte == 0 {
 		keystr = "(zero)"
 	}
 	pren := "na"
