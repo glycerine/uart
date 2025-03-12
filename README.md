@@ -187,7 +187,7 @@ map time to store 10_000_000 keys: 2.466118634s (246ns/op)
 map reads 10_000_000 keys: elapsed 101.076718ms (10ns/op)
 
 uart.Tree time to store 10_000_000 keys: 3.665080254s (366ns/op)
-uart.Tree reads 10_000_000 keys: elapsed 368.400458ms (36ns/op)
+Ascend(tree) reads 10_000_000 keys: elapsed 368.400458ms (36ns/op)
 uart Iter() reads 10_000_000 keys: elapsed 354.294422ms (35ns/op)
 tree.At(i) reads 10_000_000 keys: elapsed 381.973196ms (38ns/op)
 tree.At(i) reads from 10: 9999990 keys: elapsed 381.521877ms (38ns/op)

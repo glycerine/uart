@@ -2139,7 +2139,7 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	}
 	e1 = time.Since(t1)
 	rate1 = e1 / time.Duration(K)
-	fmt.Printf("uart.Tree reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+	fmt.Printf("Ascend(tree) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
 
 	// try the native iterator instead of iter.Seq
 
