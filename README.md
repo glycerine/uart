@@ -218,27 +218,27 @@ cpu: Intel(R) Core(TM) i7-1068NG7 CPU @ 2.30GHz
 
 BenchmarkArtReadWrite
 BenchmarkArtReadWrite/frac_0
-BenchmarkArtReadWrite/frac_0-8                 	  999542	      3083 ns/op	     119 B/op	       4 allocs/op
+BenchmarkArtReadWrite/frac_0-8                 	 1000000	      1346 ns/op	     126 B/op	       4 allocs/op
 BenchmarkArtReadWrite/frac_1
-BenchmarkArtReadWrite/frac_1-8                 	 1000000	      2629 ns/op	     107 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_1-8                 	 1236877	       965.2 ns/op	     110 B/op	       3 allocs/op
 BenchmarkArtReadWrite/frac_2
-BenchmarkArtReadWrite/frac_2-8                 	 1000000	      2370 ns/op	      95 B/op	       3 allocs/op
+BenchmarkArtReadWrite/frac_2-8                 	 1555860	       796.8 ns/op	      96 B/op	       3 allocs/op
 BenchmarkArtReadWrite/frac_3
-BenchmarkArtReadWrite/frac_3-8                 	 1000000	      1955 ns/op	      83 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_3-8                 	 2019214	       661.0 ns/op	      83 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_4
-BenchmarkArtReadWrite/frac_4-8                 	 1000000	      1602 ns/op	      71 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_4-8                 	 2350892	       608.1 ns/op	      71 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_5
-BenchmarkArtReadWrite/frac_5-8                 	 1000000	      1285 ns/op	      59 B/op	       2 allocs/op
+BenchmarkArtReadWrite/frac_5-8                 	 2813648	       564.6 ns/op	      59 B/op	       2 allocs/op
 BenchmarkArtReadWrite/frac_6
-BenchmarkArtReadWrite/frac_6-8                 	 1263609	      1166 ns/op	      47 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_6-8                 	 3293904	       495.4 ns/op	      47 B/op	       1 allocs/op
 BenchmarkArtReadWrite/frac_7
-BenchmarkArtReadWrite/frac_7-8                 	 1807928	       926.8 ns/op	      35 B/op	       1 allocs/op
+BenchmarkArtReadWrite/frac_7-8                 	 4126581	       449.8 ns/op	      35 B/op	       1 allocs/op
 BenchmarkArtReadWrite/frac_8
-BenchmarkArtReadWrite/frac_8-8                 	 2670330	       718.9 ns/op	      23 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_8-8                 	 4640168	       414.8 ns/op	      24 B/op	       0 allocs/op
 BenchmarkArtReadWrite/frac_9
-BenchmarkArtReadWrite/frac_9-8                 	 4315306	       446.3 ns/op	      11 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_9-8                 	 5503473	       372.2 ns/op	      12 B/op	       0 allocs/op
 BenchmarkArtReadWrite/frac_10
-BenchmarkArtReadWrite/frac_10-8                	22912306	        52.65 ns/op	       0 B/op	       0 allocs/op
+BenchmarkArtReadWrite/frac_10-8                	22140936	        52.31 ns/op	       0 B/op	       0 allocs/op
 
 
 // Our ART tree, with RWMutex, but now
