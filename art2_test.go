@@ -819,7 +819,7 @@ func Test_pren_sub_on_update_in_place(t *testing.T) {
 
 	verifySubN(tree.root)
 	verifyLeafIndexAt(tree)
-	fmt.Printf("past initial tree check.\n")
+	//fmt.Printf("past initial tree check.\n")
 
 	// verify that update in place does not change pren/subn.
 	// note this will be slow as it goes though the whole
