@@ -2181,4 +2181,21 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 		tree.At(i) reads  10_000_000 keys: elapsed 2.380924685s (238ns/op)
 		--- PASS: Test620_unlocked_read_comparison (8.27s)
 	*/
+
+	// we would like sequential iteration from
+	// larger than 0 to work too. start from 1:
+	t1 = time.Now()
+	beg := 1
+	for i := beg; i < K; i++ {
+		lf, ok = tree.At(i)
+		v = lf.Value.(int)
+		if !ok || v != i {
+			panic(fmt.Sprintf("At(i=%v) gave %v instead of %v", i, v, i))
+		}
+
+	}
+	e1 = time.Since(t1)
+	rate1 = e1 / time.Duration(K)
+	fmt.Printf("tree.At(i) reads from %v: %v keys: elapsed %v (%v/op)\n", beg, K-beg, e1, rate1)
+
 }

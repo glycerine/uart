@@ -531,10 +531,9 @@ func (t *Tree) at_unlocked(i int) (lf *Leaf, ok bool) {
 
 	lf, ok = t.root.at(i)
 
-	// start small with caching. only try to cache
-	// At() iteration starting from 0
-	// and going forward.
-	if ok && i == 0 && t.size > 1 {
+	// try to cache At() iteration. Gives 6x speedup
+	// for common case of going forward.
+	if ok && t.size > 1 {
 		t.atCache = t.Iter(lf.Key, nil)
 		t.atCache.Next()
 	}
