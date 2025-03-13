@@ -234,7 +234,7 @@ deciding factor. The 2x memory use must
 be weighed against the convenience and 
 performance gained.
 
-The ART maps are about 2-5x as fast as the red-black tree
+ART trees are about 2-5x as fast as the red-black tree
 used in my measurements (depending on the read/write mix),
 so in a sense this is a straight time-for-space 
 trade-off: twice as fast for twice the memory use.
