@@ -195,6 +195,11 @@ go run rbtree.go  # a red-black tree
 mstat.HeapAlloc = '22_911_096' (copies = 1; diff = 22_911_096 bytes)
 mstat.HeapAlloc = '42_296_912' (copies = 2; diff = 19_385_816 bytes)
 mstat.HeapAlloc = '55_081_880' (copies = 3; diff = 12_784_968 bytes)
+
+go run googbtree.go  # github.com/google/btree degree=30 b-tree
+mstat.HeapAlloc = '18_536_872' (copies = 1; diff = 18_536_872 bytes)
+mstat.HeapAlloc = '30_895_664' (copies = 2; diff = 12_358_792 bytes)
+mstat.HeapAlloc = '37_989_176' (copies = 3; diff = 7_093_512 bytes)
 ~~~
 
 Conclusions: the Go map and the red-black tree use about the
@@ -239,6 +244,14 @@ used in my measurements (depending on the read/write mix),
 so in a sense this is a straight time-for-space 
 trade-off: twice as fast for twice the memory use.
 
+Update: well, a degree 30 b-tree github.com/google/btree
+definitely kicks ART's bootie to the curb, in both
+time and space. google/btree Reads are 2x faster than the Go map Swiss 
+table, and 7x faster than my ART. Writes are 26% faster
+than the Go map, and 2x faster than my ART. Measurements below.
+Code in mem/googbtree.go.
+
+
 ## Benchmarks
 
 For code, see [tree_bench_test.go](./tree_bench_test.go).
@@ -274,6 +287,10 @@ adding the Tree.atCache mechanism to speed up
 sequential At(i), At(i+1), At(i+2), ... calls.
 
 tree.Atfar(i) reads 10_000_000 keys: elapsed 2.431009745s (243ns/op)
+
+// degree 30 b-tree github.com/google/btree
+google/btree time to store 10000000 keys: 1.835054285s (183ns/op)
+google/btree reads 10000000 keys: elapsed 52.309863ms (5ns/op)
 
 --- PASS: Test620_unlocked_read_comparison (12.14s)
 
