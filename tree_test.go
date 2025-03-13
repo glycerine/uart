@@ -2127,18 +2127,6 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	e1 = time.Since(t1)
 	rate1 = e1 / time.Duration(K)
 	fmt.Printf("tree.At(i) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
-	/*
-		go test -v -run 620
-		=== RUN   Test620_unlocked_read_comparison
-		map time to store 10_000_000 keys: 2.706811659s (270ns/op)
-		map reads 10_000_000 keys: elapsed 103.825162ms (10ns/op)
-
-		uart.Tree time to store 10_000_000 keys: 3.205033649s (320ns/op)
-		tree reads 10_000_000 keys: elapsed 350.897572ms (35ns/op)
-		uart Iter() reads 10_000_000 keys: elapsed 342.95423ms (34ns/op)
-		tree.At(i) reads  10_000_000 keys: elapsed 2.380924685s (238ns/op)
-		--- PASS: Test620_unlocked_read_comparison (8.27s)
-	*/
 
 	// we would like sequential iteration from
 	// larger than 0 to work too. start from 10.
@@ -2169,5 +2157,15 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	e1 = time.Since(t1)
 	rate1 = e1 / time.Duration(K)
 	fmt.Printf("tree.Atfar(i) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+
+	// with locking on
+	tree.SkipLocking = false
+	t1 = time.Now()
+	for k := range K {
+		tree.Atfar(k)
+	}
+	e1 = time.Since(t1)
+	rate1 = e1 / time.Duration(K)
+	fmt.Printf("Atfar() read-locked reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
 
 }
