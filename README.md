@@ -312,7 +312,7 @@ sequential At(i), At(i+1), At(i+2), ... calls.
 
 tree.Atfar(i) reads 10_000_000 keys: elapsed 2.431009745s (243ns/op)
 
-// degree 30 b-tree github.com/google/btree
+// degree 30 b-tree github.com/google/btree (and 3000 even faster)
 google/btree time to store 10000000 keys: 1.835054285s (183ns/op)
 google/btree reads 10000000 keys: elapsed 52.309863ms (5ns/op)
 
