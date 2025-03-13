@@ -4,8 +4,9 @@ import "fmt"
 
 type node4 struct {
 	lth      int
-	keys     [4]byte
 	children [4]*bnode
+	// benchmarking likes keys at end when mostly reading.
+	keys [4]byte
 }
 
 func (n *node4) kind() kind {
