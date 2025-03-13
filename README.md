@@ -177,8 +177,8 @@ programs is in the mem/ subdirectory.
 So that we might get to see the benefits of path 
 compression -- to see what difference that can make -- 
 the second and third loads were exactly the same 
-paths, but with __j appended to each,
-where j is the additional copy number.
+paths, but with __J appended to each,
+where J is the additional copy number.
 
 ~~~
 go run map.go     # the built-in Go map (go1.24 Swiss tables based)
@@ -218,17 +218,26 @@ compressed stats: 'map[int]int{0:42130, 1:103094, 2:7770, 3:9886, 4:11357, 5:105
 ~~~
 
 The total bytes saved through prefix compression 
-here was 725_221 bytes, less than 1% of the 
-overall ART tree use. The summary here is that
-I don't think the prefix compression feature
-of ART should be a deciding factor, and the
-2x memory use should be weighed against the
-convenience and performance gained. 
+here was 12_628_922 bytes (12MB). Which is to say,
+the ART total of 101_813_560 bytes (97MB) would have
+been 12MB larger (about 12% larger) 
+without the prefix compression.
 
-The ART maps are about 2x as fast as the red-black tree
-used in my measurements, so in a sense this is a straight
-time-for-space trade-off: twice as fast for twice
-the memory use.
+While your mileage may very because you have
+a alot of shared sub-strings in your key space
+(remember that ART will compress "prefixes"
+in the middle of a key as well as at the
+beginning), my take-home summary here 
+is that I don't think the prefix 
+compression feature of ART should be a big
+deciding factor. The 2x memory use must
+be weighed against the convenience and 
+performance gained.
+
+The ART maps are about 2-5x as fast as the red-black tree
+used in my measurements (depending on the read/write mix),
+so in a sense this is a straight time-for-space 
+trade-off: twice as fast for twice the memory use.
 
 ## Benchmarks
 
@@ -391,6 +400,35 @@ BenchmarkReadWriteSyncMap/frac_9
 BenchmarkReadWriteSyncMap/frac_9-8                      	41599728	        46.34 ns/op	      18 B/op	       1 allocs/op
 BenchmarkReadWriteSyncMap/frac_10
 BenchmarkReadWriteSyncMap/frac_10-8                     	100000000	        11.96 ns/op	       8 B/op	       1 allocs/op
+
+
+// a red-black tree; "github.com/glycerine/rbtree"
+
+BenchmarkReadWrite_RedBlackTree
+BenchmarkReadWrite_RedBlackTree/frac_0
+BenchmarkReadWrite_RedBlackTree/frac_0-8                	 1000000	      1557 ns/op	      87 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_1
+BenchmarkReadWrite_RedBlackTree/frac_1-8                	 1000000	      1521 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_2
+BenchmarkReadWrite_RedBlackTree/frac_2-8                	 1000000	      1554 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_3
+BenchmarkReadWrite_RedBlackTree/frac_3-8                	 1000000	      1485 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_4
+BenchmarkReadWrite_RedBlackTree/frac_4-8                	 1000000	      1476 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_5
+BenchmarkReadWrite_RedBlackTree/frac_5-8                	 1000000	      1548 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_6
+BenchmarkReadWrite_RedBlackTree/frac_6-8                	 1000000	      1524 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_7
+BenchmarkReadWrite_RedBlackTree/frac_7-8                	 1000000	      1638 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_8
+BenchmarkReadWrite_RedBlackTree/frac_8-8                	 1000000	      1543 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_9
+BenchmarkReadWrite_RedBlackTree/frac_9-8                	 1000000	      1548 ns/op	      40 B/op	       2 allocs/op
+BenchmarkReadWrite_RedBlackTree/frac_10
+BenchmarkReadWrite_RedBlackTree/frac_10-8               	 1000000	      1467 ns/op	      40 B/op	       2 allocs/op
+
+
 PASS
 ok  	github.com/glycerine/uart	137.808s
 

@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"sync"
 	"testing"
+	//rb "github.com/glycerine/rbtree"
 )
 
 const seed = 1
@@ -209,3 +210,49 @@ func BenchmarkReadWriteSyncMap(b *testing.B) {
 		})
 	}
 }
+
+/*
+// commented out to avoid any other package dependencies.
+
+func BenchmarkReadWrite_RedBlackTree(b *testing.B) {
+
+	tree := newRBtree()
+
+	//value := newValue(123)
+	for i := 0; i <= 10; i++ {
+		readFrac := float32(i) / 10.0
+		b.Run(fmt.Sprintf("frac_%d", i), func(b *testing.B) {
+
+			b.ResetTimer()
+			var count int
+
+			rng := rand.New(rand.NewSource(seed))
+			var rkey [8]byte
+
+			for range b.N {
+				v := randomKey(rng, rkey[:])
+				str := string(v)
+				if rng.Float32() < readFrac {
+					query := &kvs{
+						key: str,
+					}
+					it := tree.FindGE(query)
+					ok := !it.Limit()
+					if ok {
+						count++
+					}
+				} else {
+					pay := &kvs{
+						key: str,
+						val: str,
+					}
+					tree.Insert(pay)
+					//m[string(randomKey(rng))] = value
+				}
+			}
+		})
+		//vv("count = %v", count)
+		//_ = count
+	}
+}
+*/
