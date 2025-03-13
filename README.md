@@ -316,38 +316,6 @@ BenchmarkArtReadWrite/frac_10
 BenchmarkArtReadWrite/frac_10-8                	23420194	        49.64 ns/op	       0 B/op	       0 allocs/op
 
 
-// Our ART tree, with RWMutex, but now
-// without the Order-Statistics facilities.
-//
-// It looks like they trash cache lines
-// pretty badly when there are mutliple
-// writers. Without them we go up to 5x faster.
-
-BenchmarkArtReadWrite
-BenchmarkArtReadWrite/frac_0
-BenchmarkArtReadWrite/frac_0-8                 	 1855828	       616.9 ns/op	     121 B/op	       4 allocs/op
-BenchmarkArtReadWrite/frac_1
-BenchmarkArtReadWrite/frac_1-8                 	 2153430	       560.5 ns/op	     108 B/op	       3 allocs/op
-BenchmarkArtReadWrite/frac_2
-BenchmarkArtReadWrite/frac_2-8                 	 2620251	       507.5 ns/op	      95 B/op	       3 allocs/op
-BenchmarkArtReadWrite/frac_3
-BenchmarkArtReadWrite/frac_3-8                 	 2843442	       442.2 ns/op	      83 B/op	       2 allocs/op
-BenchmarkArtReadWrite/frac_4
-BenchmarkArtReadWrite/frac_4-8                 	 3177483	       421.0 ns/op	      71 B/op	       2 allocs/op
-BenchmarkArtReadWrite/frac_5
-BenchmarkArtReadWrite/frac_5-8                 	 3872078	       425.9 ns/op	      59 B/op	       2 allocs/op
-BenchmarkArtReadWrite/frac_6
-BenchmarkArtReadWrite/frac_6-8                 	 4407831	       405.9 ns/op	      47 B/op	       1 allocs/op
-BenchmarkArtReadWrite/frac_7
-BenchmarkArtReadWrite/frac_7-8                 	 5084798	       387.1 ns/op	      35 B/op	       1 allocs/op
-BenchmarkArtReadWrite/frac_8
-BenchmarkArtReadWrite/frac_8-8                 	 5877248	       283.1 ns/op	      23 B/op	       0 allocs/op
-BenchmarkArtReadWrite/frac_9
-BenchmarkArtReadWrite/frac_9-8                 	 6440737	       248.2 ns/op	      11 B/op	       0 allocs/op
-BenchmarkArtReadWrite/frac_10
-BenchmarkArtReadWrite/frac_10-8                	21996576	        53.03 ns/op	       0 B/op	       0 allocs/op
-
-
 // standard Go map wrapped with a sync.RWMutex (no range queries)
 
 BenchmarkReadWrite_map_RWMutex_wrapped
