@@ -251,6 +251,25 @@ table, and 7x faster than my ART. Writes are 26% faster
 than the Go map, and 2x faster than my ART. Measurements below.
 Code in mem/googbtree.go.
 
+As the article here 
+http://google-opensource.blogspot.com/2013/01/c-containers-that-save-memory-and-time.html
+says
+
+> For small data types, B-tree containers 
+> typically reduce memory use by 50 to 80% 
+> compared with Red-Black tree containers.
+
+and
+
+> Storing multiple elements per node can also 
+> improve performance, especially in large containers 
+> with inexpensive key-compare functions (e.g., integer 
+> keys using less-than), relative to Red-Black tree 
+> containers. This is because performance in these 
+> cases is effectively governed by the number of 
+> cache misses, not the number of key-compare 
+> operations. For large data sets, using these 
+> B-tree containers will save memory and improve performance.
 
 ## Benchmarks
 
