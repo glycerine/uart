@@ -5,6 +5,11 @@
 This means you can access your dictionary 
 like a Go slice, with integer indexes.
 
+## update: btrees are embarassingly faster, and use much less memory.
+(see my notes under Memory use below; for real-word
+use, something like https://github.com/google/btree 
+should be preferred.)
+
 Naming? This is a minimal-dependency version of 
 my Adaptive Radix Tree (ART) implementation
 and it comes without serialization support. 
