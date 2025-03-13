@@ -11,6 +11,8 @@ import (
 	"sort"
 	"testing"
 	"time"
+	// commented for no dependencies.
+	//googbtree "github.com/google/btree"
 )
 
 var _ = sort.Sort
@@ -2167,5 +2169,36 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	e1 = time.Since(t1)
 	rate1 = e1 / time.Duration(K)
 	fmt.Printf("Atfar() read-locked reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+
+	// commented for no dependencies:
+	/*
+		// google/btree load and read
+
+		degree := 3_000 // fastest
+		//g := googbtree.NewG[string](degree, googbtree.Less[string]())
+		g := googbtree.NewG[*Kint](degree, googbtree.LessFunc[*Kint](func(a, b *Kint) bool {
+			return bytes.Compare(a.Key, b.Key) < 0
+		}))
+
+		t1 = time.Now()
+		for k, kb := range keyb {
+			kint := &Kint{
+				Key: kb,
+				Val: k,
+			}
+			//g.ReplaceOrInsert(ks)
+			g.ReplaceOrInsert(kint)
+		}
+		e1 = time.Since(t1)
+		rate1 = e1 / time.Duration(K)
+		fmt.Printf("google/btree time to store %v keys: %v (%v/op)\n", K, e1, rate1)
+
+		t1 = time.Now()
+		g.Ascend(func(kint *Kint) bool { return true })
+
+		e1 = time.Since(t1)
+		rate1 = e1 / time.Duration(K)
+		fmt.Printf("google/btree reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+	*/
 
 }

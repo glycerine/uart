@@ -254,7 +254,7 @@ definitely kicks ART's bootie to the curb, in both
 time and space. google/btree Reads are 2x faster than the Go map Swiss 
 table, and 7x faster than my ART. Writes are 26% faster
 than the Go map, and 2x faster than my ART. Measurements below.
-Code in mem/googbtree.go.
+Code in mem/googbtree.go and commented in tree_test.go Test620.
 
 As the article here 
 http://google-opensource.blogspot.com/2013/01/c-containers-that-save-memory-and-time.html
