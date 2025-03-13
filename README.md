@@ -256,6 +256,11 @@ time and space. google/btree Reads are 2x faster than the Go map Swiss
 table, and 7x faster than my ART. Writes are 26% faster
 than the Go map, and 2x faster than my ART. Measurements below.
 Code in mem/googbtree.go and commented in tree_test.go Test620.
+If no locking is needed, the only drawback to these btrees is that
+deletes are _extremely_ slow, like 10x slower than a
+go map or my ART tree. This may be a reasonable trade-off if you
+don't delete much. It seems a small price to pay for such
+performance.
 
 As the article here 
 http://google-opensource.blogspot.com/2013/01/c-containers-that-save-memory-and-time.html
