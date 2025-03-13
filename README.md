@@ -230,8 +230,9 @@ compressed stats: 'map[int]int{0:42130, 1:103094, 2:7770, 3:9886, 4:11357, 5:105
 The total bytes saved through prefix compression 
 here was 12_628_922 bytes (12MB). Which is to say,
 the ART total of 101_813_560 bytes (97MB) would have
-been 12MB larger (about 12% larger) 
-without the prefix compression.
+been at least 12MB larger (about 12% larger) and
+probably much, much larger with all the extra
+inner nodes, without the prefix compression.
 
 While your mileage may very because you have
 a alot of shared sub-strings in your key space
@@ -297,12 +298,14 @@ Unlocked apples-to-apples versus the Go map:
 === RUN   Test620_unlocked_read_comparison
 map time to store 10_000_000 keys: 2.466118634s (246ns/op)
 map reads 10_000_000 keys: elapsed 101.076718ms (10ns/op)
+map deletes 10000000 keys: elapsed 1.36421433s (136ns/op)
 
 uart.Tree time to store 10_000_000 keys: 3.665080254s (366ns/op)
 Ascend(tree) reads 10_000_000 keys: elapsed 368.400458ms (36ns/op)
 uart Iter() reads 10_000_000 keys: elapsed 354.294422ms (35ns/op)
 tree.At(i) reads 10_000_000 keys: elapsed 381.973196ms (38ns/op)
 tree.At(i) reads from 10: 9999990 keys: elapsed 381.521877ms (38ns/op)
+my ART: delete 10000000 keys: elapsed 1.059195931s (105ns/op)
 
 Notice: as Atfar does not use an iterator to cache 
 sequential At calls, it is 6x slower than the iterator
@@ -315,6 +318,8 @@ tree.Atfar(i) reads 10_000_000 keys: elapsed 2.431009745s (243ns/op)
 // degree 30 b-tree github.com/google/btree (and 3000 even faster)
 google/btree time to store 10000000 keys: 1.835054285s (183ns/op)
 google/btree reads 10000000 keys: elapsed 52.309863ms (5ns/op)
+// (deletes are very slow though!)
+google/btree delete 10000000 keys: elapsed 13.386230659s (1.338µs/op)
 
 --- PASS: Test620_unlocked_read_comparison (12.14s)
 
