@@ -6,6 +6,7 @@ import (
 	"math/rand"
 	"sync"
 	"testing"
+	"time"
 	//rb "github.com/glycerine/rbtree"
 )
 
@@ -76,48 +77,52 @@ func BenchmarkArtReadWrite(b *testing.B) {
 }
 */
 
-func BenchmarkArtReadWrite_readers_writers_on_own_goro(b *testing.B) {
+func TestArtReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	value := newValue(123)
 	for i := 0; i <= 10; i++ {
 		//readFrac := float32(i) / 10.0
-		b.Run(fmt.Sprintf("frac_%d", i), func(b *testing.B) {
+		fmt.Printf("frac_%d", i)
 
-			tree := NewArtTree()
-			tree.SkipLocking = true
-			b.ResetTimer()
+		//vv("top of Run func: i = %v", i)
 
-			const ops = 10_0000
-			var wg sync.WaitGroup
-			wg.Add(10)
-			for j := range 10 {
-				isReader := j < i
-				go func(isReader bool) {
-					defer wg.Done()
+		tree := NewArtTree()
+		tree.SkipLocking = true
+		t0 := time.Now()
 
-					rng := rand.New(rand.NewSource(seed))
-					var rkey [8]byte
+		const ops = 10_0000
+		var wg sync.WaitGroup
+		wg.Add(10)
+		for j := range 10 {
+			isReader := j < i
+			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
+			go func(isReader bool) {
+				defer wg.Done()
 
-					if isReader {
-						rlock := tree.DRWmut.RLocker()
-						rlock.RLock()
-						for range ops {
-							rk := randomKey(rng, rkey[:])
-							tree.FindExact(rk)
-						}
-						rlock.RUnlock()
-					} else {
-						// is writer
-						tree.DRWmut.Lock()
-						for range ops {
-							rk := randomKey(rng, rkey[:])
-							tree.Insert(rk, value)
-						}
-						tree.DRWmut.Unlock()
+				rng := rand.New(rand.NewSource(seed))
+				var rkey [8]byte
+
+				if isReader {
+					rlock := tree.DRWmut.RLocker()
+					rlock.RLock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						tree.FindExact(rk)
 					}
-				}(isReader)
-			} // end j over all 10 goro
-			wg.Wait()
-		})
+					rlock.RUnlock()
+				} else {
+					// is writer
+					tree.DRWmut.Lock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						tree.Insert(rk, value)
+					}
+					tree.DRWmut.Unlock()
+				}
+			}(isReader)
+		} // end j over all 10 goro
+		wg.Wait()
+		e0 := time.Since(t0)
+		vv("on i=%v (%v %% readers); elapsed %v", i, i*10, e0)
 	}
 }
 
