@@ -223,6 +223,24 @@ func Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testin
 }
 
 /*
+Linux 48 core:
+
+go test -v -run Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro
+48/48 cpus found in 19.471938ms: map[0:0 1:24 2:1 3:25 4:2 5:26 8:3 9:27 10:4 11:28 12:5 13:29 16:6 17:30 18:7 19:31 20:8 21:32 24:9 25:33 26:10 27:34 28:11 29:35 32:12 33:36 34:13 35:37 36:14 37:38 40:15 41:39 42:16 43:40 44:17 45:41 48:18 49:42 50:19 51:43 52:20 53:44 56:21 57:45 58:22 59:46 60:23 61:47]
+=== RUN   Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro
+0 % read: elapsed 805.037ms; 0 reads; 100_000_000 writes (80.504 ns/op)
+10 % read: elapsed 732.843ms; 10_000_000 reads; 90_000_000 writes (73.284 ns/op)
+20 % read: elapsed 663.252ms; 20_000_000 reads; 80_000_000 writes (66.325 ns/op)
+30 % read: elapsed 541.312ms; 30_000_000 reads; 70_000_000 writes (54.131 ns/op)
+40 % read: elapsed 509.684ms; 40_000_000 reads; 60_000_000 writes (50.968 ns/op)
+50 % read: elapsed 425.301ms; 50_000_000 reads; 50_000_000 writes (42.530 ns/op)
+60 % read: elapsed 327.03ms; 60_000_000 reads; 40_000_000 writes (32.703 ns/op)
+70 % read: elapsed 261.054ms; 70_000_000 reads; 30_000_000 writes (26.105 ns/op)
+80 % read: elapsed 188.654ms; 80_000_000 reads; 20_000_000 writes (18.865 ns/op)
+90 % read: elapsed 124.279ms; 90_000_000 reads; 10_000_000 writes (12.428 ns/op)
+100 % read: elapsed 5.461ms; 100_000_000 reads; 0 writes (0.546 ns/op)
+--- PASS: Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro (4.58s)
+
 
 darwin 8 core:
 
@@ -241,6 +259,74 @@ go test -v -run=Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_gor
 90 % read: elapsed 161.941ms; 90_000_000 reads; 10_000_000 writes (16.194 ns/op)
 100 % read: elapsed 20.997ms; 100_000_000 reads; 0 writes (2.100 ns/op)
 --- PASS: Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro (4.46s)
+*/
+
+func Test_syncMap_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
+	value := newValue(123)
+	for i := 0; i <= 10; i++ {
+
+		var m sync.Map
+
+		t0 := time.Now()
+
+		const ops = 10_0000
+		var wg sync.WaitGroup
+		Ngoro := 100
+		wg.Add(Ngoro)
+		for j := range Ngoro {
+			isReader := j < i*10
+			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
+			go func(isReader bool) (count int) {
+				defer wg.Done()
+
+				rng := rand.New(rand.NewSource(seed))
+				var rkey [8]byte
+
+				if isReader {
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						_, ok := m.Load(string(rk))
+						// try to prevent compiler from eliding the map read.
+						if ok {
+							count++
+						}
+					}
+				} else {
+					// is writer
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						//tree.Insert(rk, value)
+						m.Swap(string(rk), value)
+					}
+				}
+				return
+			}(isReader)
+		} // end j over all 10 goro
+		wg.Wait()
+		e0 := time.Since(t0).Truncate(time.Microsecond)
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
+	}
+}
+
+/*
+
+Linux 48 core:
+
+go test -v -run Test_syncMap_ReadWrite_readers_writers_on_own_goro
+48/48 cpus found in 18.284692ms: map[0:0 1:24 2:1 3:25 4:2 5:26 8:3 9:27 10:4 11:28 12:5 13:29 16:6 17:30 18:7 19:31 20:8 21:32 24:9 25:33 26:10 27:34 28:11 29:35 32:12 33:36 34:13 35:37 36:14 37:38 40:15 41:39 42:16 43:40 44:17 45:41 48:18 49:42 50:19 51:43 52:20 53:44 56:21 57:45 58:22 59:46 60:23 61:47]
+=== RUN   Test_syncMap_ReadWrite_readers_writers_on_own_goro
+0 % read: elapsed 470.695ms; 0 reads; 100_000_000 writes (47.069 ns/op)
+10 % read: elapsed 427.604ms; 10_000_000 reads; 90_000_000 writes (42.760 ns/op)
+20 % read: elapsed 377.811ms; 20_000_000 reads; 80_000_000 writes (37.781 ns/op)
+30 % read: elapsed 334.283ms; 30_000_000 reads; 70_000_000 writes (33.428 ns/op)
+40 % read: elapsed 281.496ms; 40_000_000 reads; 60_000_000 writes (28.150 ns/op)
+50 % read: elapsed 246.451ms; 50_000_000 reads; 50_000_000 writes (24.645 ns/op)
+60 % read: elapsed 197.775ms; 60_000_000 reads; 40_000_000 writes (19.777 ns/op)
+70 % read: elapsed 162.997ms; 70_000_000 reads; 30_000_000 writes (16.300 ns/op)
+80 % read: elapsed 123.637ms; 80_000_000 reads; 20_000_000 writes (12.364 ns/op)
+90 % read: elapsed 92.63ms; 90_000_000 reads; 10_000_000 writes (9.263 ns/op)
+100 % read: elapsed 9.635ms; 100_000_000 reads; 0 writes (0.964 ns/op)
+--- PASS: Test_syncMap_ReadWrite_readers_writers_on_own_goro (2.73s)
 */
 
 func BenchmarkArtLinuxPaths(b *testing.B) {
