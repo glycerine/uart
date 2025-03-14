@@ -783,8 +783,8 @@ func Test_btree_no_sync(t *testing.T) {
 			continue
 		}
 
-		degree := 32
-		//degree := 3000
+		//degree := 32
+		degree := 3000
 		tree := googbtree.NewG[string](degree, googbtree.Less[string]())
 
 		//DRWmut := drwmutex.NewDRWMutex()

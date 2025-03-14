@@ -5,11 +5,6 @@
 This means you can access your dictionary 
 like a Go slice, with integer indexes.
 
-## update: btrees are embarassingly faster, and use much less memory.
-(see my notes under Memory use below; for real-word
-use, something like https://github.com/google/btree 
-should be preferred.)
-
 Naming? This is a minimal-dependency version of 
 my Adaptive Radix Tree (ART) implementation
 and it comes without serialization support. 
@@ -250,8 +245,13 @@ used in my measurements (depending on the read/write mix),
 so in a sense this is a straight time-for-space 
 trade-off: twice as fast for twice the memory use.
 
-Update: well, a degree 30 b-tree github.com/google/btree
-definitely kicks ART's bootie to the curb, in both
+A note about reading keys sequentially, the
+"full-table" scan case:
+
+Without synchronization, a degree 30 b-tree 
+github.com/google/btree, when reading sequential 
+values in-order (its sweet spot)
+kicks ART's bootie to the curb, in both
 time and space. google/btree Reads are 2x faster than the Go map Swiss 
 table, and 7x faster than my ART. Writes are 26% faster
 than the Go map, and 2x faster than my ART. Measurements below.
@@ -260,7 +260,12 @@ If no locking is needed, the only drawback to these btrees is that
 deletes are _extremely_ slow, like 10x slower than a
 go map or my ART tree. This may be a reasonable trade-off if you
 don't delete much. It seems a small price to pay for such
-performance.
+performance--in the sequential access case. 
+
+Still without synchronization, for random access, 
+this ART is slightly faster than the btree on reads,
+about the same or better on writes than the btree, faster than
+sync.Map, and competitive with the built-in Go map.
 
 As the article here 
 http://google-opensource.blogspot.com/2013/01/c-containers-that-save-memory-and-time.html
@@ -281,6 +286,10 @@ and
 > cache misses, not the number of key-compare 
 > operations. For large data sets, using these 
 > B-tree containers will save memory and improve performance.
+
+In the sequential full table scan, the btree has
+most reads cached from the last read, and so suffers
+very few cache misses.
 
 ## Benchmarks
 
