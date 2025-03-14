@@ -151,6 +151,7 @@ func Cpu2() (cpu int) {
 
 	//t0 := time.Now()
 	rdpid, ok := tryRDPID()
+	_ = rdpid
 	//e0 := time.Since(t0)
 
 	if ok {
@@ -161,6 +162,7 @@ func Cpu2() (cpu int) {
 	//rdpidDebug, eax, edx := debugRDTSCP()
 	// ecx has the cpu id.
 	eax, ebx, ecx, edx := asmRdtscpAsm()
+	_, _, _, _ = eax, ebx, ecx, edx
 
 	rdtscp := int(getCurrentCPUViaRDTSCP())
 	logcpu := cpuid.CPU.LogicalCPU()
@@ -171,7 +173,7 @@ func Cpu2() (cpu int) {
 	//mac := MacOSOnlySysctlGetLogicalCPU()
 
 	//if logcpu != rdtscp {
-	fmt.Printf("logcpu = %v; rdtscp = %v; RDPID = %v; eax=%v, ebx=%v; ecx=%v; edx=%v\n", logcpu, rdtscp, rdpid, eax, ebx, ecx, edx) // rdpidDebug, eax, edx) // , mac)
+	//fmt.Printf("logcpu = %v; rdtscp = %v; RDPID = %v; eax=%v, ebx=%v; ecx=%v; edx=%v\n", logcpu, rdtscp, rdpid, eax, ebx, ecx, edx) // rdpidDebug, eax, edx) // , mac)
 	//}
 	return logcpu
 }

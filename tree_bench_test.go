@@ -32,6 +32,9 @@ func randomKey2(rng *rand.Rand) []byte {
 	return b
 }
 
+/* this is the wrong way to benchmark readers vs writers. We
+must have them on their own goroutines for the DRW lock sharding to work.
+
 // Insert and Read benchmark. A varied fraction is
 // read vs inserted. sync.RWMutex ocking is used.
 func BenchmarkArtReadWrite(b *testing.B) {
@@ -68,6 +71,52 @@ func BenchmarkArtReadWrite(b *testing.B) {
 					}
 				}
 			})
+		})
+	}
+}
+*/
+
+func BenchmarkArtReadWrite_readers_writers_on_own_goro(b *testing.B) {
+	value := newValue(123)
+	for i := 0; i <= 10; i++ {
+		//readFrac := float32(i) / 10.0
+		b.Run(fmt.Sprintf("frac_%d", i), func(b *testing.B) {
+
+			tree := NewArtTree()
+			tree.SkipLocking = true
+			b.ResetTimer()
+
+			const ops = 10_0000
+			var wg sync.WaitGroup
+			wg.Add(10)
+			for j := range 10 {
+				isReader := j < i
+				go func(isReader bool) {
+					defer wg.Done()
+
+					rng := rand.New(rand.NewSource(seed))
+					var rkey [8]byte
+
+					if isReader {
+						rlock := tree.DRWmut.RLocker()
+						rlock.RLock()
+						for range ops {
+							rk := randomKey(rng, rkey[:])
+							tree.FindExact(rk)
+						}
+						rlock.RUnlock()
+					} else {
+						// is writer
+						tree.DRWmut.Lock()
+						for range ops {
+							rk := randomKey(rng, rkey[:])
+							tree.Insert(rk, value)
+						}
+						tree.DRWmut.Unlock()
+					}
+				}(isReader)
+			} // end j over all 10 goro
+			wg.Wait()
 		})
 	}
 }
