@@ -93,8 +93,8 @@ func TestArtReadWrite_readers_writers_on_own_goro_DRWMutex(t *testing.T) {
 		tree.SkipLocking = true // we do locking manually below
 		t0 := time.Now()
 
-		//const ops = 10_0000
-		const ops = 100
+		const ops = 10_0000
+		//const ops = 1000
 		var wg sync.WaitGroup
 		Ngoro := 100
 		elaps := make([]time.Duration, Ngoro)
@@ -208,8 +208,8 @@ func TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro(t *testing.T) {
 		tree.SkipLocking = true // we do locking manually below
 		t0 := time.Now()
 
-		//const ops = 10_0000
-		const ops = 100
+		const ops = 10_0000
+		//const ops = 1000
 		var wg sync.WaitGroup
 		Ngoro := 100
 		elaps := make([]time.Duration, Ngoro)
