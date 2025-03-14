@@ -41,3 +41,13 @@ NOP_RDPID:
     MOVL $0, cpu+0(FP)
     MOVB $0, ok+4(FP)
     RET
+
+// func debugRDTSCP() (cpu, eax, edx uint32)
+TEXT ·debugRDTSCP(SB), NOSPLIT, $8-12
+    MOVQ CX, 0(SP)
+    RDTSCP
+    MOVL CX, cpu+0(FP)     // Save raw CPU ID
+    MOVL AX, eax+4(FP)     // Save low 32 bits of TSC
+    MOVL DX, edx+8(FP)     // Save high 32 bits of TSC
+    MOVQ 0(SP), CX
+    RET
