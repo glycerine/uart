@@ -144,6 +144,24 @@ go test -v -run TestArtReadWrite_readers_writers_on_own_goro
 100 % read: elapsed 8.946ms; 100_000_000 reads; 0 writes (0.895 ns/op)
 --- PASS: TestArtReadWrite_readers_writers_on_own_goro (26.56s)
 
+// compare to sync.Map at 100% reads:
+
+> a=c(0.9,1.0, 0.92, 0.895)
+> summary(a)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+ 0.8950  0.8988  0.9100  0.9287  0.9400  1.0000
+> b=c(1.1,1.2,1.1,0.964)
+> summary(b)
+   Min. 1st Qu.  Median    Mean 3rd Qu.    Max.
+  0.964   1.066   1.100   1.091   1.125   1.200
+> d=1.091 -0.9287
+> d
+[1] 0.1623
+> d/1.091
+[1] 0.1487626
+
+// so ART reads are 15% faster than sync.Map in 100% read with DRWMutex on Linux.
+
 Darwin, 8 core:
 
 go test -v -run=ArtReadWrite_readers_writers_on_own_goro
