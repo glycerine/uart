@@ -86,7 +86,7 @@ func TestArtReadWrite_readers_writers_on_own_goro(t *testing.T) {
 		//vv("top of Run func: i = %v", i)
 
 		tree := NewArtTree()
-		tree.SkipLocking = true
+		tree.SkipLocking = true // we do locking manually below
 		t0 := time.Now()
 
 		const ops = 10_0000
