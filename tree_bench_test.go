@@ -91,9 +91,10 @@ func TestArtReadWrite_readers_writers_on_own_goro(t *testing.T) {
 
 		const ops = 10_0000
 		var wg sync.WaitGroup
-		wg.Add(10)
-		for j := range 10 {
-			isReader := j < i
+		Ngoro := 100
+		wg.Add(Ngoro)
+		for j := range Ngoro {
+			isReader := j < i*10
 			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
 			go func(isReader bool) {
 				defer wg.Done()
@@ -122,7 +123,7 @@ func TestArtReadWrite_readers_writers_on_own_goro(t *testing.T) {
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0)
-		fmt.Printf("(%v %% read); elapsed %v; %v reads; %v writes (%v/op)\n", i*10, e0, i*10*ops, (10-i)*10*ops, e0/100_000)
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%v/op)\n", i*10, e0, i*Ngoro*ops, (10-i)*Ngoro*ops, e0/time.Duration(Ngoro*ops))
 	}
 }
 
