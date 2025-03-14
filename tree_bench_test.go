@@ -429,6 +429,27 @@ func Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	}
 }
 
+/*
+
+Linux 48 core:
+
+go test -v -run Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro
+48/48 cpus found in 21.300156ms: map[0:0 1:24 2:1 3:25 4:2 5:26 8:3 9:27 10:4 11:28 12:5 13:29 16:6 17:30 18:7 19:31 20:8 21:32 24:9 25:33 26:10 27:34 28:11 29:35 32:12 33:36 34:13 35:37 36:14 37:38 40:15 41:39 42:16 43:40 44:17 45:41 48:18 49:42 50:19 51:43 52:20 53:44 56:21 57:45 58:22 59:46 60:23 61:47]
+=== RUN   Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro
+0 % read: elapsed 3.084138s; 0 reads; 100_000_000 writes (308.414 ns/op)
+10 % read: elapsed 2.839515s; 10_000_000 reads; 90_000_000 writes (283.952 ns/op)
+20 % read: elapsed 2.495739s; 20_000_000 reads; 80_000_000 writes (249.574 ns/op)
+30 % read: elapsed 2.220878s; 30_000_000 reads; 70_000_000 writes (222.088 ns/op)
+40 % read: elapsed 1.90089s; 40_000_000 reads; 60_000_000 writes (190.089 ns/op)
+50 % read: elapsed 1.596246s; 50_000_000 reads; 50_000_000 writes (159.625 ns/op)
+60 % read: elapsed 1.356848s; 60_000_000 reads; 40_000_000 writes (135.685 ns/op)
+70 % read: elapsed 1.049441s; 70_000_000 reads; 30_000_000 writes (104.944 ns/op)
+80 % read: elapsed 739.494ms; 80_000_000 reads; 20_000_000 writes (73.949 ns/op)
+90 % read: elapsed 463.687ms; 90_000_000 reads; 10_000_000 writes (46.369 ns/op)
+100 % read: elapsed 60.333ms; 100_000_000 reads; 0 writes (6.033 ns/op)
+--- PASS: Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro (17.81s)
+*/
+
 // compare google/btree using sync.RWMutex
 func Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	//value := newValue(123)
