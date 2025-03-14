@@ -143,6 +143,104 @@ go test -v -run TestArtReadWrite_readers_writers_on_own_goro
 90 % read: elapsed 512.86ms; 90_000_000 reads; 10_000_000 writes (51.286 ns/op)
 100 % read: elapsed 8.946ms; 100_000_000 reads; 0 writes (0.895 ns/op)
 --- PASS: TestArtReadWrite_readers_writers_on_own_goro (26.56s)
+
+Darwin, 8 core:
+
+go test -v -run=ArtReadWrite_readers_writers_on_own_goro
+8/8 cpus found in 8.209µs: map[0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7]
+=== RUN   TestArtReadWrite_readers_writers_on_own_goro
+0 % read: elapsed 3.093764s; 0 reads; 100_000_000 writes (309.376 ns/op)
+10 % read: elapsed 2.798005s; 10_000_000 reads; 90_000_000 writes (279.800 ns/op)
+20 % read: elapsed 2.527697s; 20_000_000 reads; 80_000_000 writes (252.770 ns/op)
+30 % read: elapsed 2.255554s; 30_000_000 reads; 70_000_000 writes (225.555 ns/op)
+40 % read: elapsed 1.939679s; 40_000_000 reads; 60_000_000 writes (193.968 ns/op)
+50 % read: elapsed 1.733701s; 50_000_000 reads; 50_000_000 writes (173.370 ns/op)
+60 % read: elapsed 1.401226s; 60_000_000 reads; 40_000_000 writes (140.123 ns/op)
+70 % read: elapsed 1.12676s; 70_000_000 reads; 30_000_000 writes (112.676 ns/op)
+80 % read: elapsed 811.226ms; 80_000_000 reads; 20_000_000 writes (81.123 ns/op)
+90 % read: elapsed 540.362ms; 90_000_000 reads; 10_000_000 writes (54.036 ns/op)
+100 % read: elapsed 26.126ms; 100_000_000 reads; 0 writes (2.613 ns/op)
+--- PASS: TestArtReadWrite_readers_writers_on_own_goro (18.25s)
+
+*/
+
+func Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
+	value := newValue(123)
+	for i := 0; i <= 10; i++ {
+		//readFrac := float32(i) / 10.0
+		//fmt.Printf("frac_%d", i)
+
+		//vv("top of Run func: i = %v", i)
+
+		//tree := NewArtTree()
+		//tree.SkipLocking = true // we do locking manually below
+		m := make(map[string][]byte)
+		var rwmut sync.RWMutex
+
+		t0 := time.Now()
+
+		const ops = 10_0000
+		var wg sync.WaitGroup
+		Ngoro := 100
+		wg.Add(Ngoro)
+		for j := range Ngoro {
+			isReader := j < i*10
+			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
+			go func(isReader bool) (count int) {
+				defer wg.Done()
+
+				rng := rand.New(rand.NewSource(seed))
+				var rkey [8]byte
+
+				if isReader {
+					rwmut.RLock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						_, ok := m[string(rk)]
+						// try to prevent compiler from eliding the map read.
+						if ok {
+							count++
+						}
+					}
+					rwmut.RUnlock()
+				} else {
+					// is writer
+					rwmut.Lock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						//tree.Insert(rk, value)
+						m[string(rk)] = value
+					}
+					rwmut.Unlock()
+				}
+				return
+			}(isReader)
+		} // end j over all 10 goro
+		wg.Wait()
+		e0 := time.Since(t0).Truncate(time.Microsecond)
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
+	}
+}
+
+/*
+
+darwin 8 core:
+
+go test -v -run=Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro
+8/8 cpus found in 4.026µs: map[0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7]
+=== RUN   Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro
+0 % read: elapsed 758.259ms; 0 reads; 100_000_000 writes (75.826 ns/op)
+10 % read: elapsed 642.936ms; 10_000_000 reads; 90_000_000 writes (64.294 ns/op)
+20 % read: elapsed 610.454ms; 20_000_000 reads; 80_000_000 writes (61.045 ns/op)
+30 % read: elapsed 543.044ms; 30_000_000 reads; 70_000_000 writes (54.304 ns/op)
+40 % read: elapsed 464.226ms; 40_000_000 reads; 60_000_000 writes (46.423 ns/op)
+50 % read: elapsed 413.726ms; 50_000_000 reads; 50_000_000 writes (41.373 ns/op)
+60 % read: elapsed 326.546ms; 60_000_000 reads; 40_000_000 writes (32.655 ns/op)
+70 % read: elapsed 296.936ms; 70_000_000 reads; 30_000_000 writes (29.694 ns/op)
+80 % read: elapsed 222.586ms; 80_000_000 reads; 20_000_000 writes (22.259 ns/op)
+90 % read: elapsed 161.941ms; 90_000_000 reads; 10_000_000 writes (16.194 ns/op)
+100 % read: elapsed 20.997ms; 100_000_000 reads; 0 writes (2.100 ns/op)
+--- PASS: Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro (4.46s)
 */
 
 func BenchmarkArtLinuxPaths(b *testing.B) {
