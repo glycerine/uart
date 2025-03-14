@@ -122,8 +122,8 @@ func TestArtReadWrite_readers_writers_on_own_goro(t *testing.T) {
 			}(isReader)
 		} // end j over all 10 goro
 		wg.Wait()
-		e0 := time.Since(t0)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%v/op)\n", i*10, e0, i*Ngoro*ops, (10-i)*Ngoro*ops, e0/time.Duration(Ngoro*ops))
+		e0 := time.Since(t0).Truncate(time.Microsecond)
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
 	}
 }
 
