@@ -39,19 +39,32 @@ func BenchmarkArtReadWrite(b *testing.B) {
 	for i := 0; i <= 10; i++ {
 		readFrac := float32(i) / 10.0
 		b.Run(fmt.Sprintf("frac_%d", i), func(b *testing.B) {
-			l := NewArtTree()
+			tree := NewArtTree()
+			tree.SkipLocking = true
 			b.ResetTimer()
 			//var count int
 			b.RunParallel(func(pb *testing.PB) {
+				i := 0
+				rlock := tree.DRWmut.RLocker()
 				rng := rand.New(rand.NewSource(seed))
 				var rkey [8]byte
 				for pb.Next() {
+					i++
 					rk := randomKey(rng, rkey[:])
 
 					if rng.Float32() < readFrac {
-						l.FindExact(rk)
+						if i%2000 == 0 {
+							// refresh the lock, in case
+							// we are different core.
+							rlock = tree.DRWmut.RLocker()
+						}
+						rlock.RLock()
+						tree.FindExact(rk)
+						rlock.RUnlock()
 					} else {
-						l.Insert(rk, value)
+						tree.DRWmut.Lock()
+						tree.Insert(rk, value)
+						tree.DRWmut.Unlock()
 					}
 				}
 			})
