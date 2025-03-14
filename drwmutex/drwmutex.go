@@ -149,14 +149,15 @@ func Cpu2() (cpu int) {
 	// dynamically detects current core, supports many architecture/OS.
 	//return uint64(cpuid.CPU.LogicalCPU())
 
-	//t0 := time.Now()
 	rdpid, ok := tryRDPID()
-	_ = rdpid
-	//e0 := time.Since(t0)
-
 	if ok {
 		//fmt.Printf("tryRDPID got rdpid = %v in %v\n", rdpid, e0)
-		//return int(cpu)
+		// So rpid does not need the APIC ID translation... but to
+		// stay compat with Cpu2() returning logical CPU,
+		// and then caller using cpu map on it, we will
+		// temporarily but it back in that domain, TODO: remove map and inv map
+		// if we keep the RDPID...
+		return inverseCpus[int(rdpid)]
 	}
 
 	//rdpidDebug, eax, edx := debugRDTSCP()
@@ -180,12 +181,17 @@ func Cpu2() (cpu int) {
 
 // cpus maps (non-consecutive) CPUID values to integer indices.
 var cpus map[int]int
+var inverseCpus map[int]int
 
 // init will construct the cpus map so that CPUIDs can be looked up to
 // determine a particular core's lock index.
 func init() {
 	start := time.Now()
 	cpus = map_cpus() // from from APICID -> "processor"
+	inverseCpus = make(map[int]int)
+	for k, v := range cpus {
+		inverseCpus[v] = k
+	}
 	fmt.Fprintf(os.Stderr, "%d/%d cpus found in %v: %v\n", len(cpus), runtime.NumCPU(), time.Now().Sub(start), cpus)
 }
 
