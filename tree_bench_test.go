@@ -8,6 +8,10 @@ import (
 	"testing"
 	"time"
 	//rb "github.com/glycerine/rbtree"
+
+	googbtree "github.com/google/btree"
+
+	"github.com/glycerine/uart/drwmutex"
 )
 
 const seed = 1
@@ -366,6 +370,64 @@ go test -v -run Test_syncMap_ReadWrite_readers_writers_on_own_goro
 --- PASS: Test_syncMap_ReadWrite_readers_writers_on_own_goro (4.99s)
 
 */
+
+// compare google/btree using DRWMutex
+func Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
+	//value := newValue(123)
+	for i := 0; i <= 10; i++ {
+		//readFrac := float32(i) / 10.0
+		//fmt.Printf("frac_%d", i)
+
+		//vv("top of Run func: i = %v", i)
+
+		degree := 3000
+		tree := googbtree.NewG[string](degree, googbtree.Less[string]())
+
+		DRWmut := drwmutex.NewDRWMutex()
+
+		t0 := time.Now()
+
+		const ops = 10_0000
+		var wg sync.WaitGroup
+		Ngoro := 100
+		wg.Add(Ngoro)
+		for j := range Ngoro {
+			isReader := j < i*10
+			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
+			go func(isReader bool) {
+				defer wg.Done()
+
+				rng := rand.New(rand.NewSource(seed))
+				var rkey [8]byte
+
+				if isReader {
+					rlock := DRWmut.RLocker()
+					rlock.RLock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						//tree.FindExact(rk)
+						_, ok := tree.Get(string(rk))
+						_ = ok
+					}
+					rlock.RUnlock()
+				} else {
+					// is writer
+					DRWmut.Lock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						// not storing value... gives btree a little advantage?
+						tree.ReplaceOrInsert(string(rk))
+						//tree.Insert(rk, value)
+					}
+					DRWmut.Unlock()
+				}
+			}(isReader)
+		} // end j over all 10 goro
+		wg.Wait()
+		e0 := time.Since(t0).Truncate(time.Microsecond)
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
+	}
+}
 
 func BenchmarkArtLinuxPaths(b *testing.B) {
 
