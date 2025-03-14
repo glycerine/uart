@@ -15,12 +15,16 @@ TEXT ·cpu(SB),NOSPLIT,$0-8
 	RET
 
 // func getCurrentCPUViaRDTSCP() uint32
-TEXT ·getCurrentCPUViaRDTSCP(SB), NOSPLIT, $0-4
-    RDTSCP
-    MOVL CX, AX    // CPU ID is in ECX
-    ANDL $0xff, AX // Mask to get just the CPU ID
-    MOVL AX, ret+0(FP)
-    RET
+TEXT ·getCurrentCPUViaRDTSCP(SB), NOSPLIT, $8-4 // Note: changed stack size to 8
+        // Save registers since RDTSCP modifies EDX and EAX too
+        MOVQ CX, 0(SP)
+        RDTSCP                  // Returns TSC in EDX:EAX, CPU ID in ECX
+        MOVL CX, AX            // Move CPU ID from CX to AX
+        ANDL $0xff, AX         // Mask to get just the CPU ID
+        MOVL AX, ret+0(FP)     // Store result
+        // Restore saved register
+        MOVQ 0(SP), CX
+        RET
 
 // func tryRDPID() (cpu uint32, ok bool)
 TEXT ·tryRDPID(SB), NOSPLIT, $0-8

@@ -163,8 +163,11 @@ func Cpu2() (cpu int) {
 	if rdtscp != 0 {
 		//fmt.Printf("RDTSCP was non-zero! logcpu = %v; rdtscp = %v\n", logcpu, rdtscp)
 	}
+
+	//mac := MacOSOnlySysctlGetLogicalCPU()
+
 	//if logcpu != rdtscp {
-	fmt.Printf("logcpu = %v; rdtscp = %v; PDPID = %v\n", logcpu, rdtscp, rdpid)
+	fmt.Printf("logcpu = %v; rdtscp = %v; RDPID = %v;\n", logcpu, rdtscp, rdpid) // , mac)
 	//}
 	return logcpu
 }
