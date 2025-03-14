@@ -81,7 +81,7 @@ func TestArtReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	value := newValue(123)
 	for i := 0; i <= 10; i++ {
 		//readFrac := float32(i) / 10.0
-		fmt.Printf("frac_%d", i)
+		//fmt.Printf("frac_%d", i)
 
 		//vv("top of Run func: i = %v", i)
 
@@ -122,7 +122,7 @@ func TestArtReadWrite_readers_writers_on_own_goro(t *testing.T) {
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0)
-		vv("on i=%v (%v %% readers); elapsed %v", i, i*10, e0)
+		fmt.Printf("(%v %% read); elapsed %v; %v reads; %v writes (%v/op)\n", i*10, e0, i*10*ops, (10-i)*10*ops, e0/100_000)
 	}
 }
 
