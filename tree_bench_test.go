@@ -429,6 +429,85 @@ func Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	}
 }
 
+// compare google/btree using sync.RWMutex
+func Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
+	//value := newValue(123)
+	for i := 0; i <= 10; i++ {
+		//readFrac := float32(i) / 10.0
+		//fmt.Printf("frac_%d", i)
+
+		//vv("top of Run func: i = %v", i)
+
+		degree := 3000
+		tree := googbtree.NewG[string](degree, googbtree.Less[string]())
+
+		var rwmut sync.RWMutex
+
+		t0 := time.Now()
+
+		const ops = 10_0000
+		var wg sync.WaitGroup
+		Ngoro := 100
+		wg.Add(Ngoro)
+		for j := range Ngoro {
+			isReader := j < i*10
+			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
+			go func(isReader bool) {
+				defer wg.Done()
+
+				rng := rand.New(rand.NewSource(seed))
+				var rkey [8]byte
+
+				if isReader {
+					rwmut.RLock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						//tree.FindExact(rk)
+						_, ok := tree.Get(string(rk))
+						_ = ok
+					}
+					rwmut.RUnlock()
+				} else {
+					// is writer
+					rwmut.Lock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						// not storing value... gives btree a little advantage?
+						tree.ReplaceOrInsert(string(rk))
+						//tree.Insert(rk, value)
+					}
+					rwmut.Unlock()
+				}
+			}(isReader)
+		} // end j over all 10 goro
+		wg.Wait()
+		e0 := time.Since(t0).Truncate(time.Microsecond)
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
+	}
+}
+
+/*
+
+Darwin 8 core:
+
+go test -v -run Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro
+8/8 cpus found in 4.987µs: map[0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7]
+=== RUN   Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro
+0 % read: elapsed 3.091518s; 0 reads; 100_000_000 writes (309.152 ns/op)
+10 % read: elapsed 2.752677s; 10_000_000 reads; 90_000_000 writes (275.268 ns/op)
+20 % read: elapsed 2.538319s; 20_000_000 reads; 80_000_000 writes (253.832 ns/op)
+30 % read: elapsed 2.28622s; 30_000_000 reads; 70_000_000 writes (228.622 ns/op)
+40 % read: elapsed 2.039747s; 40_000_000 reads; 60_000_000 writes (203.975 ns/op)
+50 % read: elapsed 1.799679s; 50_000_000 reads; 50_000_000 writes (179.968 ns/op)
+60 % read: elapsed 1.584123s; 60_000_000 reads; 40_000_000 writes (158.412 ns/op)
+70 % read: elapsed 1.35866s; 70_000_000 reads; 30_000_000 writes (135.866 ns/op)
+80 % read: elapsed 1.105797s; 80_000_000 reads; 20_000_000 writes (110.580 ns/op)
+90 % read: elapsed 872.747ms; 90_000_000 reads; 10_000_000 writes (87.275 ns/op)
+100 % read: elapsed 79.896ms; 100_000_000 reads; 0 writes (7.990 ns/op)
+--- PASS: Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro (19.51s)
+
+*/
+
 func BenchmarkArtLinuxPaths(b *testing.B) {
 
 	paths := loadTestFile("assets/linux.txt")
