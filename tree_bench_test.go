@@ -187,6 +187,79 @@ go test -v -run=ArtReadWrite_readers_writers_on_own_goro
 
 */
 
+func TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro(t *testing.T) {
+	value := newValue(123)
+	for i := 0; i <= 10; i++ {
+		//readFrac := float32(i) / 10.0
+		//fmt.Printf("frac_%d", i)
+
+		//vv("top of Run func: i = %v", i)
+
+		var rwmut sync.RWMutex // just one, shared not sharded.
+
+		tree := NewArtTree()
+		tree.SkipLocking = true // we do locking manually below
+		t0 := time.Now()
+
+		const ops = 10_0000
+		var wg sync.WaitGroup
+		Ngoro := 100
+		wg.Add(Ngoro)
+		for j := range Ngoro {
+			isReader := j < i*10
+			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
+			go func(isReader bool) {
+				defer wg.Done()
+
+				rng := rand.New(rand.NewSource(seed))
+				var rkey [8]byte
+
+				if isReader {
+					rwmut.RLock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						tree.FindExact(rk)
+					}
+					rwmut.RUnlock()
+				} else {
+					// is writer
+					rwmut.Lock()
+					for range ops {
+						rk := randomKey(rng, rkey[:])
+						tree.Insert(rk, value)
+					}
+					rwmut.Unlock()
+				}
+			}(isReader)
+		} // end j over all 10 goro
+		wg.Wait()
+		e0 := time.Since(t0).Truncate(time.Microsecond)
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
+	}
+}
+
+/*
+
+Darwin 8 core:
+
+go test -v -run TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro
+8/8 cpus found in 9.307µs: map[0:0 1:1 2:2 3:3 4:4 5:5 6:6 7:7]
+=== RUN   TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro
+0 % read: elapsed 3.060976s; 0 reads; 100_000_000 writes (306.098 ns/op)
+10 % read: elapsed 2.818532s; 10_000_000 reads; 90_000_000 writes (281.853 ns/op)
+20 % read: elapsed 2.596279s; 20_000_000 reads; 80_000_000 writes (259.628 ns/op)
+30 % read: elapsed 2.256704s; 30_000_000 reads; 70_000_000 writes (225.670 ns/op)
+40 % read: elapsed 1.977007s; 40_000_000 reads; 60_000_000 writes (197.701 ns/op)
+50 % read: elapsed 1.665417s; 50_000_000 reads; 50_000_000 writes (166.542 ns/op)
+60 % read: elapsed 1.388382s; 60_000_000 reads; 40_000_000 writes (138.838 ns/op)
+70 % read: elapsed 1.117619s; 70_000_000 reads; 30_000_000 writes (111.762 ns/op)
+80 % read: elapsed 820.719ms; 80_000_000 reads; 20_000_000 writes (82.072 ns/op)
+90 % read: elapsed 527.433ms; 90_000_000 reads; 10_000_000 writes (52.743 ns/op)
+100 % read: elapsed 25.672ms; 100_000_000 reads; 0 writes (2.567 ns/op)
+--- PASS: TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro (18.26s)
+
+*/
+
 func Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	value := newValue(123)
 	for i := 0; i <= 10; i++ {
