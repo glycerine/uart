@@ -1,3 +1,4 @@
+//go:build !amd64
 // +build !amd64
 
 package drwmutex
@@ -7,5 +8,9 @@ package drwmutex
 // cpu_*.s.
 func cpu() uint64 {
 	// this reverts the behaviour to that of a regular DRWMutex
+	return 0
+}
+
+func getCurrentCPUViaRDTSCP() uint32 {
 	return 0
 }
