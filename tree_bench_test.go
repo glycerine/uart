@@ -96,7 +96,7 @@ func TestArtReadWrite_readers_writers_on_own_goro_DRWMutex(t *testing.T) {
 		//const ops = 10_0000
 		const ops = 100
 		var wg sync.WaitGroup
-		Ngoro := 10
+		Ngoro := 100
 		elaps := make([]time.Duration, Ngoro)
 		wg.Add(Ngoro)
 		for j := range Ngoro {
@@ -130,8 +130,11 @@ func TestArtReadWrite_readers_writers_on_own_goro_DRWMutex(t *testing.T) {
 		} // end j over all goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops), elaps)
+		if i == 0 || i == 10 {
+			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
+			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops), elaps)
+		}
+
 	}
 }
 
@@ -208,7 +211,7 @@ func TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro(t *testing.T) {
 		//const ops = 10_0000
 		const ops = 100
 		var wg sync.WaitGroup
-		Ngoro := 10
+		Ngoro := 100
 		elaps := make([]time.Duration, Ngoro)
 		wg.Add(Ngoro)
 		for j := range Ngoro {
@@ -238,10 +241,13 @@ func TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro(t *testing.T) {
 				}
 				elaps[j] = time.Since(t1)
 			}(isReader, j)
-		} // end j over all 10 goro
+		} // end j over all goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops), elaps)
+		if i == 0 || i == 10 {
+			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops))
+			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops), elaps)
+		}
 	}
 }
 

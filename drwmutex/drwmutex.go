@@ -151,7 +151,9 @@ func Cpu2() (cpu int) {
 
 	rdpid, ok := tryRDPID()
 	_ = rdpid
-	if ok {
+	// on mac, always 0, so assume it failed if 0.
+	// some linux will take longer, but okay for the moment.
+	if ok && rdpid > 0 {
 		//fmt.Printf("tryRDPID got rdpid = %v in %v\n", rdpid, e0)
 		// So rpid does not need the APIC ID translation... but to
 		// stay compat with Cpu2() returning logical CPU,
