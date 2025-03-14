@@ -7,3 +7,5 @@ func getCurrentCPUViaRDTSCP() uint32
 func tryRDPID() (cpu uint32, ok bool)
 
 func debugRDTSCP() (cpu, eax, edx uint32)
+
+func asmRdtscpAsm() (eax, ebx, ecx, edx uint32)

@@ -51,3 +51,13 @@ TEXT ·debugRDTSCP(SB), NOSPLIT, $8-12
     MOVL DX, edx+8(FP)     // Save high 32 bits of TSC
     MOVQ 0(SP), CX
     RET
+
+// func asmRdtscpAsm() (eax, ebx, ecx, edx uint32)
+TEXT ·asmRdtscpAsm(SB), 7, $0
+	BYTE $0x0F; BYTE $0x01; BYTE $0xF9 // RDTSCP
+	MOVL AX, eax+0(FP)
+	MOVL BX, ebx+4(FP)
+	MOVL CX, ecx+8(FP)
+	MOVL DX, edx+12(FP)
+	RET
+
