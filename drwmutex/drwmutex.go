@@ -150,6 +150,7 @@ func Cpu2() (cpu int) {
 	//return uint64(cpuid.CPU.LogicalCPU())
 
 	rdpid, ok := tryRDPID()
+	_ = rdpid
 	if ok {
 		//fmt.Printf("tryRDPID got rdpid = %v in %v\n", rdpid, e0)
 		// So rpid does not need the APIC ID translation... but to
