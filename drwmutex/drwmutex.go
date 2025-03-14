@@ -110,13 +110,40 @@ for further discussion.
 
 import (
 	"fmt"
-	//"os"
-	//"runtime"
+	"os"
+	"runtime"
 	"sync"
-	//"time"
+	"time"
 
 	"github.com/klauspost/cpuid"
 )
+
+/*
+Linux / Zen.
+go test -v
+48/48 cpus found in 20.866431ms: map[0:0 1:24 2:1 3:25 4:2 5:26 8:3 9:27 10:4 11:28 12:5 13:29 16:6 17:30 18:7 19:31 20:8 21:32 24:9 25:33 26:10 27:34 28:11 29:35 32:12 33:36 34:13 35:37 36:14 37:38 40:15 41:39 42:16 43:40 44:17 45:41 48:18 49:42 50:19 51:43 52:20 53:44 56:21 57:45 58:22 59:46 60:23 61:47]
+
+=== RUN   TestDrwmutex
+runtime.NumCPU() = 48
+logcpu = 45; rdtscp = 41; PDPID = 41
+i=0 LogicalCPUID from klauspost/cpuid: 45
+logcpu = 29; rdtscp = 35; PDPID = 35
+i=1 LogicalCPUID from klauspost/cpuid: 29
+logcpu = 45; rdtscp = 41; PDPID = 41
+i=1 LogicalCPUID from klauspost/cpuid: 45
+logcpu = 29; rdtscp = 35; PDPID = 35
+i=0 LogicalCPUID from klauspost/cpuid: 29
+logcpu = 45; rdtscp = 41; PDPID = 41
+i=1 LogicalCPUID from klauspost/cpuid: 45
+logcpu = 34; rdtscp = 13; PDPID = 13
+i=0 LogicalCPUID from klauspost/cpuid: 34
+logcpu = 45; rdtscp = 41; PDPID = 41
+i=1 LogicalCPUID from klauspost/cpuid: 45
+
+logcpu = 24; rdtscp = 9; PDPID = 9
+logcpu = 33; rdtscp = 36; PDPID = 36
+
+*/
 
 func Cpu2() (cpu int) {
 	// dynamically detects current core, supports many architecture/OS.
@@ -145,9 +172,9 @@ var cpus map[int]int
 // init will construct the cpus map so that CPUIDs can be looked up to
 // determine a particular core's lock index.
 func init() {
-	//start := time.Now()
+	start := time.Now()
 	cpus = map_cpus() // from from APICID -> "processor"
-	//fmt.Fprintf(os.Stderr, "%d/%d cpus found in %v: %v\n", len(cpus), runtime.NumCPU(), time.Now().Sub(start), cpus)
+	fmt.Fprintf(os.Stderr, "%d/%d cpus found in %v: %v\n", len(cpus), runtime.NumCPU(), time.Now().Sub(start), cpus)
 }
 
 type paddedRWMutex struct {
