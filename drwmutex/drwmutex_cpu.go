@@ -14,3 +14,7 @@ func cpu() uint64 {
 func getCurrentCPUViaRDTSCP() uint32 {
 	return 0
 }
+
+func tryRDPID() (cpu uint32, ok bool) {
+	return
+}

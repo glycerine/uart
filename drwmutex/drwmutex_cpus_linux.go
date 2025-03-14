@@ -8,8 +8,8 @@ import (
 	"strings"
 )
 
-func map_cpus() (cpus map[uint64]int) {
-	cpus = make(map[uint64]int)
+func map_cpus() (cpus map[int]int) {
+	cpus = make(map[int]int)
 
 	cpuinfo, err := ioutil.ReadFile("/proc/cpuinfo")
 	if err != nil {
@@ -21,7 +21,7 @@ func map_cpus() (cpus map[uint64]int) {
 	lines := strings.Split(string(cpuinfo), "\n")
 	for i, line := range lines {
 		if len(line) == 0 && i != 0 {
-			cpus[apic] = pnum
+			cpus[int(apic)] = pnum
 			pnum = 0
 			apic = 0
 			continue

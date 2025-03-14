@@ -7,11 +7,11 @@ import (
 	"runtime"
 )
 
-func map_cpus() (cpus map[uint64]int) {
-	cpus = make(map[uint64]int)
+func map_cpus() (cpus map[int]int) {
+	cpus = make(map[int]int)
 	nCPU := runtime.NumCPU()
 	for i := range nCPU {
-		cpus[uint64(i)] = i // darwin already sequential
+		cpus[i] = i // darwin already sequential
 	}
 	return
 }

@@ -109,7 +109,7 @@ for further discussion.
 */
 
 import (
-	//"fmt"
+	"fmt"
 	//"os"
 	//"runtime"
 	"sync"
@@ -118,13 +118,29 @@ import (
 	"github.com/klauspost/cpuid"
 )
 
-func Cpu2() uint64 {
+func Cpu2() (cpu int) {
 	// dynamically detects current core, supports many architecture/OS.
-	return uint64(cpuid.CPU.LogicalCPU())
+	//return uint64(cpuid.CPU.LogicalCPU())
+
+	rdpid, ok := tryRDPID()
+	if ok {
+		//fmt.Printf("tryRDPID got cpu = %v\n", cpu)
+		//return int(cpu)
+	}
+
+	rdtscp := int(getCurrentCPUViaRDTSCP())
+	logcpu := cpuid.CPU.LogicalCPU()
+	if rdtscp != 0 {
+		//fmt.Printf("RDTSCP was non-zero! logcpu = %v; rdtscp = %v\n", logcpu, rdtscp)
+	}
+	//if logcpu != rdtscp {
+	fmt.Printf("logcpu = %v; rdtscp = %v; PDPID = %v\n", logcpu, rdtscp, rdpid)
+	//}
+	return logcpu
 }
 
 // cpus maps (non-consecutive) CPUID values to integer indices.
-var cpus map[uint64]int
+var cpus map[int]int
 
 // init will construct the cpus map so that CPUIDs can be looked up to
 // determine a particular core's lock index.
