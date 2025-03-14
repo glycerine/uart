@@ -3,8 +3,7 @@ package uart
 import (
 	"fmt"
 	"sync"
-
-	"github.com/glycerine/uart/drwmutex"
+	//"github.com/glycerine/uart/drwmutex"
 )
 
 // Tree is a trie that implements
@@ -78,9 +77,9 @@ import (
 // [5] "Counted B-Trees"
 // https://www.chiark.greenend.org.uk/~sgtatham/algorithms/cbtree.html
 type Tree struct {
-	//RWmut sync.RWMutex `msg:"-"`
-	DRWmut *drwmutex.DRWMutex `msg:"-"`
-	RWmut  *sync.RWMutex      `msg:"-"`
+	RWmut sync.RWMutex `msg:"-"`
+	//DRWmut *drwmutex.DRWMutex `msg:"-"`
+	//RWmut  *sync.RWMutex      `msg:"-"`
 
 	root *bnode
 	size int64
@@ -138,12 +137,12 @@ type Tree struct {
 // NewArtTree creates and returns a new ART Tree,
 // ready for use.
 func NewArtTree() *Tree {
-	dmut := drwmutex.NewDRWMutex()
+	//dmut := drwmutex.NewDRWMutex()
 	// gets the sync.RWLock, not locked:
-	locker := dmut.RLocker()
+	//locker := dmut.RLocker()
 	return &Tree{
-		DRWmut: dmut,
-		RWmut:  locker,
+		//DRWmut: dmut,
+		//RWmut:  locker,
 	}
 }
 

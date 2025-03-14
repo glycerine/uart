@@ -114,9 +114,13 @@ import (
 	"runtime"
 	"sync"
 	"time"
-
-	"github.com/klauspost/cpuid"
+	// commented for zero dependencies.
+	//"github.com/klauspost/cpuid"
 )
+
+var _ = fmt.Sprintf
+var _ = os.Create
+var _ = runtime.NumCPU
 
 /*
 Linux / Zen.
@@ -169,7 +173,11 @@ func Cpu2() (cpu int) {
 	_, _, _, _ = eax, ebx, ecx, edx
 
 	rdtscp := int(getCurrentCPUViaRDTSCP())
-	logcpu := cpuid.CPU.LogicalCPU()
+
+	panic(" klauspost/cpuid was only commented out for zero dependency. it is needed here!")
+	//logcpu := cpuid.CPU.LogicalCPU()
+	logcpu := 0 // delete me if cpuid comes back!
+
 	if rdtscp != 0 {
 		//fmt.Printf("RDTSCP was non-zero! logcpu = %v; rdtscp = %v\n", logcpu, rdtscp)
 	}
@@ -195,7 +203,8 @@ func init() {
 	for k, v := range cpus {
 		inverseCpus[v] = k
 	}
-	fmt.Fprintf(os.Stderr, "%d/%d cpus found in %v: %v\n", len(cpus), runtime.NumCPU(), time.Now().Sub(start), cpus)
+	_ = start
+	//fmt.Fprintf(os.Stderr, "%d/%d cpus found in %v: %v\n", len(cpus), runtime.NumCPU(), time.Now().Sub(start), cpus)
 }
 
 type paddedRWMutex struct {

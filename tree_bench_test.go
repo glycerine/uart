@@ -8,17 +8,16 @@ import (
 	"testing"
 	"time"
 	//rb "github.com/glycerine/rbtree"
-
-	googbtree "github.com/google/btree"
-
-	"github.com/glycerine/uart/drwmutex"
+	//googbtree "github.com/google/btree"
+	//"github.com/glycerine/uart/drwmutex"
 )
 
+// how many read/write operations to do
+// after taking the appropriate read/write lock.
 const ops = 10_000
 
-const Ngoro = 1
-
-//const ops = 10_0000
+// how many goro to run in parallel
+const ngoro = 100
 
 const seed = 1
 
@@ -87,7 +86,9 @@ func BenchmarkArtReadWrite(b *testing.B) {
 }
 */
 
+/* zero dep
 func TestArtReadWrite_readers_writers_on_own_goro_DRWMutex(t *testing.T) {
+	return // drwmutex turned off for zero dependencies.
 	value := newValue(123)
 	for i := 0; i <= 10; i++ {
 		if i > 0 && i < 10 {
@@ -104,9 +105,9 @@ func TestArtReadWrite_readers_writers_on_own_goro_DRWMutex(t *testing.T) {
 		//const ops = 5
 		var wg sync.WaitGroup
 
-		elaps := make([]time.Duration, Ngoro)
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		elaps := make([]time.Duration, ngoro)
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//isReader := j > 0
 
@@ -140,12 +141,13 @@ func TestArtReadWrite_readers_writers_on_own_goro_DRWMutex(t *testing.T) {
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
 		if i == 0 || i == 10 {
-			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
-			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops), elaps)
+			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
+			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*ngoro*ops), formatUnder((10-i)*ngoro*ops), float64(e0)/float64(ngoro*ops), elaps)
 		}
 
 	}
 }
+*/
 
 /* Linux 48 core:
 go test -v -run TestArtReadWrite_readers_writers_on_own_goro
@@ -222,9 +224,9 @@ func TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro(t *testing.T) {
 		//const ops = 5
 		var wg sync.WaitGroup
 
-		elaps := make([]time.Duration, Ngoro)
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		elaps := make([]time.Duration, ngoro)
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//isReader := j > 0
 
@@ -257,8 +259,8 @@ func TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro(t *testing.T) {
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
 		if i == 0 || i == 10 {
-			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
-			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops), elaps)
+			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
+			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*ngoro*ops), formatUnder((10-i)*ngoro*ops), float64(e0)/float64(ngoro*ops), elaps)
 		}
 	}
 }
@@ -304,6 +306,9 @@ go test -v -run TestArtReadWrite_sync_RWMutex_readers_writers_on_own_goro
 */
 
 func TestArtReadWrite_no_sync(t *testing.T) {
+	if ngoro != 1 {
+		return
+	}
 	value := newValue(123)
 	for i := 0; i <= 10; i++ {
 		if i > 0 && i < 10 {
@@ -320,9 +325,9 @@ func TestArtReadWrite_no_sync(t *testing.T) {
 		//const ops = 5
 		var wg sync.WaitGroup
 
-		elaps := make([]time.Duration, Ngoro)
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		elaps := make([]time.Duration, ngoro)
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//isReader := j > 0
 
@@ -351,8 +356,8 @@ func TestArtReadWrite_no_sync(t *testing.T) {
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
 		if i == 0 || i == 10 {
-			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
-			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*Ngoro*ops), formatUnder((10-i)*Ngoro*ops), float64(e0)/float64(Ngoro*ops), elaps)
+			fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
+			//fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op); elaps='%#v'\n", i*10, e0, formatUnder(i*ngoro*ops), formatUnder((10-i)*ngoro*ops), float64(e0)/float64(ngoro*ops), elaps)
 		}
 
 	}
@@ -380,8 +385,8 @@ func Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testin
 		//const ops = 10_0000
 		var wg sync.WaitGroup
 
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
 			go func(isReader bool) (count int) {
@@ -416,7 +421,7 @@ func Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testin
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
 	}
 }
 
@@ -460,6 +465,9 @@ go test -v -run=Test_Go_builtin_map_RWMutex_ReadWrite_readers_writers_on_own_gor
 */
 
 func Test_Go_builtin_map_no_sync(t *testing.T) {
+	if ngoro != 1 {
+		return
+	}
 	value := newValue(123)
 	for i := 0; i <= 10; i++ {
 		if i > 0 && i < 10 {
@@ -472,8 +480,8 @@ func Test_Go_builtin_map_no_sync(t *testing.T) {
 		//const ops = 10_0000
 		var wg sync.WaitGroup
 
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
 			go func(isReader bool) (count int) {
@@ -504,7 +512,7 @@ func Test_Go_builtin_map_no_sync(t *testing.T) {
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
 	}
 }
 
@@ -523,8 +531,8 @@ func Test_syncMap_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 		//const ops = 10_0000
 		var wg sync.WaitGroup
 
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
 			go func(isReader bool) (count int) {
@@ -555,7 +563,7 @@ func Test_syncMap_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
 	}
 }
 
@@ -599,6 +607,7 @@ go test -v -run Test_syncMap_ReadWrite_readers_writers_on_own_goro
 
 */
 
+/* // commented for no dependencies
 // compare google/btree using DRWMutex
 func Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	//value := newValue(123)
@@ -619,8 +628,8 @@ func Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 		//const ops = 10_0000
 		var wg sync.WaitGroup
 
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
 			go func(isReader bool) {
@@ -654,9 +663,10 @@ func Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
 	}
 }
+*/
 
 /*
 
@@ -679,6 +689,8 @@ go test -v -run Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro
 --- PASS: Test_btree_DRWMutex_ReadWrite_readers_writers_on_own_goro (17.81s)
 */
 
+/* // commented for no dependencies
+
 // compare google/btree using sync.RWMutex
 func Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T) {
 	//value := newValue(123)
@@ -698,8 +710,8 @@ func Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T)
 		//const ops = 1
 		var wg sync.WaitGroup
 
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
 			go func(isReader bool) {
@@ -732,9 +744,10 @@ func Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro(t *testing.T)
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
 	}
 }
+*/
 
 /*
 Linux 48 core:
@@ -776,7 +789,13 @@ go test -v -run Test_btree_sync_RWMutex_ReadWrite_readers_writers_on_own_goro
 
 */
 
+/* // commented for no dependencies
+
 func Test_btree_no_sync(t *testing.T) {
+	if ngoro != 1 {
+		return
+	}
+
 	//value := newValue(123)
 	for i := 0; i <= 10; i++ {
 		if i > 0 && i < 10 {
@@ -795,8 +814,8 @@ func Test_btree_no_sync(t *testing.T) {
 		//const ops = 10_0000
 		var wg sync.WaitGroup
 
-		wg.Add(Ngoro)
-		for j := range Ngoro {
+		wg.Add(ngoro)
+		for j := range ngoro {
 			isReader := j < i*10
 			//vv("on i=%v; j=%v; am reader? %v", i, j, isReader)
 			go func(isReader bool) {
@@ -830,9 +849,10 @@ func Test_btree_no_sync(t *testing.T) {
 		} // end j over all 10 goro
 		wg.Wait()
 		e0 := time.Since(t0).Truncate(time.Microsecond)
-		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*Ngoro*ops/10), formatUnder((10-i)*Ngoro*ops/10), float64(e0)/float64(Ngoro*ops))
+		fmt.Printf("%v %% read: elapsed %v; %v reads; %v writes (%0.3f ns/op)\n", i*10, e0, formatUnder(i*ngoro*ops/10), formatUnder((10-i)*ngoro*ops/10), float64(e0)/float64(ngoro*ops))
 	}
 }
+*/
 
 func BenchmarkArtLinuxPaths(b *testing.B) {
 
