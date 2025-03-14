@@ -149,9 +149,12 @@ func Cpu2() (cpu int) {
 	// dynamically detects current core, supports many architecture/OS.
 	//return uint64(cpuid.CPU.LogicalCPU())
 
+	//t0 := time.Now()
 	rdpid, ok := tryRDPID()
+	//e0 := time.Since(t0)
+
 	if ok {
-		//fmt.Printf("tryRDPID got cpu = %v\n", cpu)
+		//fmt.Printf("tryRDPID got rdpid = %v in %v\n", rdpid, e0)
 		//return int(cpu)
 	}
 
