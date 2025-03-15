@@ -208,7 +208,11 @@ func init() {
 }
 
 type paddedRWMutex struct {
-	_ [5]uint64 // assuming alignment. Pad by cache-line size to prevent false sharing.
+	// Assuming word alignment, which the Go compiler provides,
+	// we can avoid false sharing just by padding to the
+	// end of the cache-line rather than a full (8 word) line worth.
+	// Since the sync.RWMutex is 3 words, we only need 5 more (64-bit words).
+	_ [5]uint64
 	//_  [8]uint64 // Pad by cache-line size to prevent false sharing.
 
 	mu sync.RWMutex
