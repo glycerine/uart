@@ -262,12 +262,26 @@ go map or my ART tree. This may be a reasonable trade-off if you
 don't delete much. It seems a small price to pay for such
 performance--in the sequential access case. 
 
-Still without synchronization, for random access, 
+Still without synchronization: for random access, 
 this ART is slightly faster than the btree on reads,
-about the same or better on writes than the btree, faster than
-sync.Map, and competitive with the built-in Go map.
+and ART is slightly faster than the btree on writes (inserts). 
+So the access pattern matters a great deal. 
+For random writes and reads (single goroutine, 
+unsynchronized access), this ART is only a
+little slower than the built-in Go map (which
+does not provide next-key-greater-than queries).
+You can use the tests in tree_bench_test.go
+to measure performance on your own data
+and access patterns.
 
-As the article here 
+In short, this ART is faster than the sync.Map in many
+cases, and competitive with the built-in Go map,
+ands offers a sorted dictionary and fast
+order statstics. 
+
+If memory is tight and you have very few
+deletes, then the in-memory btree may be
+preferred. As the article here 
 http://google-opensource.blogspot.com/2013/01/c-containers-that-save-memory-and-time.html
 says
 
@@ -289,7 +303,9 @@ and
 
 In the sequential full table scan, the btree has
 most reads cached from the last read, and so suffers
-very few cache misses.
+very few cache misses. If only we could get btree
+deletion in less than 10x the time of inserts, 
+it would be easier to recommend the btree for general use.
 
 ## Benchmarks
 
