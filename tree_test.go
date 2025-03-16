@@ -2179,7 +2179,16 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 
 	// google/btree load and read
 
-	degree := 3_000 // fastest
+	// degree := 3_000 // fastest load/read
+	// google/btree time to store 10000000 keys: 1.404165436s (140ns/op)
+	// google/btree reads SEQUENTIALLY (in a FULL TABLE SCAN) 10000000 keys: elapsed 28.916136ms (2ns/op)
+	// google/btree delete sequentially 10000000 keys: elapsed 13.549681183s (1.354µs/op)
+
+	degree := 32 // slower load/read, but MUCH faster delete.
+	// google/btree time to store 10000000 keys: 2.097327599s (209ns/op)
+	// google/btree reads SEQUENTIALLY (in a FULL TABLE SCAN) 10000000 keys: elapsed 49.415972ms (4ns/op)
+	// google/btree delete sequentially 10000000 keys: elapsed 2.024685985s (202ns/op)
+
 	//g := googbtree.NewG[string](degree, googbtree.Less[string]())
 	g := googbtree.NewG[*Kint](degree, googbtree.LessFunc[*Kint](func(a, b *Kint) bool {
 		return bytes.Compare(a.Key, b.Key) < 0
@@ -2220,23 +2229,23 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	fmt.Printf("google/btree delete sequentially %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
 
 	/*
-	Compilation started at Sun Mar 16 18:19:18
+		Compilation started at Sun Mar 16 18:19:18
 
-	go test -v -run 620
-	=== RUN   Test620_unlocked_read_comparison
-	map time to store 10000000 keys: 2.776807891s (277ns/op)
-	map reads 10000000 keys: elapsed 106.00481ms (10ns/op)
-	uart.Tree time to store 10000000 keys: 2.848750999s (284ns/op)
-	Ascend(tree) reads 10000000 keys: elapsed 375.325296ms (37ns/op)
-	uart Iter() reads 10000000 keys: elapsed 322.602521ms (32ns/op)
-	tree.At(i) reads 10000000 keys: elapsed 454.098228ms (45ns/op)
-	tree.At(i) reads from 10: 9999990 keys: elapsed 405.951558ms (40ns/op)
-	tree.Atfar(i) reads 10000000 keys: elapsed 2.641728004s (264ns/op)
-	Atfar() read-locked reads 10000000 keys: elapsed 2.489250896s (248ns/op)
-	google/btree time to store 10000000 keys: 1.526335125s (152ns/op)
-	google/btree reads SEQUENTIALLY (in a FULL TABLE SCAN) 10000000 keys: elapsed 28.72547ms (2ns/op)
-	Note that random reads from the btree will be much slower(!)
-	google/btree delete sequentially 10000000 keys: elapsed 13.402311703s (1.34µs/op)
-	--- PASS: Test620_unlocked_read_comparison (30.01s)
+		go test -v -run 620
+		=== RUN   Test620_unlocked_read_comparison
+		map time to store 10000000 keys: 2.776807891s (277ns/op)
+		map reads 10000000 keys: elapsed 106.00481ms (10ns/op)
+		uart.Tree time to store 10000000 keys: 2.848750999s (284ns/op)
+		Ascend(tree) reads 10000000 keys: elapsed 375.325296ms (37ns/op)
+		uart Iter() reads 10000000 keys: elapsed 322.602521ms (32ns/op)
+		tree.At(i) reads 10000000 keys: elapsed 454.098228ms (45ns/op)
+		tree.At(i) reads from 10: 9999990 keys: elapsed 405.951558ms (40ns/op)
+		tree.Atfar(i) reads 10000000 keys: elapsed 2.641728004s (264ns/op)
+		Atfar() read-locked reads 10000000 keys: elapsed 2.489250896s (248ns/op)
+		google/btree time to store 10000000 keys: 1.526335125s (152ns/op)
+		google/btree reads SEQUENTIALLY (in a FULL TABLE SCAN) 10000000 keys: elapsed 28.72547ms (2ns/op)
+		Note that random reads from the btree will be much slower(!)
+		google/btree delete sequentially 10000000 keys: elapsed 13.402311703s (1.34µs/op)
+		--- PASS: Test620_unlocked_read_comparison (30.01s)
 	*/
 }
