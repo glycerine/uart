@@ -81,7 +81,11 @@ type iterator struct {
 	value any
 	leaf  *Leaf
 
-	// freelist of checkpoints
+	// freelist of checkpoints to minimize
+	// allocation during iteration. We should
+	// only ever allocate (max actual depth of tree)
+	// checkpoints and then recycle them after
+	// that limit.
 	freelist *checkpoint
 }
 
