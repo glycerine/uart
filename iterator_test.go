@@ -446,6 +446,21 @@ func TestIterRange(t *testing.T) {
 //
 // after freelist implemented:
 // BenchmarkIter-8   	      27	  42958694 ns/op	13119847 B/op	  694434 allocs/op
+/*
+Before freelist:
+=== RUN   Test620_unlocked_read_comparison
+Ascend(tree) reads 10000000 keys: elapsed 431.848822ms (43ns/op)
+uart Iter() reads  10000000 keys: elapsed 352.459284ms (35ns/op)
+tree.At(i) reads   10000000 keys: elapsed 439.873357ms (43ns/op)
+tree.At(i) reads from 10: 9999990 elapsed 396.461528ms (39ns/op)
+
+After freelist, about ~ 10% faster since we allocate less.
+=== RUN   Test620_unlocked_read_comparison
+Ascend(tree) reads 10000000 keys: elapsed 383.190063ms (38ns/op)
+uart Iter() reads  10000000 keys: elapsed 328.554866ms (32ns/op)
+tree.At(i) reads   10000000 keys: elapsed 404.381091ms (40ns/op)
+tree.At(i) reads from 10: 9999990 elapsed 356.028887ms (35ns/op)
+*/
 func BenchmarkIter(b *testing.B) {
 
 	for range b.N {
