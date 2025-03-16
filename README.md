@@ -5,7 +5,7 @@
 This means you can access your dictionary 
 like a Go slice, with integer indexes.
 
-### See "Memory Use" and "Benchmarks" below for a comparison to in-memory B-trees
+### See ["Memory Use"](#memory-use) and ["Benchmarks"](#benchmarks) below for a comparison to in-memory B-trees
 
 (In memory B-trees like https://github.com/google/btree or 
 https://github.com/tidwall/btree are more space and cache
