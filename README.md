@@ -5,6 +5,14 @@
 This means you can access your dictionary 
 like a Go slice, with integer indexes.
 
+### See "Memory Use" and "Benchmarks" below for a comparison to in-memory B-trees
+
+(In memory B-trees like https://github.com/google/btree or 
+https://github.com/tidwall/btree are more space and cache
+efficient if you do alot of sequential-key queries).
+
+## overview
+
 Naming? This is a minimal-dependency version of 
 my Adaptive Radix Tree (ART) implementation
 and it comes without serialization support. 
@@ -257,25 +265,24 @@ used in my measurements (depending on the read/write mix),
 so in a sense this is a straight time-for-space 
 trade-off: 2/3x as fast, for 2/3x the memory use versus
 the red-black tree. However the in-memory btree does so 
-much better than the red-black tree; it is the real competition to ART
-if deletions are rare. See the remarks above.
+much better than the red-black tree; it is the real competition to ART.
 
 A note about reading keys sequentially, the
 "full-table" scan case:
 
-Without synchronization, a degree 30 b-tree 
+Without synchronization, a degree 32 b-tree 
 github.com/google/btree, when reading sequential 
-values in-order (its sweet spot)
-kicks ART's bootie to the curb, in both
-time and space. google/btree Reads are 2x faster than the Go map Swiss 
-table, and 7x faster than my ART. Writes are 26% faster
-than the Go map, and 2x faster than my ART. Measurements below.
-Code in mem/googbtree.go and commented in tree_test.go Test620.
-If no locking is needed, the only drawback to these btrees is that
-deletes are _extremely_ slow, like 10x slower than a
-go map or my ART tree. This may be a reasonable trade-off if you
-don't delete much. It seems a small price to pay for such
-performance--in the sequential access case. 
+values in-order (its sweet spot) kicks ART's bootie 
+to the curb, in both time and space. 
+
+The google/btree reads are 2x faster than the Go map Swiss 
+table, and 9x faster than my ART. Writes are 15% faster
+than the Go map, and 75% faster than my ART. Measurements below.
+Code in mem/googbtree.go and commented in tree_test.go Test620 (on branch).
+If no locking and no deletions are needed, the btree
+with bigger degree (say degree 3000) performs even better
+than the degree 32 btree, with the understanding that
+deletes are then 6x slower due to the large copies involved.
 
 Still without synchronization: for random access, 
 this ART is slightly faster than the btree on reads,
@@ -291,12 +298,17 @@ and access patterns.
 
 In short, this ART is faster than the sync.Map in many
 cases, and competitive with the built-in Go map,
-ands offers a sorted dictionary and fast
-order statstics. 
+and offers a sorted dictionary and fast
+order statstics. Nonetheless, if sequential
+full read of all keys (a full table scan) is needed
+often, an in-memory btree will save you
+a ton of time and space, and should be preferred
+to the ART tree. If your key access is random
+and you have memory to spare, the ART tree may
+be the faster choice.
 
-If memory is tight and you have very few
-deletes, then the in-memory btree may be
-preferred. As the article here 
+To go deeper into the rationale as to why
+in-memory B-trees do so well:  The article here 
 http://google-opensource.blogspot.com/2013/01/c-containers-that-save-memory-and-time.html
 says
 
@@ -316,11 +328,9 @@ and
 > operations. For large data sets, using these 
 > B-tree containers will save memory and improve performance.
 
-In the sequential full table scan, the btree has
+In the sequential read/full table scan, the btree has
 most reads cached from the last read, and so suffers
-very few cache misses. If only we could get btree
-deletion in less than 10x the time of inserts, 
-it would be easier to recommend the btree for general use.
+very few L1 cache misses. 
 
 ## Benchmarks
 
@@ -336,14 +346,14 @@ exact-match lookups.
 
 ```bash
 
-Unlocked apples-to-apples versus the Go map:
+Unlocked apples-to-apples versus the Go map and google/btree:
 
 (To take synchronization overhead out of the picture.)
 
 === RUN   Test620_unlocked_read_comparison
 map time to store 10_000_000 keys: 2.466118634s (246ns/op)
 map reads 10_000_000 keys: elapsed 101.076718ms (10ns/op)
-map deletes 10000000 keys: elapsed 1.36421433s (136ns/op)
+map deletes 10_000_000 keys: elapsed 1.36421433s (136ns/op)
 
 uart.Tree time to store 10_000_000 keys: 3.665080254s (366ns/op)
 Ascend(tree) reads 10_000_000 keys: elapsed 368.400458ms (36ns/op)
@@ -360,11 +370,14 @@ sequential At(i), At(i+1), At(i+2), ... calls.
 
 tree.Atfar(i) reads 10_000_000 keys: elapsed 2.431009745s (243ns/op)
 
-// degree 30 b-tree github.com/google/btree (and 3000 even faster)
-google/btree time to store 10000000 keys: 1.835054285s (183ns/op)
-google/btree reads 10000000 keys: elapsed 52.309863ms (5ns/op)
-// (deletes are very slow though!)
-google/btree delete 10000000 keys: elapsed 13.386230659s (1.338µs/op)
+// degree 32 b-tree github.com/google/btree
+//
+// (Code kept on a branch to keep zero dependencies).
+// See https://github.com/glycerine/uart/tree/bench_goog_btree
+//
+google/btree time to store 10_000_000 keys: 2.097327599s (209ns/op)
+google/btree read all keys sequentially: elapsed 49.415972ms (4ns/op)
+google/btree delete all keys: elapsed 2.024685985s (202ns/op)
 
 --- PASS: Test620_unlocked_read_comparison (12.14s)
 
