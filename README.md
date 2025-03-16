@@ -176,7 +176,7 @@ A comprehensive test suite is inclued to verify all operations.
 ## Memory use
 
 I measured memory using the runtime.MemStats.HeapAlloc 
-counter on three simple programs that did nothing 
+counter on four simple programs that did nothing 
 else besides load the dictionary with one, two, or 
 three copies of the 93790 linux kernel source tree 
 paths in assets/linux.txt. The code for these simple 
