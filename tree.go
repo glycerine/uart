@@ -192,7 +192,7 @@ func (t *Tree) InsertX(key Key, value any, x []byte) (updated bool) {
 	return t.InsertLeaf(lf)
 }
 
-// Insert could be called "insert or replace this key,
+// Insert could be called "insert -- or replace this key,
 // if it is already in the tree, with this value".
 // Insert makes a copy of key to avoid sharing bugs.
 // The value is only stored and not copied.

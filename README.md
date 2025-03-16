@@ -205,6 +205,18 @@ mstat.HeapAlloc = '37_989_176' (copies = 3; diff = 7_093_512 bytes)
 Conclusions: the Go map and the red-black tree use about the
 same amount of memory. The ART tree uses about 2x the memory of those.
 
+The btree consumes much less memory than the map or red-black tree.
+ART seems memory hungry in comparison, using 2x to 3x or more 
+memory compared to the btree. This is due to the extra internal nodes
+and leaf nodes. The incrementally more leaf and internal nodes can
+consume about the same memory as the more compact btree itself,
+resulting in 3 fold the memory consumption of the much more
+compact btree. This is a pretty serious drawback to ART trees.
+For random access (instead of sequential) reads, ART can 
+be slightly faster than even a well tuned btree, but only 
+about 15% faster. That speed hardly makes up for 3x more memory
+to my thinking, as long as the slow deletes are not a concern.
+
 Path/prefix compression really seems like a wash on this data set.
 The second copy actually consumed more memory (3.5% more) than the
 inital set plus the baseline of memory for the runtime. 
@@ -236,14 +248,17 @@ in the middle of a key as well as at the
 beginning), my take-home summary here 
 is that I don't think the prefix 
 compression feature of ART should be a big
-deciding factor. The 2x memory use must
+deciding factor. The 2x - 3x memory use must
 be weighed against the convenience and 
 performance gained.
 
 ART trees are about 2-5x as fast as the red-black tree
 used in my measurements (depending on the read/write mix),
 so in a sense this is a straight time-for-space 
-trade-off: twice as fast for twice the memory use.
+trade-off: 2/3x as fast, for 2/3x the memory use versus
+the red-black tree. However the in-memory btree does so 
+much better than the red-black tree; it is the real competition to ART
+if deletions are rare. See the remarks above.
 
 A note about reading keys sequentially, the
 "full-table" scan case:
