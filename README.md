@@ -223,9 +223,9 @@ compact btree. This is a pretty serious drawback to ART trees.
 For random access (instead of sequential) reads, ART can 
 be slightly faster than even a well tuned btree, but only 
 about 15% faster. That speed hardly makes up for 3x more memory
-to my thinking, as long as the slow deletes are not a concern.
+to my thinking.
 
-Path/prefix compression really seems like a wash on this data set.
+Path/prefix compression too really seems like a wash on this data set.
 The second copy actually consumed more memory (3.5% more) than the
 inital set plus the baseline of memory for the runtime. 
 The third copy consumed about 14% less than 
@@ -256,9 +256,7 @@ in the middle of a key as well as at the
 beginning), my take-home summary here 
 is that I don't think the prefix 
 compression feature of ART should be a big
-deciding factor. The 2x - 3x memory use must
-be weighed against the convenience and 
-performance gained.
+deciding factor. 
 
 ART trees are about 2-5x as fast as the red-black tree
 used in my measurements (depending on the read/write mix),
@@ -272,14 +270,14 @@ A note about reading keys sequentially, the
 
 Without synchronization, a degree 32 b-tree 
 github.com/google/btree, when reading sequential 
-values in-order (its sweet spot) kicks ART's bootie 
+values in-order (its sweet spot), kicks ART's bootie 
 to the curb, in both time and space. 
 
 The google/btree reads are 2x faster than the Go map Swiss 
 table, and 9x faster than my ART. Writes are 15% faster
 than the Go map, and 75% faster than my ART. Measurements below.
 Code in mem/googbtree.go and commented in tree_test.go Test620 (on branch).
-If no locking and no deletions are needed, the btree
+If no deletions are needed, the btree
 with bigger degree (say degree 3000) performs even better
 than the degree 32 btree, with the understanding that
 deletes are then 6x slower due to the large copies involved.
@@ -300,12 +298,13 @@ In short, this ART is faster than the sync.Map in many
 cases, and competitive with the built-in Go map,
 and offers a sorted dictionary and fast
 order statstics. Nonetheless, if sequential
-full read of all keys (a full table scan) is needed
-often, an in-memory btree will save you
+full read of all keys (a full table scan) is common,
+an in-memory btree will save you
 a ton of time and space, and should be preferred
-to the ART tree. If your key access is random
-and you have memory to spare, the ART tree may
-be the faster choice.
+to the ART tree. If your key access is random,
+you have memory to spare, and you absolutely 
+need the last ounce of speed, the ART tree may
+be the marginally faster choice.
 
 To go deeper into the rationale as to why
 in-memory B-trees do so well:  The article here 
