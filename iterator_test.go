@@ -440,3 +440,70 @@ func TestIterRange(t *testing.T) {
 		}
 	}
 }
+
+// pre iter checkpoint freelist;
+// BenchmarkIter-8   	      26	  43662844 ns/op	13827824 B/op	  723932 allocs/op
+//
+// after freelist implemented:
+// BenchmarkIter-8   	      27	  42958694 ns/op	13119847 B/op	  694434 allocs/op
+func BenchmarkIter(b *testing.B) {
+
+	for range b.N {
+		tree := NewArtTree()
+		tree.SkipLocking = true
+
+		N := 60000
+		for i := range N {
+			k := fmt.Sprintf("%09d", i)
+			key := Key(k) // []byte
+			tree.Insert(key, key)
+		}
+		//vv("full tree before any delete/iter: '%s'", tree)
+
+		//b.ResetTimer()
+		iter := tree.Iter(nil, nil)
+		thresh := 5000
+		for iter.Next() {
+			sz := tree.Size()
+			k := iter.Key()
+			nk, err := strconv.Atoi(strings.TrimSpace(string(k)))
+			panicOn(err)
+
+			// e.g. for N=6 and thresh=4 => delete 0,1,2,3. keep 4,5
+			if nk < thresh {
+				gone, _ := tree.Remove(k)
+				if !gone {
+					panic("should have gone")
+				}
+
+				sz2 := tree.Size()
+				if sz2 != sz-1 {
+					//vv("tree now '%s'", tree)
+					panic("should have shrunk tree")
+				}
+			}
+		}
+		sz := tree.Size()
+		//vv("after iter, sz = %v", sz)
+		//vv("got (len %v) = '%#v'", len(got), got)
+		//vv("deleted (len %v) = '%#v'", len(deleted), deleted)
+		//vv("kept (len %v) = '%#v'", len(kept), kept)
+
+		if thresh > N {
+			thresh = N // simpler verification below, no change in above.
+		}
+
+		if sz != (N - thresh) {
+			b.Fatalf("expected tree to be size %v, but see %v", N-thresh, sz)
+		}
+		//vv("tree at end '%s'", tree)
+		for i := thresh; i < N; i++ {
+			k := fmt.Sprintf("%09d", i)
+			key := Key(k) // []b
+			_, _, found := tree.FindExact(key)
+			if !found {
+				b.Fatalf("expected to find '%v' still in tree", k)
+			}
+		}
+	} // end for b.Loop()
+}

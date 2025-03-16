@@ -510,12 +510,13 @@ func (t *Tree) IsEmpty() (empty bool) {
 // common case is a dramatic 6x, from 240 nsec to 40 nsec
 // per call. The trade-off is that we must
 // do a small amount of allocation
-// to maintain a stack during the calls.
-// We will try to add a small pool of iterator
-// checkpoint frames in the future to minimize it,
+// to maintain a stack (the checkpoint frames) during the calls.
+// We have a small freelist pool of iterator
+// checkpoint frames to minimize it,
 // but complete zero-alloc is almost impossible
-// if we want this optimization. My call is
-// that this a trade-off well worth making.
+// (and the iterator itself is an allocation). My call is
+// that this small space for large time-speed-up trade-off
+// well worth making.
 //
 // If you will be doing alot of random (un-sequential/non-linear)
 // access to the tree, use Atfar() instead of At().

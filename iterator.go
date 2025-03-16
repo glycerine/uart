@@ -80,6 +80,9 @@ type iterator struct {
 	key   []byte
 	value any
 	leaf  *Leaf
+
+	// freelist of checkpoints
+	freelist *checkpoint
 }
 
 // Iter starts a traversal over the range [start, end)
@@ -278,6 +281,23 @@ func (i *iterator) Next() (ok bool) {
 
 		// reset the stack from scratch
 		i.cursor = leaf.Key
+
+		// about to do i.stack = nil; so
+		// recycle those checkpoint frames to avoid allocation
+		if i.freelist == nil {
+			i.freelist = i.stack
+		} else {
+			i.freelist.prev = i.stack
+			if i.stack != nil {
+				i.stack.node = nil
+				i.stack.curkey = nil
+				// leave i.stack.prev to recycle them too,
+				// although we don't clear out their node/curkey;
+				// do that on re-use. note a few nodes may not
+				// be gc-ed until the iterator goes out of scope
+				// and is itself garbage collected. That is fine.
+			}
+		}
 		i.stack = nil
 		// let re-init code below start the stack again.
 
@@ -336,9 +356,25 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 		}
 		return true, false
 	}
-	i.stack = &checkpoint{
-		node: root.inner,
+	chk := i.freelist
+	if chk == nil {
+		// freelist was empty. must allocate.
+		chk = &checkpoint{}
+	} else {
+		// we successfully took from the freelist
+
+		// equivalent to: i.freelist = i.freelist.prev
+		i.freelist = chk.prev
+
+		chk.prev = nil
+		chk.curkey = nil
+		// about to overwrite chk.node so no need to clear it.
 	}
+	chk.node = root.inner
+	i.stack = chk
+	//i.stack = &checkpoint{
+	//	node: root.inner,
+	//}
 	return false, false
 }
 
@@ -351,7 +387,7 @@ func (i *iterator) iterate() bool {
 			i.stack = i.stack.prev
 			if i.stack == nil {
 				// checkpoint is root
-				i.stack = nil
+				// redundant: i.stack = nil
 				if exit, next := i.init(); exit {
 					return next
 				}
@@ -377,6 +413,15 @@ func (i *iterator) tryAdvance() (bool, bool) {
 
 			// inner node is exhausted, move one level up the stack
 			i.stack = tail.prev
+			// recycle tail frame
+			if i.freelist == nil {
+				i.freelist = tail
+			} else {
+				i.freelist.prev = tail
+			}
+			tail.prev = nil // prev is still in use, cannot recycle it.
+			tail.curkey = nil
+			tail.node = nil
 			return false, false
 		}
 		// advance curkey
@@ -397,10 +442,21 @@ func (i *iterator) tryAdvance() (bool, bool) {
 			return false, false
 
 		}
-		i.stack = &checkpoint{
-			node: child.inner,
-			prev: tail,
+		chk := i.freelist
+		if chk == nil {
+			chk = &checkpoint{}
+		} else {
+			i.freelist = chk.prev
+			chk.curkey = nil
+			// about to overwrite chk.node and chk.prev, so no need to clear
 		}
+		chk.node = child.inner
+		chk.prev = tail
+		i.stack = chk
+		//i.stack = &checkpoint{
+		//	node: child.inner,
+		//	prev: tail,
+		//}
 		return false, false
 	}
 }
