@@ -356,6 +356,7 @@ func (i *iterator) init() (exit bool, nextOK bool) {
 		if i.inRange(l.Key) {
 			i.key = l.Key
 			i.value = l.Value
+			i.leaf = l
 			return true, true
 		}
 		return true, false
