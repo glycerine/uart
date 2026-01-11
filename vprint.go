@@ -247,3 +247,7 @@ func getGoroutineIDs() map[int]bool {
 
 	return m
 }
+
+func panicf(format string, a ...interface{}) {
+	panic(fmt.Sprintf(format, a...))
+}

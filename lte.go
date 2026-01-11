@@ -109,6 +109,7 @@ func (n *inner) getLTE(
 	case 1:
 		dir = needNextLeaf
 		value, _ = n.recursiveLast()
+		id = n.SubN - 1
 		return
 	case -1:
 		dir = needPrevLeaf
@@ -175,7 +176,7 @@ func (n *inner) getLTE(
 	// so our subtree is relavant and must be searched.
 	// Do a bisecting LTE search.
 
-	// This is imporant, because only we (a this
+	// This is imporant, because only we (at this
 	// stage in the tree descent) can make the
 	// determination that two adjacent leaves meet
 	// the LTE termination condition. Otherwise the
