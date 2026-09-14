@@ -2179,7 +2179,9 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 
 	// google/btree load and read
 
-	degree := 3_000 // fastest
+	degree := 3_000 // fastest; full table scan: 2 ns/key (put at 207 ns/key)
+	//degree := 32 // full table scan: 6 ns/key (put at 241 ns/key)
+	//degree := 10 // full table scan :  7 ns/key (put at 286 ns/key)
 	//g := googbtree.NewG[string](degree, googbtree.Less[string]())
 	g := googbtree.NewG[*Kint](degree, googbtree.LessFunc[*Kint](func(a, b *Kint) bool {
 		return bytes.Compare(a.Key, b.Key) < 0
