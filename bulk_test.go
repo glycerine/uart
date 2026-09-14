@@ -17,15 +17,17 @@ func TestNewArtTreeFromSortedNoCopy(t *testing.T) {
 	}
 
 	items := make([]BulkItem, len(keys))
-	want := NewArtTree()
-	want.SkipLocking = true
 	for i, key := range keys {
 		items[i] = BulkItem{Key: key, Value: key}
-		want.InsertNoCopy(key, key)
 	}
 
 	got := NewArtTreeFromSortedNoCopy(items)
 	got.SkipLocking = true
+	checkBulkTree(t, got, keys)
+}
+
+func checkBulkTree(t *testing.T, got *Tree, keys []Key) {
+	t.Helper()
 	if got.Size() != len(keys) {
 		t.Fatalf("got size %d, want %d", got.Size(), len(keys))
 	}

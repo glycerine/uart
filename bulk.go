@@ -17,6 +17,8 @@ func NewArtTreeFromSortedNoCopy(items []BulkItem) *Tree {
 	if len(items) == 0 {
 		return t
 	}
+	t.SharePrefixBytes = true
+	t.orderedLeaves = make([]Leaf, len(items))
 	t.root = t.buildSortedNoCopy(items, 0)
 	t.size = int64(len(items))
 	t.treeVersion = 1

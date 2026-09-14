@@ -92,6 +92,9 @@ type Tree struct {
 	node48Arena  node48Arena
 	node256Arena node256Arena
 
+	orderedLeaves   []Leaf
+	orderedLeafNext int
+
 	// At() calls are much slower than
 	// iteration by default, because they
 	// start at the root and go down the tree
@@ -257,6 +260,10 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	if !t.SkipLocking {
 		t.RWmut.Lock()
 		defer t.RWmut.Unlock()
+	}
+	if t.orderedLeaves != nil {
+		t.orderedLeaves = nil
+		t.orderedLeafNext = 0
 	}
 
 	var replacement *bnode
@@ -507,6 +514,10 @@ func (t *Tree) Remove(key Key) (deleted bool, deletedLeaf *Leaf) {
 		deletedLeaf = deletedNode.leaf
 		t.size--
 		t.treeVersion++
+		if t.orderedLeaves != nil {
+			t.orderedLeaves = nil
+			t.orderedLeafNext = 0
+		}
 	}
 	return
 }

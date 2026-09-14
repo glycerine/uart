@@ -126,6 +126,12 @@ func (t *Tree) newLeaf(key Key, value any) *Leaf {
 	if t == nil {
 		return NewLeaf(key, value, nil)
 	}
+	if t.orderedLeaves != nil && t.orderedLeafNext < len(t.orderedLeaves) {
+		lf := &t.orderedLeaves[t.orderedLeafNext]
+		t.orderedLeafNext++
+		*lf = Leaf{Key: key, Value: value}
+		return lf
+	}
 	lf := t.leafArena.alloc()
 	*lf = Leaf{Key: key, Value: value}
 	return lf

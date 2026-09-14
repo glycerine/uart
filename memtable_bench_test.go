@@ -205,6 +205,21 @@ func BenchmarkMemtableInsertSequential100K(b *testing.B) {
 		memtableBenchSink = sink
 		b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*len(keys)), "ns/key")
 	})
+	b.Run("uart_bulk_sorted_nocopy", func(b *testing.B) {
+		items := make([]BulkItem, len(keys))
+		for i, key := range keys {
+			items[i] = BulkItem{Key: key, Value: nil}
+		}
+		b.ReportAllocs()
+		b.ResetTimer()
+		var sink int
+		for range b.N {
+			tree := NewArtTreeFromSortedNoCopy(items)
+			sink += tree.Size()
+		}
+		memtableBenchSink = sink
+		b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*len(keys)), "ns/key")
+	})
 	for _, degree := range []int{32, 3000} {
 		degree := degree
 		b.Run(fmt.Sprintf("google_btree_degree_%d", degree), func(b *testing.B) {
@@ -239,6 +254,12 @@ func BenchmarkMemtableScanSequential100K(b *testing.B) {
 	for _, key := range keys {
 		tree.InsertNoCopy(key, nil)
 	}
+	bulkItems := make([]BulkItem, len(keys))
+	for i, key := range keys {
+		bulkItems[i] = BulkItem{Key: key, Value: nil}
+	}
+	bulkTree := NewArtTreeFromSortedNoCopy(bulkItems)
+	bulkTree.SkipLocking = true
 
 	b.Run("uart_iter", func(b *testing.B) {
 		b.ReportAllocs()
@@ -259,6 +280,19 @@ func BenchmarkMemtableScanSequential100K(b *testing.B) {
 		var sink int
 		for range b.N {
 			tree.ScanLeaves(func(lf *Leaf) bool {
+				sink += len(lf.Key)
+				return true
+			})
+		}
+		memtableBenchSink = sink
+		b.ReportMetric(float64(b.Elapsed().Nanoseconds())/float64(b.N*len(keys)), "ns/key")
+	})
+	b.Run("uart_bulk_scan", func(b *testing.B) {
+		b.ReportAllocs()
+		b.ResetTimer()
+		var sink int
+		for range b.N {
+			bulkTree.ScanLeaves(func(lf *Leaf) bool {
 				sink += len(lf.Key)
 				return true
 			})

@@ -563,6 +563,15 @@ func (t *Tree) Scan(yield func(key Key, value any) bool) {
 		t.RWmut.RLock()
 		defer t.RWmut.RUnlock()
 	}
+	if len(t.orderedLeaves) == int(t.size) {
+		for i := range t.orderedLeaves {
+			lf := &t.orderedLeaves[i]
+			if !yield(lf.Key, lf.Value) {
+				return
+			}
+		}
+		return
+	}
 	t.root.scan(func(lf *Leaf) bool {
 		return yield(lf.Key, lf.Value)
 	})
@@ -579,6 +588,14 @@ func (t *Tree) ScanLeaves(yield func(*Leaf) bool) {
 	if !t.SkipLocking {
 		t.RWmut.RLock()
 		defer t.RWmut.RUnlock()
+	}
+	if len(t.orderedLeaves) == int(t.size) {
+		for i := range t.orderedLeaves {
+			if !yield(&t.orderedLeaves[i]) {
+				return
+			}
+		}
+		return
 	}
 	t.root.scan(yield)
 }
