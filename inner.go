@@ -2,7 +2,9 @@ package uart
 
 import (
 	"bytes"
+	"encoding/binary"
 	"fmt"
+	"math/bits"
 	"strings"
 	"sync"
 	//"sync/atomic"
@@ -12,14 +14,30 @@ import (
 )
 
 func comparePrefix(k1, k2 []byte, depth int) int {
-	idx, limit := depth, min(len(k1), len(k2))
-	for ; idx < limit; idx++ {
-		if k1[idx] != k2[idx] {
-			break
+	if depth >= len(k1) || depth >= len(k2) {
+		return 0
+	}
+	return commonPrefixLen(k1[depth:], k2[depth:])
+}
+
+func commonPrefixLen(a, b []byte) int {
+	n := min(len(a), len(b))
+	a = a[:n]
+	b = b[:n]
+
+	i := 0
+	for ; i+8 <= n; i += 8 {
+		x := binary.LittleEndian.Uint64(a[i:]) ^ binary.LittleEndian.Uint64(b[i:])
+		if x != 0 {
+			return i + bits.TrailingZeros64(x)/8
 		}
 	}
-
-	return idx - depth
+	for ; i < n; i++ {
+		if a[i] != b[i] {
+			return i
+		}
+	}
+	return n
 }
 
 func (n *inner) kind() kind {
@@ -30,12 +48,7 @@ func (n *inner) kind() kind {
 func (n *inner) compressedMismatch(key Key, depth int) (idx int) {
 
 	maxCmp := min(len(n.compressed), len(key)-depth)
-	for idx = 0; idx < maxCmp; idx++ {
-		if n.compressed[idx] != key[depth+idx] {
-			return idx // mismatch
-		}
-	}
-	return maxCmp
+	return commonPrefixLen(n.compressed[:maxCmp], key[depth:depth+maxCmp])
 }
 
 // selfb must be the bnode holding us, such that
@@ -54,22 +67,19 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 		newChildKey := n.compressed[mis]
 		parentCompressed := append([]byte{}, n.compressed[:mis]...)
 
-		newChild := &inner{
-			Node:       n.Node,
-			compressed: n.compressed[mis+1:],
-			// keep path stuff for debugging!
-			//path:       append([]byte{}, lf.Key[:depth+mis]...),
-			SubN: n.SubN,
-		}
+		newChild := tree.newInner(n.Node, n.SubN)
+		newChild.compressed = n.compressed[mis+1:]
+		// keep path stuff for debugging!
+		//newChild.path = append([]byte{}, lf.Key[:depth+mis]...)
 		//vv("assigned path '%v' to %p", string(newChild.path), newChild)
 		newChild.keybyte = newChildKey
 
 		// n becomes the new parent of newChild and lf
-		n4 := &node4{}
+		n4 := tree.newNode4()
 		leafKeybyte := lf.Key.At(depth + mis)
 		lf.keybyte = leafKeybyte
-		n4.addChild(leafKeybyte, bnodeLeaf(lf))
-		n4.addChild(newChildKey, bnodeInner(newChild))
+		n4.addChild(leafKeybyte, tree.newBnodeLeaf(lf))
+		n4.addChild(newChildKey, tree.newBnodeInner(newChild))
 
 		n.Node = n4
 
@@ -108,11 +118,11 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 	if next == nil {
 
 		if n.Node.full() {
-			n.Node = n.Node.grow()
+			n.Node = growNode(n.Node, tree)
 		}
 		addkey := lf.Key.At(nextDepth)
 		lf.keybyte = addkey
-		n.Node.addChild(addkey, bnodeLeaf(lf))
+		n.Node.addChild(addkey, tree.newBnodeLeaf(lf))
 		n.SubN++
 		n.prenOK = false
 

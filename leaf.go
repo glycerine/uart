@@ -103,7 +103,7 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *in
 	}
 
 	if other.equal(lf.Key) {
-		value = bnodeLeaf(other)
+		value = tree.newBnodeLeaf(other)
 		updated = true
 		// avoid forcing a full re-compute of pren.
 		value.pren = selfb.pren
@@ -112,14 +112,10 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *in
 
 	longestPrefix := comparePrefix(lf.Key, other.Key, depth)
 	//vv("longestPrefix = %v; lf.Key='%v', other.key='%v', depth=%v", longestPrefix, string(lf.Key), string(other.Key), depth)
-	n4 := &node4{}
-	nn := &inner{
-		Node: n4,
-
-		// keep commented out path stuff for debugging!
-		//path: append([]byte{}, lf.Key[:depth+longestPrefix]...),
-		SubN: 2,
-	}
+	n4 := tree.newNode4()
+	nn := tree.newInner(n4, 2)
+	// keep commented out path stuff for debugging!
+	//nn.path = append([]byte{}, lf.Key[:depth+longestPrefix]...)
 	//vv("assigned path '%v' to %p", string(nn.path), nn)
 	if longestPrefix > 0 {
 		nn.compressed = append([]byte{}, lf.Key[depth:depth+longestPrefix]...)
@@ -131,8 +127,8 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *in
 
 	//vv("child0key = 0x%x; lf.Key = '%v' (len %v); depth=%v; longestPrefix=%v; depth+longestPrefix=%v", child0key, string(lf.Key), len(lf.Key), depth, longestPrefix, depth+longestPrefix)
 
-	nn.Node.addChild(child0key, bnodeLeaf(lf))
-	nn.Node.addChild(child1key, bnodeLeaf(other))
+	nn.Node.addChild(child0key, tree.newBnodeLeaf(lf))
+	nn.Node.addChild(child1key, tree.newBnodeLeaf(other))
 
 	selfb.isLeaf = false
 	selfb.inner = nn

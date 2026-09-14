@@ -84,6 +84,14 @@ type Tree struct {
 	root *bnode
 	size int64
 
+	bnodeArena   bnodeArena
+	leafArena    leafArena
+	innerArena   innerArena
+	node4Arena   node4Arena
+	node16Arena  node16Arena
+	node48Arena  node48Arena
+	node256Arena node256Arena
+
 	// At() calls are much slower than
 	// iteration by default, because they
 	// start at the root and go down the tree
@@ -191,7 +199,7 @@ func (t *Tree) stringNoKeys(recurse int) string {
 func (t *Tree) InsertX(key Key, value any, x []byte) (updated bool) {
 
 	key2 := Key(append([]byte{}, key...))
-	lf := NewLeaf(key2, value, x)
+	lf := t.newLeaf(key2, value)
 	return t.InsertLeaf(lf)
 }
 
@@ -216,8 +224,18 @@ func (t *Tree) Insert(key Key, value any) (updated bool) {
 	// without it, for instance, since they
 	// re-use key []byte memory alot.
 	key2 := Key(append([]byte{}, key...))
-	lf := NewLeaf(key2, value, nil)
+	lf := t.newLeaf(key2, value)
 
+	return t.InsertLeaf(lf)
+}
+
+// InsertNoCopy inserts or replaces key with value without copying key.
+//
+// The caller must not modify key while it is stored in the tree. This is meant
+// for performance-sensitive paths, such as memtables, where key ownership is
+// already clear and the defensive copy in Insert would only add overhead.
+func (t *Tree) InsertNoCopy(key Key, value any) (updated bool) {
+	lf := t.newLeaf(key, value)
 	return t.InsertLeaf(lf)
 }
 
@@ -237,7 +255,7 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 	if t.root == nil {
 		// first leaf in the tree
 		t.size++
-		t.root = bnodeLeaf(lf)
+		t.root = t.newBnodeLeaf(lf)
 		t.treeVersion++
 		return false
 	}

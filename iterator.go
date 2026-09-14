@@ -550,6 +550,73 @@ func Descend(t *Tree, endx, start Key) iter.Seq2[Key, any] {
 	}
 }
 
+// Scan visits every leaf in ascending key order.
+//
+// Scan is a faster full-table traversal than Iter(nil, nil). It does not carry
+// range, index, or mutation-resume state; callers must not mutate the tree from
+// the callback.
+func (t *Tree) Scan(yield func(key Key, value any) bool) {
+	if t == nil || t.root == nil {
+		return
+	}
+	if !t.SkipLocking {
+		t.RWmut.RLock()
+		defer t.RWmut.RUnlock()
+	}
+	t.root.scan(func(lf *Leaf) bool {
+		return yield(lf.Key, lf.Value)
+	})
+}
+
+// ScanLeaves visits every leaf in ascending key order.
+//
+// This avoids the interface and range machinery in Iter for callers that want
+// raw leaves during a stable full-table scan.
+func (t *Tree) ScanLeaves(yield func(*Leaf) bool) {
+	if t == nil || t.root == nil {
+		return
+	}
+	if !t.SkipLocking {
+		t.RWmut.RLock()
+		defer t.RWmut.RUnlock()
+	}
+	t.root.scan(yield)
+}
+
+func (b *bnode) scan(yield func(*Leaf) bool) bool {
+	if b.isLeaf {
+		return yield(b.leaf)
+	}
+
+	switch n := b.inner.Node.(type) {
+	case *node4:
+		for i := 0; i < n.lth; i++ {
+			if !n.children[i].scan(yield) {
+				return false
+			}
+		}
+	case *node16:
+		for i := 0; i < n.lth; i++ {
+			if !n.children[i].scan(yield) {
+				return false
+			}
+		}
+	case *node48:
+		for _, idx := range n.keys {
+			if idx != 0 && !n.children[idx-1].scan(yield) {
+				return false
+			}
+		}
+	case *node256:
+		for _, child := range n.children {
+			if child != nil && !child.scan(yield) {
+				return false
+			}
+		}
+	}
+	return true
+}
+
 // dfs does depth-first-search.
 //
 // Useful for debugging/visualizing
