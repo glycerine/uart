@@ -63,6 +63,10 @@ type iterator struct {
 
 	stack *checkpoint
 
+	prefetchLeafRefs []*Leaf
+	prefetchLeaves   []Leaf
+	prefetchPos      int
+
 	initDone bool
 	closed   bool
 
@@ -126,6 +130,20 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 			closed:   true,
 		}
 	}
+	if len(start) == 0 && len(end) == 0 {
+		it := &iterator{
+			tree:        t,
+			treeVersion: t.treeVersion,
+			curIdx:      -1,
+			prefetchPos: -1,
+		}
+		if len(t.orderedLeaves) == int(t.size) {
+			it.prefetchLeaves = t.orderedLeaves
+		} else {
+			it.prefetchLeafRefs = t.cachedOrderedLeafRefs()
+		}
+		return it
+	}
 
 	// get the integer range [begIdx, endIdx]
 	_, begIdx, ok := t.find_unlocked(GTE, start)
@@ -156,6 +174,16 @@ func (t *Tree) Iter(start, end []byte) (iter *iterator) {
 		curIdx:      begIdx - 1,
 		//endxIdx:     endIdx + 1,
 	}
+}
+
+func (t *Tree) cachedOrderedLeafRefs() []*Leaf {
+	if len(t.orderedLeafRefs) == int(t.size) {
+		return t.orderedLeafRefs
+	}
+	refs := make([]*Leaf, int(t.size))
+	t.root.fillLeafRefs(refs, 0)
+	t.orderedLeafRefs = refs
+	return refs
 }
 
 // RevIter starts a traversal over
@@ -257,6 +285,14 @@ func (i *iterator) Next() (ok bool) {
 	if i.closed {
 		return false
 	}
+	if i.prefetchLeafRefs != nil || i.prefetchLeaves != nil {
+		if i.treeVersion == i.tree.treeVersion {
+			return i.nextPrefetched()
+		}
+		i.prefetchLeafRefs = nil
+		i.prefetchLeaves = nil
+		i.prefetchPos = -1
+	}
 	if i.treeVersion != i.tree.treeVersion {
 		// there has been a modification
 		// to the tree, reset the stack and
@@ -338,6 +374,28 @@ func (i *iterator) Next() (ok bool) {
 	// 	}
 	// }
 	return
+}
+
+func (i *iterator) nextPrefetched() bool {
+	i.prefetchPos++
+	i.curIdx = i.prefetchPos
+	var lf *Leaf
+	if i.prefetchLeafRefs != nil {
+		if i.prefetchPos >= len(i.prefetchLeafRefs) {
+			i.closed = true
+			return false
+		}
+		lf = i.prefetchLeafRefs[i.prefetchPos]
+	} else {
+		if i.prefetchPos >= len(i.prefetchLeaves) {
+			i.closed = true
+			return false
+		}
+		lf = &i.prefetchLeaves[i.prefetchPos]
+	}
+	i.leaf = lf
+	i.cursor = lf.Key
+	return true
 }
 
 // exit returned true means only 0 or 1 nodes in tree,
@@ -481,6 +539,9 @@ func (i *iterator) Leaf() *Leaf {
 }
 
 func (i *iterator) Value() any {
+	if i.leaf != nil {
+		return i.leaf.Value
+	}
 	return i.value
 }
 
@@ -501,6 +562,9 @@ func (i *iterator) Index() int {
 // After tree modification, we continue
 // from the successor to the last good key.
 func (i *iterator) Key() Key {
+	if i.leaf != nil {
+		return i.leaf.Key
+	}
 	return i.key
 }
 
@@ -520,6 +584,26 @@ func (i *iterator) inRange(key []byte) (inside bool) {
 // Tree.Iter description for details.
 func Ascend(t *Tree, beg, endx Key) iter.Seq2[Key, any] {
 	return func(yield func(key Key, value any) bool) {
+		if len(beg) == 0 && len(endx) == 0 {
+			if t == nil || t.root == nil {
+				return
+			}
+			if len(t.orderedLeaves) == int(t.size) {
+				for i := range t.orderedLeaves {
+					lf := &t.orderedLeaves[i]
+					if !yield(lf.Key, lf) {
+						return
+					}
+				}
+				return
+			}
+			for _, lf := range t.cachedOrderedLeafRefs() {
+				if !yield(lf.Key, lf) {
+					return
+				}
+			}
+			return
+		}
 		it := t.Iter(beg, endx)
 		for it.Next() {
 			if !yield(it.Key(), it.Leaf()) {
@@ -572,6 +656,14 @@ func (t *Tree) Scan(yield func(key Key, value any) bool) {
 		}
 		return
 	}
+	if len(t.orderedLeafRefs) == int(t.size) {
+		for _, lf := range t.orderedLeafRefs {
+			if !yield(lf.Key, lf.Value) {
+				return
+			}
+		}
+		return
+	}
 	t.root.scan(func(lf *Leaf) bool {
 		return yield(lf.Key, lf.Value)
 	})
@@ -592,6 +684,14 @@ func (t *Tree) ScanLeaves(yield func(*Leaf) bool) {
 	if len(t.orderedLeaves) == int(t.size) {
 		for i := range t.orderedLeaves {
 			if !yield(&t.orderedLeaves[i]) {
+				return
+			}
+		}
+		return
+	}
+	if len(t.orderedLeafRefs) == int(t.size) {
+		for _, lf := range t.orderedLeafRefs {
+			if !yield(lf) {
 				return
 			}
 		}
@@ -632,6 +732,37 @@ func (b *bnode) scan(yield func(*Leaf) bool) bool {
 		}
 	}
 	return true
+}
+
+func (b *bnode) fillLeafRefs(refs []*Leaf, pos int) int {
+	if b.isLeaf {
+		refs[pos] = b.leaf
+		return pos + 1
+	}
+
+	switch n := b.inner.Node.(type) {
+	case *node4:
+		for i := 0; i < n.lth; i++ {
+			pos = n.children[i].fillLeafRefs(refs, pos)
+		}
+	case *node16:
+		for i := 0; i < n.lth; i++ {
+			pos = n.children[i].fillLeafRefs(refs, pos)
+		}
+	case *node48:
+		for _, idx := range n.keys {
+			if idx != 0 {
+				pos = n.children[idx-1].fillLeafRefs(refs, pos)
+			}
+		}
+	case *node256:
+		for _, child := range n.children {
+			if child != nil {
+				pos = child.fillLeafRefs(refs, pos)
+			}
+		}
+	}
+	return pos
 }
 
 // dfs does depth-first-search.

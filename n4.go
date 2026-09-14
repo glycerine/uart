@@ -135,12 +135,22 @@ func (n *node4) child(k byte) (idx int, ch *bnode) {
 
 func (n *node4) addChild(k byte, child *bnode) {
 	idx := n.index(k)
-	copy(n.children[idx+1:], n.children[idx:])
-	copy(n.keys[idx+1:], n.keys[idx:])
+	switch n.lth - idx {
+	case 3:
+		n.children[idx+3] = n.children[idx+2]
+		n.keys[idx+3] = n.keys[idx+2]
+		fallthrough
+	case 2:
+		n.children[idx+2] = n.children[idx+1]
+		n.keys[idx+2] = n.keys[idx+1]
+		fallthrough
+	case 1:
+		n.children[idx+1] = n.children[idx]
+		n.keys[idx+1] = n.keys[idx]
+	}
 	n.keys[idx] = k
 	n.children[idx] = child
 	n.lth++
-	n.redoPren()
 }
 
 // update pren cache of cumulative SubN
@@ -152,12 +162,12 @@ func (n *node4) redoPren() {
 		if i >= n.lth {
 			break
 		}
-		ch.pren = tot
+		ch.pren = uint32(tot)
 		//tot += ch.subn()
 		if ch.isLeaf {
 			tot += 1
 		} else {
-			tot += ch.inner.SubN
+			tot += int(ch.inner.SubN)
 		}
 	}
 }
@@ -169,14 +179,8 @@ func (n *node4) replace(idx int, child *bnode, del bool) (old *bnode) {
 		n.keys[n.lth-1] = 0
 		n.children[n.lth-1] = nil
 		n.lth--
-		if del && idx < n.lth {
-			n.redoPren()
-		}
 	} else {
 		n.children[idx] = child
-		if del && child.pren != old.pren {
-			n.redoPren()
-		}
 	}
 	return
 }
@@ -190,7 +194,6 @@ func (n *node4) grow() inode {
 	nn.lth = n.lth
 	copy(nn.keys[:], n.keys[:])
 	copy(nn.children[:], n.children[:])
-	nn.redoPren()
 	return nn
 }
 

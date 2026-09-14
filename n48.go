@@ -139,7 +139,6 @@ func (n *node48) addChild(k byte, child *bnode) {
 			n.keys[k] = uint16(idx + 1)
 			n.children[idx] = child
 			n.lth++
-			n.redoPren()
 			return
 		}
 	}
@@ -156,12 +155,12 @@ func (n *node48) redoPren() {
 			continue
 		}
 		ch := n.children[idx-1]
-		ch.pren = tot
+		ch.pren = uint32(tot)
 		//tot += ch.subn()
 		if ch.isLeaf {
 			tot += 1
 		} else {
-			tot += ch.inner.SubN
+			tot += int(ch.inner.SubN)
 		}
 	}
 }
@@ -176,7 +175,6 @@ func (n *node48) grow() inode {
 		}
 		nn.children[b] = n.children[i-1]
 	}
-	nn.redoPren()
 	return nn
 }
 
@@ -190,13 +188,6 @@ func (n *node48) replace(k int, child *bnode, del bool) (old *bnode) {
 	if child == nil {
 		n.keys[k] = 0
 		n.lth--
-		if del {
-			n.redoPren()
-		}
-	} else {
-		if del && child.pren != old.pren {
-			n.redoPren()
-		}
 	}
 	return
 }
@@ -221,7 +212,6 @@ func (n *node48) shrink() inode {
 			nni++
 		}
 	}
-	nn.redoPren()
 	return nn
 }
 

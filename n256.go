@@ -119,13 +119,6 @@ func (n *node256) replace(idx int, child *bnode, del bool) (old *bnode) {
 	n.children[byte(idx)] = child
 	if child == nil {
 		n.lth--
-		if del {
-			n.redoPren()
-		}
-	} else {
-		if del && child.pren != old.pren {
-			n.redoPren()
-		}
 	}
 	return
 }
@@ -137,7 +130,6 @@ func (n *node256) full() bool {
 func (n *node256) addChild(k byte, child *bnode) {
 	n.children[k] = child
 	n.lth++
-	n.redoPren()
 }
 
 // update pren cache of cumulative SubN
@@ -149,12 +141,12 @@ func (n *node256) redoPren() {
 		if ch == nil {
 			continue
 		}
-		ch.pren = tot
+		ch.pren = uint32(tot)
 		//tot += ch.subn()
 		if ch.isLeaf {
 			tot += 1
 		} else {
-			tot += ch.inner.SubN
+			tot += int(ch.inner.SubN)
 		}
 	}
 }
@@ -180,7 +172,6 @@ func (n *node256) shrink() inode {
 		nn.keys[i] = index
 		nn.children[index-1] = n.children[i]
 	}
-	nn.redoPren()
 	return nn
 }
 

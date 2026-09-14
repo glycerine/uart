@@ -236,7 +236,7 @@ func (n *inner) getGTE(
 		selfb.subTreeRedoPren()
 	}
 
-	id += next.pren
+	id += int(next.pren)
 	if found {
 		// exact GTE match
 		switch smod {
@@ -261,7 +261,7 @@ func (n *inner) getGTE(
 			value, _ = nextLocal.recursiveFirst()
 			found = true
 			dir = 0
-			id = nextLocal.pren
+			id = int(nextLocal.pren)
 			return
 			// end GT
 		}
@@ -306,7 +306,7 @@ func (n *inner) getGTE(
 			byteCmp(querykey, nextnextKeyb, keyCmpPath),
 		)
 
-		id2 += nextnext.pren
+		id2 += int(nextnext.pren)
 		if found2 {
 			return value2, true, 0, id2
 		}
@@ -370,7 +370,7 @@ func (n *inner) getGTE(
 		byteCmp(querykey, prevKeyb, keyCmpPath),
 	)
 
-	id2 += prev.pren
+	id2 += int(prev.pren)
 	if found2 {
 		return value2, true, 0, id2
 	}
@@ -380,7 +380,7 @@ func (n *inner) getGTE(
 		// next.recursiveFirst() is our goal node.
 
 		value, _ := next.recursiveFirst()
-		return value, true, 0, next.pren
+		return value, true, 0, int(next.pren)
 	}
 	if dir2 > 0 && smallestWillDo {
 		dir2 = 2

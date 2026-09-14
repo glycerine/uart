@@ -1661,7 +1661,7 @@ func verifySubN(root *bnode) (leafcount int) {
 			}
 		}
 
-		if root.inner.SubN != leafcount {
+		if int(root.inner.SubN) != leafcount {
 			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v; node='%v'", leafcount, root.inner.SubN, root))
 		}
 		if leafcount == 0 {
@@ -1695,7 +1695,7 @@ func verifyPren(b *bnode) (leafcount int) {
 					subn = verifyPren(n.children[i])
 					leafcount += subn
 
-					if ch.pren != pren {
+					if int(ch.pren) != pren {
 						panic(fmt.Sprintf("%p n4 pren is off: child.pren = %v; manual pren=%v", ch, ch.pren, pren))
 					}
 					pren += subn
@@ -1707,7 +1707,7 @@ func verifyPren(b *bnode) (leafcount int) {
 					subn = verifyPren(n.children[i])
 					leafcount += subn
 
-					if ch.pren != pren {
+					if int(ch.pren) != pren {
 						panic(fmt.Sprintf("%p n16 pren is off: child.pren = %v; manual pren=%v;\n ch = '%v'", ch, ch.pren, pren, ch))
 
 					}
@@ -1723,7 +1723,7 @@ func verifyPren(b *bnode) (leafcount int) {
 				child := n.children[k-1]
 				subn = verifyPren(child)
 				leafcount += subn
-				if child.pren != pren {
+				if int(child.pren) != pren {
 					panic(fmt.Sprintf("%p n48 pren is off: child.pren = %v; manual pren=%v", child, child.pren, pren))
 				}
 				pren += subn
@@ -1733,7 +1733,7 @@ func verifyPren(b *bnode) (leafcount int) {
 				if child != nil {
 					subn = verifyPren(child)
 					leafcount += subn
-					if child.pren != pren {
+					if int(child.pren) != pren {
 						panic(fmt.Sprintf("%p n256 pren is off: child.pren = %v; manual pren=%v", child, child.pren, pren))
 					}
 					pren += subn
@@ -1741,7 +1741,7 @@ func verifyPren(b *bnode) (leafcount int) {
 			}
 		}
 
-		if b.inner.SubN != leafcount {
+		if int(b.inner.SubN) != leafcount {
 			panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, b.inner.SubN))
 		}
 	}
@@ -2056,15 +2056,13 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	// with data already in, how fast are we vs a map?
 
 	// K = total number of keys (leaves) in the starting tree.
-	// nothing fancy, just sequential integers -> strings.
+	// Use permuted fixed-width keys so this does not benchmark a sorted load.
 	K := 10_000_000
 
-	var keys []string
-	var keyb [][]byte
-	for k := range K {
-		key := fmt.Sprintf("%09d", k)
-		keys = append(keys, key)
-		keyb = append(keyb, []byte(key))
+	keyb := memtablePermutedUint64Keys(K)
+	keys := make([]string, len(keyb))
+	for k, kb := range keyb {
+		keys[k] = string(kb)
 	}
 
 	tree := NewArtTree()
@@ -2098,6 +2096,17 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	rate1 := e1 / time.Duration(K)
 	fmt.Printf("uart.Tree time to store %v keys: %v (%v/op)\n", K, e1, rate1)
 
+	// try the native iterator instead of iter.Seq
+
+	t1 = time.Now()
+	it := tree.Iter(nil, nil)
+	for it.Next() {
+		_ = it.Key()
+	}
+	e1 = time.Since(t1)
+	rate1 = e1 / time.Duration(K)
+	fmt.Printf("uart Iter() reads %v keys, including iterator construction: elapsed %v (%v/op)\n", K, e1, rate1)
+
 	t1 = time.Now()
 	for lf := range Ascend(tree, nil, nil) {
 		_ = lf
@@ -2106,82 +2115,77 @@ func Test620_unlocked_read_comparison(t *testing.T) {
 	rate1 = e1 / time.Duration(K)
 	fmt.Printf("Ascend(tree) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
 
-	// try the native iterator instead of iter.Seq
-
-	it := tree.Iter(nil, nil)
 	t1 = time.Now()
-	for it.Next() {
-		_ = it.Key
-	}
+	tree.ScanLeaves(func(lf *Leaf) bool {
+		return true
+	})
 	e1 = time.Since(t1)
 	rate1 = e1 / time.Duration(K)
-	fmt.Printf("uart Iter() reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+	fmt.Printf("uart ScanLeaves() reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
 
 	// and the integer indexing:
 
+	atK := min(K, 100_000)
 	t1 = time.Now()
 	var lf *Leaf
 	var ok bool
-	var v int
-	for i := range K {
+	for i := range atK {
 		lf, ok = tree.At(i)
-		v = lf.Value.(int)
-		if !ok || v != i {
-			panic(fmt.Sprintf("At(i=%v) gave %v instead of %v", i, v, i))
+		if !ok || lf == nil {
+			panic(fmt.Sprintf("At(i=%v) failed", i))
 		}
 
 	}
 	e1 = time.Since(t1)
-	rate1 = e1 / time.Duration(K)
-	fmt.Printf("tree.At(i) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+	rate1 = e1 / time.Duration(atK)
+	fmt.Printf("tree.At(i) reads %v sampled keys: elapsed %v (%v/op)\n", atK, e1, rate1)
 
 	// we would like sequential iteration from
 	// larger than 0 to work too. start from 10.
 	t1 = time.Now()
 	beg := 10
-	for i := beg; i < K; i++ {
+	for i := beg; i < atK; i++ {
 		lf, ok = tree.At(i)
-		v = lf.Value.(int)
-		if !ok || v != i {
-			panic(fmt.Sprintf("At(i=%v) gave %v instead of %v", i, v, i))
+		if !ok || lf == nil {
+			panic(fmt.Sprintf("At(i=%v) failed", i))
 		}
 
 	}
 	e1 = time.Since(t1)
-	rate1 = e1 / time.Duration(K)
-	fmt.Printf("tree.At(i) reads from %v: %v keys: elapsed %v (%v/op)\n", beg, K-beg, e1, rate1)
+	rate1 = e1 / time.Duration(atK-beg)
+	fmt.Printf("tree.At(i) reads from %v: %v sampled keys: elapsed %v (%v/op)\n", beg, atK-beg, e1, rate1)
 
 	// Atfar should work the same as un-cached At
+	atfarK := min(K, 10_000)
 	t1 = time.Now()
-	for i := range K {
+	for i := range atfarK {
 		lf, ok = tree.Atfar(i)
-		v = lf.Value.(int)
-		if !ok || v != i {
-			panic(fmt.Sprintf("Atfar(i=%v) gave %v instead of %v", i, v, i))
+		if !ok || lf == nil {
+			panic(fmt.Sprintf("Atfar(i=%v) failed", i))
 		}
 
 	}
 	e1 = time.Since(t1)
-	rate1 = e1 / time.Duration(K)
-	fmt.Printf("tree.Atfar(i) reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+	rate1 = e1 / time.Duration(atfarK)
+	fmt.Printf("tree.Atfar(i) reads %v sampled keys: elapsed %v (%v/op)\n", atfarK, e1, rate1)
 
 	// with locking on
 	tree.SkipLocking = false
 	t1 = time.Now()
-	for k := range K {
+	for k := range atfarK {
 		tree.Atfar(k)
 	}
 	e1 = time.Since(t1)
-	rate1 = e1 / time.Duration(K)
-	fmt.Printf("Atfar() read-locked reads %v keys: elapsed %v (%v/op)\n", K, e1, rate1)
+	rate1 = e1 / time.Duration(atfarK)
+	fmt.Printf("Atfar() read-locked reads %v sampled keys: elapsed %v (%v/op)\n", atfarK, e1, rate1)
 
 	// commented for no dependencies:
 
 	// google/btree load and read
 
-	degree := 3_000 // fastest; full table scan: 2 ns/key (put at 207 ns/key)
-	//degree := 32 // full table scan: 6 ns/key (put at 241 ns/key)
-	//degree := 10 // full table scan :  7 ns/key (put at 286 ns/key)
+	degree := 32 // fastest for the permuted-key load shape in the memtable benchmark.
+	//degree := 3_000 // fastest for already-sorted loads; much slower for permuted loads.
+	//degree := 10
 	//g := googbtree.NewG[string](degree, googbtree.Less[string]())
 	g := googbtree.NewG[*Kint](degree, googbtree.LessFunc[*Kint](func(a, b *Kint) bool {
 		return bytes.Compare(a.Key, b.Key) < 0

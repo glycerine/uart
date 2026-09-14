@@ -67,7 +67,7 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 		newChildKey := n.compressed[mis]
 		parentCompressed := tree.prefixBytes(n.compressed[:mis])
 
-		newChild := tree.newInner(n.Node, n.SubN)
+		newChild := tree.newInner(n.Node, int(n.SubN))
 		newChild.compressed = n.compressed[mis+1:]
 		// keep path stuff for debugging!
 		//newChild.path = append([]byte{}, lf.Key[:depth+mis]...)
@@ -78,8 +78,20 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 		n4 := tree.newNode4()
 		leafKeybyte := lf.Key.At(depth + mis)
 		lf.keybyte = leafKeybyte
-		n4.addChild(leafKeybyte, tree.newBnodeLeaf(lf))
-		n4.addChild(newChildKey, tree.newBnodeInner(newChild))
+		leafChild := tree.newBnodeLeaf(lf)
+		innerChild := tree.newBnodeInner(newChild)
+		if leafKeybyte <= newChildKey {
+			n4.keys[0] = leafKeybyte
+			n4.children[0] = leafChild
+			n4.keys[1] = newChildKey
+			n4.children[1] = innerChild
+		} else {
+			n4.keys[0] = newChildKey
+			n4.children[0] = innerChild
+			n4.keys[1] = leafKeybyte
+			n4.children[1] = leafChild
+		}
+		n4.lth = 2
 
 		n.Node = n4
 
@@ -137,7 +149,6 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 		if !updated {
 			n.SubN++
 			n.prenOK = false
-			n.Node.redoPren() // no a no-op, but leave in case we revisit.
 		}
 		if !replacement.isLeaf {
 			replacement.inner.keybyte = nextkey
@@ -154,7 +165,6 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 	if !updated {
 		n.SubN++
 		n.prenOK = false
-		n.Node.redoPren() // Test_PrenInsert green. update: no-op with lazy
 	}
 
 	return selfb, updated
@@ -234,7 +244,6 @@ func (n *inner) del(key Key, depth int, selfb *bnode, parentUpdate func(*bnode))
 	if deleted {
 		n.SubN--
 		n.prenOK = false
-		n.Node.redoPren() // essential! for LeafIndex/id to be correct.
 	}
 	return deleted, deletedNode
 }
@@ -328,7 +337,7 @@ func (n *inner) get(key Key, depth int, selfb *bnode, calldepth int, tree *Tree)
 		selfb.subTreeRedoPren()
 	}
 
-	id += next.pren
+	id += int(next.pren)
 	return
 }
 

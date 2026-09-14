@@ -80,7 +80,7 @@ func (n *inner) getLTE(
 		dir = 0
 		found = true
 		value, _ = n.recursiveLast()
-		id = n.SubN - 1
+		id = int(n.SubN) - 1
 		return
 	}
 
@@ -95,7 +95,7 @@ func (n *inner) getLTE(
 	// leaf in the tree.
 	if len(key) == 0 {
 		value, found = n.recursiveLast()
-		id = n.SubN - 1
+		id = int(n.SubN) - 1
 		return
 	}
 
@@ -109,7 +109,7 @@ func (n *inner) getLTE(
 	case 1:
 		dir = needNextLeaf
 		value, _ = n.recursiveLast()
-		id = n.SubN - 1
+		id = int(n.SubN) - 1
 		return
 	case -1:
 		dir = needPrevLeaf
@@ -148,7 +148,7 @@ func (n *inner) getLTE(
 		if gt {
 			dir = needNextLeaf
 			value, _ = n.recursiveLast()
-			id = n.SubN - 1
+			id = int(n.SubN) - 1
 			// set found to allow LTE queries greater
 			// than largest key in the tree to answer correctly.
 			found = (calldepth == 0)
@@ -241,7 +241,7 @@ func (n *inner) getLTE(
 		selfb.subTreeRedoPren()
 	}
 
-	id += prev.pren
+	id += int(prev.pren)
 	if found {
 		// exact LTE match
 		switch smod {
@@ -266,7 +266,7 @@ func (n *inner) getLTE(
 			value, _ = prevLocal.recursiveLast()
 			found = true
 			dir = 0
-			id = prevLocal.pren + prevLocal.subn() - 1
+			id = int(prevLocal.pren) + prevLocal.subn() - 1
 			return
 			// end LT
 		}
@@ -311,7 +311,7 @@ func (n *inner) getLTE(
 			byteCmp(querykey, prevprevKeyb, keyCmpPath),
 		)
 
-		id2 += prevprev.pren
+		id2 += int(prevprev.pren)
 		if found2 {
 			return value2, true, 0, id2
 		}
@@ -357,7 +357,7 @@ func (n *inner) getLTE(
 		// keys after the largest key in the tree.
 		found = (calldepth == 0)
 
-		return value, found, needNextLeaf, n.SubN - 1
+		return value, found, needNextLeaf, int(n.SubN) - 1
 	}
 
 	if dir < -1 {
@@ -376,7 +376,7 @@ func (n *inner) getLTE(
 		byteCmp(querykey, nextKeyb, keyCmpPath),
 	)
 
-	id2 += next.pren
+	id2 += int(next.pren)
 	if found2 {
 		return value2, true, 0, id2
 	}
@@ -386,7 +386,7 @@ func (n *inner) getLTE(
 		// prev.recursiveLast() is our goal node.
 		//value, _ = value.recursiveLast()
 		value, _ = prev.recursiveLast()
-		return value, true, 0, prev.pren + prev.subn() - 1
+		return value, true, 0, int(prev.pren) + prev.subn() - 1
 	}
 	if dir2 < 0 && largestWillDo {
 		dir2 = -2

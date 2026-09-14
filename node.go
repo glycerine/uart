@@ -63,7 +63,7 @@ type bnode struct {
 	// summing on the fly of SubN counts
 	// during find/get/gte/lte. It allows
 	// the LeafIndex functionality to work and be fast.
-	pren int
+	pren uint32
 }
 
 func (a *bnode) kind() kind {
@@ -93,7 +93,7 @@ func (a *bnode) subn() (count int) {
 	if a.isLeaf {
 		return 1
 	}
-	count = a.inner.SubN
+	count = int(a.inner.SubN)
 	return
 }
 
@@ -110,7 +110,7 @@ func (a *bnode) at(i int) (r *Leaf, ok bool) {
 	}
 	// INVAR: a is inner
 	n := a.inner
-	if i >= n.SubN {
+	if i >= int(n.SubN) {
 		// i too large, out of bounds
 		return nil, false
 	}
@@ -199,7 +199,7 @@ func (k kind) String() string {
 
 // At() returns the char at key[pos], or a 0 if out of bounds.
 func (key Key) At(pos int) byte {
-	if pos < 0 || pos >= len(key) {
+	if uint(pos) >= uint(len(key)) {
 		// imitate the C-like string termination character
 		return 0
 	}
@@ -213,6 +213,14 @@ type inner struct {
 
 	// compressed implements path compression.
 	compressed []byte
+
+	// Node holds one of node4, node16, node48, or node256.
+	// inode is an interface that all of them implement.
+	Node inode
+
+	// counted B-tree style: how many
+	// leaves are stored in our sub-tree.
+	SubN uint32
 
 	// try lazy updating of pren to
 	// allow bulk writes to not trash the L1 cache
@@ -229,14 +237,6 @@ type inner struct {
 	// For sane debugging, comment this in
 	// back in to store the full path on each inner node.
 	//path []byte
-
-	// counted B-tree style: how many
-	// leaves are stored in our sub-tree.
-	SubN int
-
-	// Node holds one of node4, node16, node48, or node256.
-	// inode is an interface that all of them implement.
-	Node inode
 
 	// keybyte gives the byte that leads
 	// to us in the parent index.
@@ -409,7 +409,7 @@ func (b *bnode) subTreeRedoPren() (leafcount int) {
 		return 1
 	}
 	if b.inner.prenOK {
-		return b.inner.SubN
+		return int(b.inner.SubN)
 	}
 	// INVAR: b is an inner, and has a stale pren somewhere.
 
@@ -425,7 +425,7 @@ func (b *bnode) subTreeRedoPren() (leafcount int) {
 				leafcount += subn
 
 				// update ch.pren
-				ch.pren = pren
+				ch.pren = uint32(pren)
 				pren += subn
 			}
 		}
@@ -436,7 +436,7 @@ func (b *bnode) subTreeRedoPren() (leafcount int) {
 				leafcount += subn
 
 				// update ch.pren
-				ch.pren = pren
+				ch.pren = uint32(pren)
 				pren += subn
 			}
 		}
@@ -451,7 +451,7 @@ func (b *bnode) subTreeRedoPren() (leafcount int) {
 			leafcount += subn
 
 			// update ch.pren
-			ch.pren = pren
+			ch.pren = uint32(pren)
 			pren += subn
 		}
 	case *node256:
@@ -461,14 +461,14 @@ func (b *bnode) subTreeRedoPren() (leafcount int) {
 				leafcount += subn
 
 				// update ch.pren
-				ch.pren = pren
+				ch.pren = uint32(pren)
 				pren += subn
 			}
 		}
 	}
 
 	// todo remove this, once sanity check ensured.
-	if b.inner.SubN != leafcount {
+	if int(b.inner.SubN) != leafcount {
 		panic(fmt.Sprintf("leafcount=%v, but n.SubN = %v", leafcount, b.inner.SubN))
 	}
 

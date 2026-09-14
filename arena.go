@@ -1,6 +1,7 @@
 package uart
 
 const (
+	keyArenaChunkLen     = 1 << 20
 	bnodeArenaChunkLen   = 4096
 	leafArenaChunkLen    = 4096
 	innerArenaChunkLen   = 2048
@@ -9,6 +10,30 @@ const (
 	node48ArenaChunkLen  = 128
 	node256ArenaChunkLen = 64
 )
+
+type keyArena struct {
+	chunks [][]byte
+	next   int
+}
+
+func (a *keyArena) copy(key Key) Key {
+	if len(key) == 0 {
+		return nil
+	}
+	if len(a.chunks) == 0 || a.next+len(key) > len(a.chunks[len(a.chunks)-1]) {
+		chunkLen := keyArenaChunkLen
+		if len(key) > chunkLen {
+			chunkLen = len(key)
+		}
+		a.chunks = append(a.chunks, make([]byte, chunkLen))
+		a.next = 0
+	}
+	chunk := a.chunks[len(a.chunks)-1]
+	keyCopy := chunk[a.next : a.next+len(key)]
+	copy(keyCopy, key)
+	a.next += len(key)
+	return Key(keyCopy)
+}
 
 type bnodeArena struct {
 	chunks [][]bnode
@@ -129,11 +154,17 @@ func (t *Tree) newLeaf(key Key, value any) *Leaf {
 	if t.orderedLeaves != nil && t.orderedLeafNext < len(t.orderedLeaves) {
 		lf := &t.orderedLeaves[t.orderedLeafNext]
 		t.orderedLeafNext++
-		*lf = Leaf{Key: key, Value: value}
+		lf.Key = key
+		if value != nil {
+			lf.Value = value
+		}
 		return lf
 	}
 	lf := t.leafArena.alloc()
-	*lf = Leaf{Key: key, Value: value}
+	lf.Key = key
+	if value != nil {
+		lf.Value = value
+	}
 	return lf
 }
 
@@ -142,7 +173,8 @@ func (t *Tree) newBnodeLeaf(lf *Leaf) *bnode {
 		return bnodeLeaf(lf)
 	}
 	b := t.bnodeArena.alloc()
-	*b = bnode{leaf: lf, isLeaf: true}
+	b.leaf = lf
+	b.isLeaf = true
 	return b
 }
 
@@ -151,16 +183,17 @@ func (t *Tree) newBnodeInner(n *inner) *bnode {
 		return bnodeInner(n)
 	}
 	b := t.bnodeArena.alloc()
-	*b = bnode{inner: n}
+	b.inner = n
 	return b
 }
 
 func (t *Tree) newInner(node inode, subN int) *inner {
 	if t == nil {
-		return &inner{Node: node, SubN: subN}
+		return &inner{Node: node, SubN: uint32(subN)}
 	}
 	n := t.innerArena.alloc()
-	*n = inner{Node: node, SubN: subN}
+	n.Node = node
+	n.SubN = uint32(subN)
 	return n
 }
 
@@ -168,36 +201,28 @@ func (t *Tree) newNode4() *node4 {
 	if t == nil {
 		return &node4{}
 	}
-	n := t.node4Arena.alloc()
-	*n = node4{}
-	return n
+	return t.node4Arena.alloc()
 }
 
 func (t *Tree) newNode16() *node16 {
 	if t == nil {
 		return &node16{}
 	}
-	n := t.node16Arena.alloc()
-	*n = node16{}
-	return n
+	return t.node16Arena.alloc()
 }
 
 func (t *Tree) newNode48() *node48 {
 	if t == nil {
 		return &node48{}
 	}
-	n := t.node48Arena.alloc()
-	*n = node48{}
-	return n
+	return t.node48Arena.alloc()
 }
 
 func (t *Tree) newNode256() *node256 {
 	if t == nil {
 		return &node256{}
 	}
-	n := t.node256Arena.alloc()
-	*n = node256{}
-	return n
+	return t.node256Arena.alloc()
 }
 
 func growNode(nd inode, t *Tree) inode {
@@ -210,7 +235,6 @@ func growNode(nd inode, t *Tree) inode {
 		nn.lth = n.lth
 		copy(nn.keys[:], n.keys[:])
 		copy(nn.children[:], n.children[:])
-		nn.redoPren()
 		return nn
 	case *node16:
 		nn := t.newNode48()
@@ -221,7 +245,6 @@ func growNode(nd inode, t *Tree) inode {
 				nn.keys[n.keys[i]] = uint16(i) + 1
 			}
 		}
-		nn.redoPren()
 		return nn
 	case *node48:
 		nn := t.newNode256()
@@ -231,7 +254,6 @@ func growNode(nd inode, t *Tree) inode {
 				nn.children[b] = n.children[i-1]
 			}
 		}
-		nn.redoPren()
 		return nn
 	default:
 		return nd.grow()
@@ -242,8 +264,5 @@ func (t *Tree) prefixBytes(prefix []byte) []byte {
 	if len(prefix) == 0 {
 		return nil
 	}
-	if t != nil && t.SharePrefixBytes {
-		return prefix
-	}
-	return append([]byte{}, prefix...)
+	return prefix
 }

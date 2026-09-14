@@ -127,8 +127,20 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *in
 
 	//vv("child0key = 0x%x; lf.Key = '%v' (len %v); depth=%v; longestPrefix=%v; depth+longestPrefix=%v", child0key, string(lf.Key), len(lf.Key), depth, longestPrefix, depth+longestPrefix)
 
-	nn.Node.addChild(child0key, tree.newBnodeLeaf(lf))
-	nn.Node.addChild(child1key, tree.newBnodeLeaf(other))
+	child0 := tree.newBnodeLeaf(lf)
+	child1 := tree.newBnodeLeaf(other)
+	if child0key <= child1key {
+		n4.keys[0] = child0key
+		n4.children[0] = child0
+		n4.keys[1] = child1key
+		n4.children[1] = child1
+	} else {
+		n4.keys[0] = child1key
+		n4.children[0] = child1
+		n4.keys[1] = child0key
+		n4.children[1] = child0
+	}
+	n4.lth = 2
 
 	selfb.isLeaf = false
 	selfb.inner = nn
@@ -173,12 +185,12 @@ func (lf *Leaf) String() string {
 
 // used by get
 func (lf *Leaf) equal(other []byte) (equal bool) {
-	return bytes.Compare(lf.Key, other) == 0
+	return bytes.Equal(lf.Key, other)
 }
 
 // use by del, already holding Lock
 func (lf *Leaf) equalUnlocked(other []byte) (equal bool) {
-	equal = bytes.Compare(lf.Key, other) == 0
+	equal = bytes.Equal(lf.Key, other)
 	return
 }
 

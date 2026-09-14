@@ -6,6 +6,8 @@ import (
 	//"github.com/glycerine/uart/drwmutex"
 )
 
+const maxTreeLeaves = int64(1<<32 - 1)
+
 // Tree is a trie that implements
 // the Adaptive Radix Tree (ART) algorithm
 // to provide a sorted, key-value, in-memory
@@ -84,6 +86,7 @@ type Tree struct {
 	root *bnode
 	size int64
 
+	keyArena     keyArena
 	bnodeArena   bnodeArena
 	leafArena    leafArena
 	innerArena   innerArena
@@ -94,6 +97,7 @@ type Tree struct {
 
 	orderedLeaves   []Leaf
 	orderedLeafNext int
+	orderedLeafRefs []*Leaf
 
 	// At() calls are much slower than
 	// iteration by default, because they
@@ -144,9 +148,9 @@ type Tree struct {
 	// default to false.
 	SkipLocking bool `msg:"-"`
 
-	// SharePrefixBytes lets compressed path fragments reference key bytes
-	// directly instead of copying them. InsertNoCopy enables this because its
-	// key ownership contract already requires stable key bytes.
+	// SharePrefixBytes is kept for source compatibility. Compressed path
+	// fragments now always reference tree-owned key bytes; Insert copies keys
+	// into an arena, and InsertNoCopy/InsertLeaf require stable key ownership.
 	SharePrefixBytes bool `msg:"-"`
 }
 
@@ -206,9 +210,13 @@ func (t *Tree) stringNoKeys(recurse int) string {
 // The x slice is not copied.
 func (t *Tree) InsertX(key Key, value any, x []byte) (updated bool) {
 
-	key2 := Key(append([]byte{}, key...))
+	if !t.SkipLocking {
+		t.RWmut.Lock()
+		defer t.RWmut.Unlock()
+	}
+	key2 := t.keyArena.copy(key)
 	lf := t.newLeaf(key2, value)
-	return t.InsertLeaf(lf)
+	return t.insertLeafLocked(lf)
 }
 
 // Insert could be called "insert -- or replace this key,
@@ -225,16 +233,14 @@ func (t *Tree) InsertX(key Key, value any, x []byte) (updated bool) {
 // from this Insert call.
 func (t *Tree) Insert(key Key, value any) (updated bool) {
 
-	// make a copy of key that we own, so
-	// caller can alter/reuse without messing us up.
-	// This was a frequent source of bugs, so
-	// it is important. The benchmarks will crash
-	// without it, for instance, since they
-	// re-use key []byte memory alot.
-	key2 := Key(append([]byte{}, key...))
+	if !t.SkipLocking {
+		t.RWmut.Lock()
+		defer t.RWmut.Unlock()
+	}
+	key2 := t.keyArena.copy(key)
 	lf := t.newLeaf(key2, value)
 
-	return t.InsertLeaf(lf)
+	return t.insertLeafLocked(lf)
 }
 
 // InsertNoCopy inserts or replaces key with value without copying key.
@@ -244,11 +250,12 @@ func (t *Tree) Insert(key Key, value any) (updated bool) {
 // for performance-sensitive paths, such as memtables, where key ownership is
 // already clear and the defensive copy in Insert would only add overhead.
 func (t *Tree) InsertNoCopy(key Key, value any) (updated bool) {
-	if !t.SharePrefixBytes {
-		t.SharePrefixBytes = true
+	if !t.SkipLocking {
+		t.RWmut.Lock()
+		defer t.RWmut.Unlock()
 	}
 	lf := t.newLeaf(key, value)
-	return t.InsertLeaf(lf)
+	return t.insertLeafLocked(lf)
 }
 
 // InsertLeaf: the *Leaf lf *must* own the lf.Key it holds.
@@ -261,10 +268,24 @@ func (t *Tree) InsertLeaf(lf *Leaf) (updated bool) {
 		t.RWmut.Lock()
 		defer t.RWmut.Unlock()
 	}
+
+	return t.insertLeafLocked(lf)
+}
+
+func (t *Tree) insertLeafLocked(lf *Leaf) (updated bool) {
+	if t.size == maxTreeLeaves {
+		if old, _, found := t.find_unlocked(Exact, lf.Key); found {
+			old.Value = lf.Value
+			t.treeVersion++
+			return true
+		}
+		panic("uart: maximum tree size exceeded")
+	}
 	if t.orderedLeaves != nil {
 		t.orderedLeaves = nil
 		t.orderedLeafNext = 0
 	}
+	t.orderedLeafRefs = nil
 
 	var replacement *bnode
 
@@ -518,6 +539,7 @@ func (t *Tree) Remove(key Key) (deleted bool, deletedLeaf *Leaf) {
 			t.orderedLeaves = nil
 			t.orderedLeafNext = 0
 		}
+		t.orderedLeafRefs = nil
 	}
 	return
 }
