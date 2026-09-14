@@ -36,6 +36,44 @@ func (t *Tree) buildSortedNoCopy(items []BulkItem, depth int) *bnode {
 		depth += prefixLen
 	}
 
+	var groupKeys [16]byte
+	var groupStarts [17]int
+	var groups int
+	for start := 0; start < len(items); {
+		if groups == len(groupKeys) {
+			return t.buildSortedNoCopyWide(items, depth, compressed)
+		}
+		groupStarts[groups] = start
+		groupKeys[groups] = items[start].Key.At(depth)
+		end := start + 1
+		for end < len(items) && items[end].Key.At(depth) == groupKeys[groups] {
+			end++
+		}
+		groups++
+		groupStarts[groups] = end
+		start = end
+	}
+
+	n := t.newInner(t.newNodeForFanout(groups), len(items))
+	n.compressed = compressed
+
+	for g := 0; g < groups; g++ {
+		keyb := groupKeys[g]
+		start := groupStarts[g]
+		end := groupStarts[g+1]
+		child := t.buildSortedNoCopy(items[start:end], depth+1)
+		if child.isLeaf {
+			child.leaf.keybyte = keyb
+		} else {
+			child.inner.keybyte = keyb
+		}
+		addChildSorted(n.Node, keyb, child)
+	}
+
+	return t.newBnodeInner(n)
+}
+
+func (t *Tree) buildSortedNoCopyWide(items []BulkItem, depth int, compressed Key) *bnode {
 	var groupKeys [256]byte
 	var groupStarts [257]int
 	var groups int
@@ -64,7 +102,7 @@ func (t *Tree) buildSortedNoCopy(items []BulkItem, depth int) *bnode {
 		} else {
 			child.inner.keybyte = keyb
 		}
-		n.Node.addChild(keyb, child)
+		addChildSorted(n.Node, keyb, child)
 	}
 
 	return t.newBnodeInner(n)
@@ -87,5 +125,30 @@ func (t *Tree) newNodeForFanout(n int) inode {
 		return t.newNode48()
 	default:
 		return t.newNode256()
+	}
+}
+
+func addChildSorted(nd inode, keyb byte, child *bnode) {
+	switch n := nd.(type) {
+	case *node4:
+		idx := n.lth
+		n.keys[idx] = keyb
+		n.children[idx] = child
+		n.lth++
+	case *node16:
+		idx := n.lth
+		n.keys[idx] = keyb
+		n.children[idx] = child
+		n.lth++
+	case *node48:
+		idx := n.lth
+		n.keys[keyb] = uint16(idx + 1)
+		n.children[idx] = child
+		n.lth++
+	case *node256:
+		n.children[keyb] = child
+		n.lth++
+	default:
+		nd.addChild(keyb, child)
 	}
 }
