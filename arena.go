@@ -231,3 +231,13 @@ func growNode(nd inode, t *Tree) inode {
 		return nd.grow()
 	}
 }
+
+func (t *Tree) prefixBytes(prefix []byte) []byte {
+	if len(prefix) == 0 {
+		return nil
+	}
+	if t != nil && t.SharePrefixBytes {
+		return prefix
+	}
+	return append([]byte{}, prefix...)
+}

@@ -36,15 +36,28 @@ func (t *Tree) buildSortedNoCopy(items []BulkItem, depth int) *bnode {
 		depth += prefixLen
 	}
 
-	n := t.newInner(t.newNodeForFanout(countSortedFanout(items, depth)), len(items))
-	n.compressed = compressed
-
+	var groupKeys [256]byte
+	var groupStarts [257]int
+	var groups int
 	for start := 0; start < len(items); {
-		keyb := items[start].Key.At(depth)
+		groupStarts[groups] = start
+		groupKeys[groups] = items[start].Key.At(depth)
 		end := start + 1
-		for end < len(items) && items[end].Key.At(depth) == keyb {
+		for end < len(items) && items[end].Key.At(depth) == groupKeys[groups] {
 			end++
 		}
+		groups++
+		groupStarts[groups] = end
+		start = end
+	}
+
+	n := t.newInner(t.newNodeForFanout(groups), len(items))
+	n.compressed = compressed
+
+	for g := 0; g < groups; g++ {
+		keyb := groupKeys[g]
+		start := groupStarts[g]
+		end := groupStarts[g+1]
 		child := t.buildSortedNoCopy(items[start:end], depth+1)
 		if child.isLeaf {
 			child.leaf.keybyte = keyb
@@ -52,7 +65,6 @@ func (t *Tree) buildSortedNoCopy(items []BulkItem, depth int) *bnode {
 			child.inner.keybyte = keyb
 		}
 		n.Node.addChild(keyb, child)
-		start = end
 	}
 
 	return t.newBnodeInner(n)
@@ -63,19 +75,6 @@ func commonPrefixLenAt(a, b Key, depth int) int {
 		return 0
 	}
 	return commonPrefixLen(a[depth:], b[depth:])
-}
-
-func countSortedFanout(items []BulkItem, depth int) int {
-	var n int
-	var last byte
-	for i, item := range items {
-		keyb := item.Key.At(depth)
-		if i == 0 || keyb != last {
-			n++
-			last = keyb
-		}
-	}
-	return n
 }
 
 func (t *Tree) newNodeForFanout(n int) inode {

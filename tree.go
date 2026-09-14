@@ -140,6 +140,11 @@ type Tree struct {
 	// employed if SkipLocking is allowed to
 	// default to false.
 	SkipLocking bool `msg:"-"`
+
+	// SharePrefixBytes lets compressed path fragments reference key bytes
+	// directly instead of copying them. InsertNoCopy enables this because its
+	// key ownership contract already requires stable key bytes.
+	SharePrefixBytes bool `msg:"-"`
 }
 
 // NewArtTree creates and returns a new ART Tree,
@@ -231,10 +236,14 @@ func (t *Tree) Insert(key Key, value any) (updated bool) {
 
 // InsertNoCopy inserts or replaces key with value without copying key.
 //
-// The caller must not modify key while it is stored in the tree. This is meant
+// The tree may also retain slices of key as compressed-prefix storage, so the
+// caller must not modify key bytes until the tree is discarded. This is meant
 // for performance-sensitive paths, such as memtables, where key ownership is
 // already clear and the defensive copy in Insert would only add overhead.
 func (t *Tree) InsertNoCopy(key Key, value any) (updated bool) {
+	if !t.SharePrefixBytes {
+		t.SharePrefixBytes = true
+	}
 	lf := t.newLeaf(key, value)
 	return t.InsertLeaf(lf)
 }

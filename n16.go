@@ -43,8 +43,8 @@ func (n *node16) kind() kind {
 }
 
 func (n *node16) index(k byte) int {
-	for i, b := range n.keys {
-		if k <= b {
+	for i := 0; i < n.lth; i++ {
+		if k <= n.keys[i] {
 			return i
 		}
 	}
@@ -63,11 +63,9 @@ func index(key *byte, nkey *[16]byte) (int, bool) {
 }
 
 func (n *node16) child(k byte) (idx int, ch *bnode) {
-	var key byte
-	for idx, key = range n.keys {
-		if key == k {
-			ch = n.children[idx]
-			return
+	for idx = 0; idx < n.lth; idx++ {
+		if n.keys[idx] == k {
+			return idx, n.children[idx]
 		}
 	}
 	return
@@ -77,7 +75,8 @@ func (n *node16) next(k *byte) (byte, *bnode) {
 	if k == nil {
 		return n.keys[0], n.children[0]
 	}
-	for i, b := range n.keys {
+	for i := 0; i < n.lth; i++ {
+		b := n.keys[i]
 		if b > *k {
 			return b, n.children[i]
 		}
@@ -96,7 +95,8 @@ func (n *node16) gte(k *byte) (byte, *bnode) {
 		return n.keys[0], n.children[0]
 	}
 
-	for i, b := range n.keys {
+	for i := 0; i < n.lth; i++ {
+		b := n.keys[i]
 		if b >= *k {
 			return b, n.children[i]
 		}
@@ -114,7 +114,8 @@ func (n *node16) gt(k *byte) (byte, *bnode) {
 	if k == nil {
 		return n.keys[0], n.children[0]
 	}
-	for i, b := range n.keys {
+	for i := 0; i < n.lth; i++ {
+		b := n.keys[i]
 		if b > *k {
 			return b, n.children[i]
 		}

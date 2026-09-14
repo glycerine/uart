@@ -40,8 +40,8 @@ func (n *node4) childkeysString() (s string) {
 // index returns the first child (index) whose key <= k.
 // indexLTE would be an equivalent name
 func (n *node4) index(k byte) int {
-	for i, b := range n.keys {
-		if k <= b {
+	for i := 0; i < n.lth; i++ {
+		if k <= n.keys[i] {
 			return i
 		}
 	}
@@ -60,7 +60,8 @@ func (n *node4) next(k *byte) (byte, *bnode) {
 	if k == nil {
 		return n.keys[0], n.children[0]
 	}
-	for idx, b := range n.keys {
+	for idx := 0; idx < n.lth; idx++ {
+		b := n.keys[idx]
 		if b > *k {
 			return b, n.children[idx]
 		}
@@ -78,7 +79,8 @@ func (n *node4) gt(k *byte) (byte, *bnode) {
 	if k == nil {
 		return n.keys[0], n.children[0]
 	}
-	for idx, b := range n.keys {
+	for idx := 0; idx < n.lth; idx++ {
+		b := n.keys[idx]
 		if b > *k {
 			return b, n.children[idx]
 		}
@@ -96,7 +98,8 @@ func (n *node4) gte(k *byte) (byte, *bnode) {
 	if k == nil {
 		return n.keys[0], n.children[0]
 	}
-	for idx, b := range n.keys {
+	for idx := 0; idx < n.lth; idx++ {
+		b := n.keys[idx]
 		if b >= *k {
 			return b, n.children[idx]
 		}
@@ -122,8 +125,8 @@ func (n *node4) prev(k *byte) (byte, *bnode) {
 }
 
 func (n *node4) child(k byte) (idx int, ch *bnode) {
-	for i, b := range n.keys {
-		if k == b {
+	for i := 0; i < n.lth; i++ {
+		if k == n.keys[i] {
 			return i, n.children[i]
 		}
 	}

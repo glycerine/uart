@@ -4,6 +4,7 @@ import (
 	"bytes"
 	"encoding/binary"
 	"fmt"
+	"slices"
 	"testing"
 
 	googbtree "github.com/google/btree"
@@ -131,6 +132,12 @@ func BenchmarkMemtableBuildScanPermutedUint64_100K(b *testing.B) {
 
 func BenchmarkMemtableBuildScanLinuxPaths(b *testing.B) {
 	keys := loadTestFile("assets/linux.txt")
+	benchmarkMemtableBuildScan(b, keys)
+}
+
+func BenchmarkMemtableBuildScanSortedLinuxPaths(b *testing.B) {
+	keys := loadTestFile("assets/linux.txt")
+	slices.SortFunc(keys, bytes.Compare)
 	benchmarkMemtableBuildScan(b, keys)
 }
 

@@ -65,7 +65,7 @@ func (n *inner) insert(lf *Leaf, depth int, selfb *bnode, tree *Tree, parent *in
 		// we will overwrite ourself (n) with a new n4 split.
 		// This newChild node will be a child of (us) n.Node
 		newChildKey := n.compressed[mis]
-		parentCompressed := append([]byte{}, n.compressed[:mis]...)
+		parentCompressed := tree.prefixBytes(n.compressed[:mis])
 
 		newChild := tree.newInner(n.Node, n.SubN)
 		newChild.compressed = n.compressed[mis+1:]

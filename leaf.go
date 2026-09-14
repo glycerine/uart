@@ -118,7 +118,7 @@ func (lf *Leaf) insert(other *Leaf, depth int, selfb *bnode, tree *Tree, par *in
 	//nn.path = append([]byte{}, lf.Key[:depth+longestPrefix]...)
 	//vv("assigned path '%v' to %p", string(nn.path), nn)
 	if longestPrefix > 0 {
-		nn.compressed = append([]byte{}, lf.Key[depth:depth+longestPrefix]...)
+		nn.compressed = tree.prefixBytes(lf.Key[depth : depth+longestPrefix])
 	}
 	//vv("leaf insert: lef nn.PrefixLen = %v (longestPrefix)", nn.PrefixLen)
 
