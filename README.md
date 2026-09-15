@@ -12,8 +12,8 @@ https://github.com/tidwall/btree are more space and cache
 efficient if you do alot of sequential-key queries).
 
 2026 Sept 14 UPDATE: see SPEEDUP_MEMTABLE.md herein. After 
-some bot driven optimization, our ART is on-par or a little
-faster than an in-memory B-tree for some use cases, but still at the
+some bot driven optimization, our ART can be 2x faster than 
+an in-memory B-tree for some use cases, but still at the
 expense of 5x more memory consumed.
 
 ## overview
