@@ -13,7 +13,7 @@ efficient if you do alot of sequential-key queries).
 
 2026 Sept 14 UPDATE: see SPEEDUP_MEMTABLE.md herein. After 
 some bot driven optimization, our ART is on-par or a little
-faster than an in-memory B-tree for some batch use cases, but still at the
+faster than an in-memory B-tree for some use cases, but still at the
 expense of 5x more memory consumed.
 
 ## overview
