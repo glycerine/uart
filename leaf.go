@@ -185,12 +185,12 @@ func (lf *Leaf) String() string {
 
 // used by get
 func (lf *Leaf) equal(other []byte) (equal bool) {
-	return bytes.Equal(lf.Key, other)
+	return bytes.Compare(lf.Key, other) == 0
 }
 
 // use by del, already holding Lock
 func (lf *Leaf) equalUnlocked(other []byte) (equal bool) {
-	equal = bytes.Equal(lf.Key, other)
+	equal = bytes.Compare(lf.Key, other) == 0
 	return
 }
 
