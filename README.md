@@ -11,8 +11,8 @@ like a Go slice, with integer indexes.
 https://github.com/tidwall/btree are more space and cache
 efficient if you do alot of sequential-key queries).
 
-2026 Sept 14 UPDATE: see SPEEDUP_MEMTABLE.md herein. After 
-some bot driven optimization, our ART can be 2x faster than 
+2026 Sept 14 UPDATE: see SPEEDUP_MEMTABLE.md herein. Even after 
+some bot driven optimization, our ART is only about 15% faster than 
 an in-memory B-tree for some use cases, but still at the
 expense of 5x more memory consumed.
 
