@@ -31,13 +31,13 @@ timing changes run to run. For repeated measurements, the report uses median
 
 Initial random-input baseline, before this optimization pass:
 
-| Case | ns/key | B/op | allocs/op |
-| --- | ---: | ---: | ---: |
-| `uart_insert_iter` | 552.1 | 15,699,270 | 270,554 |
-| `uart_insert_scan` | 339.0 | 15,528,470 | 100,137 |
-| `uart_insert_nocopy_scan` | 282.7 | 14,728,460 | 137 |
-| `google_btree_degree_32` | 301.7 | 1,777,360 | 6,437 |
-| `google_btree_degree_3000` | 592.2 | 2,673,106 | 140 |
+| Case                        | ns/key     | B/op       | allocs/op 
+| ----------------------------|------------|------------|-----------
+| `uart_insert_iter`          | 552.1      | 15,699,270 | 270,554 
+| `uart_insert_scan`          | 339.0      | 15,528,470 | 100,137 
+| `uart_insert_nocopy_scan`   | 282.7      | 14,728,460 | 137
+| `google_btree_degree_32`    | 301.7      | 1,777,360  | 6,437
+| `google_btree_degree_3000`  | 592.2      | 2,673,106  | 140
 
 At this point default `Insert+ScanLeaves` was still slower than
 `google/btree` degree 32, and default `Insert+Iter` was much slower.
@@ -46,24 +46,25 @@ At this point default `Insert+ScanLeaves` was still slower than
 
 Final current-code run after reverting the non-winning `bytes.Equal` trial:
 
-| Case | Runs, ns/key | Median ns/key | B/op | allocs/op |
-| --- | --- | ---: | ---: | ---: |
-| `uart_insert_iter` | 255.5, 255.9, 257.2 | 255.9 | 14,876,250 | 141 |
-| `uart_insert_scan` | 249.4, 249.0, 259.3 | 249.4 | 14,073,184 | 139 |
-| `uart_insert_nocopy_scan` | 243.0, 234.5, 238.0 | 238.0 | 13,024,584 | 137 |
-| `google_btree_degree_32` | 292.8, 297.8, 296.4 | 296.4 | 1,777,364 | 6,437 |
-| `google_btree_degree_3000` | 569.4, 568.2, 560.1 | 568.2 | 2,673,108 | 140 |
+| Case                       | Runs, ns/key        | Median ns/key | B/op       | allocs/op
+| ---------------------------|---------------------|---------------|------------|----
+| `uart_insert_iter`         | 255.5, 255.9, 257.2 | 255.9         | 14,876,250 | 141
+| `uart_insert_scan`         | 249.4, 249.0, 259.3 | 249.4         | 14,073,184 | 139
+| `uart_insert_nocopy_scan`  | 243.0, 234.5, 238.0 | 238.0         | 13,024,584 | 137
+| `google_btree_degree_32`   | 292.8, 297.8, 296.4 | 296.4         | 1,777,364  | 6,437
+| `google_btree_degree_3000` | 569.4, 568.2, 560.1 | 568.2         | 2,673,108  | 140
 
 Overall improvement versus the starting point:
 
-| Case | Before | After | Improvement |
-| --- | ---: | ---: | ---: |
-| `Insert+Iter(nil,nil)` | 552.1 ns/key | 255.9 ns/key | 296.2 ns/key, 53.6% |
-| `Insert+ScanLeaves` | 339.0 ns/key | 249.4 ns/key | 89.6 ns/key, 26.4% |
-| `InsertNoCopy+ScanLeaves` | 282.7 ns/key | 238.0 ns/key | 44.7 ns/key, 15.8% |
+| Case                     | Before       | After        | Improvement 
+| -------------------------| -------------| -------------| -------------------
+| `Insert+Iter(nil,nil)`   | 552.1 ns/key | 255.9 ns/key | 296.2 ns/key, 53.6%
+| `Insert+ScanLeaves`      | 339.0 ns/key | 249.4 ns/key |  89.6 ns/key, 26.4%
+| `InsertNoCopy+ScanLeaves`| 282.7 ns/key | 238.0 ns/key |  44.7 ns/key, 15.8%
 
 Final default `Insert+Iter(nil,nil)` is 40.5 ns/key faster than
 `google_btree_degree_32` on the same random build plus full-scan benchmark.
+
 Final default `Insert+ScanLeaves` is 47.0 ns/key faster than
 `google_btree_degree_32`.
 
