@@ -403,6 +403,57 @@ These were tried but not kept as speedup claims:
 | Full-range `Ascend` implemented via recursive `ScanLeaves` | `Test620` showed it was slower inside `iter.Seq2`; replaced with direct cache-slice traversal. |
 | `GOGC=off` diagnostic | Not a retained setting. It showed ART algorithmic cost was already much lower than btree, and that GC scanning of pointer-rich structures was the real limiter. |
 | Passing `int` values directly to ART in the benchmark | Caused one interface-box allocation per key for ART while btree values were prebuilt outside the timer. Useful fairness warning, not kept as the main benchmark. |
+| `uint32` child refs instead of `*bnode` child pointers | Correct, but slower on the target build-plus-scan benchmark. Reverted. |
+
+### `uint32` Child Refs For Node Fanout Arrays
+
+This experiment tested the next arena idea: replace the persistent `*bnode`
+child slots in `node4`, `node16`, `node48`, and `node256` with integer refs.
+The prototype assigned each bnode a one-based `uint32` index in `bnodeArena`
+and changed node navigation to resolve refs through the owning `Tree`. The
+resolver used shift/mask arithmetic for the 4096-element bnode chunks after an
+initial version using ordinary division/modulo was also slow.
+
+This did remove GC-visible child pointers from the four node-size payloads, but
+it added an extra arena lookup on every descent, split update, scan, and pren
+refresh. It also required a bnode ref field. Net allocation bytes went up by
+about 57 KiB per 100K-key benchmark run because the bnode size increase mostly
+offset the smaller fanout arrays.
+
+Correctness passed:
+
+```sh
+go test -timeout=3m .
+```
+
+Measured target result after the shift/mask resolver:
+
+| Case | Current Baseline | Child-Ref Prototype | Delta |
+| --- | ---: | ---: | ---: |
+| `uart_insert_iter` | 255.9 ns/key | 258.6 ns/key | 2.7 ns/key slower |
+| `uart_insert_scan` | 249.4 ns/key | 272.2 ns/key | 22.8 ns/key slower |
+| `uart_insert_nocopy_scan` | 238.0 ns/key | 249.9 ns/key | 11.9 ns/key slower |
+
+The 10M diagnostic was also not a default-API win:
+
+| Case | Child-Ref Prototype |
+| --- | ---: |
+| `uart.Tree` store | 238 ns/op |
+| `uart Iter`, including construction | 94 ns/op |
+| `Ascend(tree,nil,nil)` after cache warmup | 8 ns/op |
+| `uart ScanLeaves` | 1 ns/op |
+
+That made `Insert+Iter(nil,nil)` about 332 ns/key in the diagnostic, versus the
+previous reported 313 ns/key. `ScanLeaves` remained fast after the ordered-leaf
+cache existed, but the benchmark target includes the construction/readback
+path, not only a warmed scan.
+
+A fully movable "double and copy" arena for the four node sizes would require
+one more structural step: `inner.Node inode` currently stores an interface that
+points directly at a `node4`/`node16`/`node48`/`node256`. Copying those arenas
+would invalidate that pointer. The next refactor would therefore need to turn
+`inner.Node` itself into a typed node ref as well. Since the child-ref half
+already regressed the build-plus-scan score, this deeper version was not kept.
 
 The `GOGC=off` diagnostic numbers were especially useful:
 
